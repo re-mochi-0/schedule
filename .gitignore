@@ -1,0 +1,11 @@
+# このリポジトリは GitHub Pages 用の静的サイト（docs/）のみを追跡する。
+# GAS・カード JSON・スクリプトはローカルで管理し、push しない。
+
+*.gs
+カード型_JSON/
+scripts/
+GITHUB_PAGES.md
+シフト選定ロジック.md
+.DS_Store
+.env
+.env.*
