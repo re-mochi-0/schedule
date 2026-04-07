@@ -5768,17 +5768,17 @@
     let chickenPeriods = []; // 期間と種類の組み合わせを保持
     
     async function showAddChickenModal(skipAddPeriod = false) {
-      // メンバーリストを取得（API側で卒業者は既に除外されている）
+      // メンバーリストを取得（卒業者のみ除外・ゼミ・イベントと同じ基準）
       if (membersList.length === 0) {
         // 管理者の場合はadminId、回答者の場合はstudentIdを使用
         const apiData = currentUser.role === 'admin' 
           ? { adminId: currentUser.id }
           : { studentId: currentUser.id };
         const result = await callAPI('getMembers', apiData);
-        membersList = result.members.filter(m => m.isActive && !m.isGraduated);
+        membersList = result.members.filter(m => !m.isGraduated);
       }
       
-      // 鶏班のみをフィルタリング（既に卒業者は除外済み）
+      // 鶏班のみをフィルタリング（非卒業者プールから）
       const chickenTeamMembers = membersList.filter(m => m.team === '鶏班');
       
       // チェックボックスを生成
@@ -6254,10 +6254,10 @@
       editingSeminarIndex = index;
       const seminar = seminarData[index];
       
-      // メンバーリストを取得（卒業者は除外）
+      // メンバーリストを取得（卒業者のみ除外・管理者メンバータブと同じ基準）
       if (membersList.length === 0) {
         const result = await callAPI('getMembers', { adminId: currentUser.id });
-        membersList = result.members.filter(m => m.isActive && !m.isGraduated);
+        membersList = result.members.filter(m => !m.isGraduated);
       }
       
       const checkboxContainer = document.getElementById('seminarPresentersCheckbox');
@@ -6435,10 +6435,10 @@
     }
     
     async function showAddSeminarModal() {
-      // メンバーリストを取得（卒業者は除外）
+      // メンバーリストを取得（卒業者のみ除外・管理者メンバータブと同じ基準）
       if (membersList.length === 0) {
         const result = await callAPI('getMembers', { adminId: currentUser.id });
-        membersList = result.members.filter(m => m.isActive && !m.isGraduated);
+        membersList = result.members.filter(m => !m.isGraduated);
       }
       
       const checkboxContainer = document.getElementById('seminarPresentersCheckbox');
@@ -6721,7 +6721,7 @@
       if (!box) return;
       if (membersList.length === 0) {
         const result = await callAPI('getMembers', { adminId: currentUser.id });
-        membersList = result.members.filter(m => m.isActive && !m.isGraduated);
+        membersList = result.members.filter(m => !m.isGraduated);
       }
       const sel = new Set(selectedNames || []);
       box.innerHTML = membersList.map(m => `
