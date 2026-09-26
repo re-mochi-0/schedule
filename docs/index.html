@@ -3052,7 +3052,7 @@
     .poll-options-head { display: flex; justify-content: space-between; align-items: center; margin: 14px 0 6px; font-size: 13px; font-weight: 700; color: #55626a; }
     .poll-option-list { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
     .poll-option-item { display: flex; align-items: center; gap: 6px; padding: 8px 6px 8px 12px; border: 1px solid #e7e3dc; border-radius: 10px; background: #fff; }
-    /* 作業者を決める：種類・人数 */
+    /* 担当を決める：種類・人数 */
     .poll-mode-row { display: flex; align-items: center; gap: 6px; }
     .poll-mode-row .seg-tabs { flex: 1; margin: 0; }
     .poll-need-row { display: flex; align-items: center; gap: 8px; margin: 4px 0 10px; }
@@ -3701,6 +3701,9 @@
     .tp-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 3px 14px; margin: 12px 0 0; padding: 10px 12px; background: #f5f5f5; border-radius: 4px; }
     .tp-facts dt { font-weight: 700; white-space: nowrap; }
     .tp-facts dd { margin: 0; word-break: break-word; }
+    .tp-action { display: flex; justify-content: center; margin-top: 12px; }
+    .tp-btn { background: #5b5fc7; color: #fff; font-weight: 700; font-size: 13px; padding: 6px 14px; border-radius: 4px; }
+    .tp-hint { margin-top: 6px; text-align: center; font-size: 11.5px; color: #616161; }
     @media (min-width: 900px) {
       #semremModal .sheet-box { width: min(1060px, 92vw); max-width: 1060px; }
       .semrem-editor { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 24px; align-items: start; }
@@ -5962,10 +5965,14 @@
           <div class="poll-mode-row">
             <div class="seg-tabs" id="pollModeSeg" role="tablist" aria-label="種類">
               <button type="button" class="seg-tab active" data-mode="date" onclick="setPollMode('date')"><i class="fa-regular fa-calendar-check"></i> 日程を決める</button>
-              <button type="button" class="seg-tab" data-mode="staff" onclick="setPollMode('staff')"><i class="fa-solid fa-user-check"></i> 作業者を決める</button>
+              <button type="button" class="seg-tab" data-mode="staff" onclick="setPollMode('staff')"><i class="fa-solid fa-user-check"></i> 担当を決める</button>
             </div>
-            <button type="button" class="info-tip" data-tip="日程を決める：候補の中から 1 つの日時に決めます。作業者を決める：枠ごとに必要な人数を決め、回答をもとに担当者を割り当てます" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button>
+            <button type="button" class="info-tip" data-tip="日程を決める：候補の中から 1 つの日時に決めます。担当を決める：枠ごとに必要な人数を決め、回答をもとに担当者を割り当てます" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button>
           </div>
+        </div>
+        <div class="form-group" id="pollLabelRow" hidden>
+          <label class="form-label" for="pollLabel">依頼名<button type="button" class="info-tip" data-tip="Teams の通知の見出しと、一覧の印に使います（例：協力のお願い・片付けの手伝い）" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></label>
+          <input type="text" id="pollLabel" class="form-input" maxlength="20" placeholder="協力のお願い">
         </div>
         <div class="form-group">
           <label class="form-label">タイトル<span class="g-req">*</span></label>
@@ -10758,7 +10765,7 @@
         const decided = p.options.find(o => o.id === p.decidedOptionId);
         const staffMode = pollIsStaff(p);
         const statusChip = (p.status === 'open' ? '<span class="poll-chip open">受付中</span>' : p.status === 'decided' ? `<span class="poll-chip decided">${staffMode ? '担当決定' : '決定'}</span>` : '<span class="poll-chip closed">締切</span>')
-          + (staffMode ? '<span class="poll-chip staff">作業者の募集</span>' : '');
+          + (staffMode ? `<span class="poll-chip staff">${escapeHtml((p.settings && p.settings.label) || '協力のお願い')}</span>` : '');
         let foot = '';
         if (staffMode && p.status === 'decided') {
           const my = pollMySlots(p);
@@ -11141,7 +11148,7 @@
     }
 
     // ==============================================
-    // 日程調整：作業者を決める（枠ごとに必要な人数を決め、回答をもとに担当を割り当てる）
+    // 日程調整：担当を決める（枠ごとに必要な人数を決め、回答をもとに担当を割り当てる）
     // ==============================================
     function pollIsStaff(p) {
       return !!(p && p.settings && p.settings.mode === 'staff');
@@ -11360,11 +11367,12 @@
       document.querySelectorAll('#pollModeSeg .seg-tab').forEach(b => b.classList.toggle('active', b.dataset.mode === pollEditor.mode));
       const staff = pollEditor.mode === 'staff';
       document.getElementById('pollNeedRow').hidden = !staff;
+      document.getElementById('pollLabelRow').hidden = !staff;
       document.getElementById('pollTitle').placeholder = staff ? '例: 研究室の片付け' : '例: 忘年会の日程';
       const decideBox = document.getElementById('pollAllowOthersDecide');
       const decideName = decideBox && decideBox.closest('.set-row') ? decideBox.closest('.set-row').querySelector('.set-name') : null;
       if (decideName) decideName.textContent = staff ? '作成者以外による担当の決定を許可' : '作成者以外による日程の決定を許可';
-      // 新しく作るとき：担当はふつう作成者（管理者）が決めるので、作業者モードでは「ほかの人も決められる」をオフから
+      // 新しく作るとき：担当はふつう作成者（管理者）が決めるので、担当を決めるときは「ほかの人も決められる」をオフから
       if (decideBox && !pollEditor.fromSrc) decideBox.checked = !staff;
       renderPollEditorLists_();
     }
@@ -11547,6 +11555,7 @@
       document.getElementById('pollTitle').value = src ? src.title + (copyFrom ? '（コピー）' : '') : '';
       document.getElementById('pollDescription').value = src ? src.description : '';
       document.getElementById('pollLocation').value = src ? src.location : '';
+      document.getElementById('pollLabel').value = src && src.settings && src.settings.label ? src.settings.label : '';
       const dl = src && src.deadline && !copyFrom ? parseYmdHmLocal_(src.deadline) : (() => { const d = new Date(); d.setDate(d.getDate() + 3); return d; })();
       document.getElementById('pollDeadlineDate').value = src && !src.deadline && !copyFrom ? '' : ymdDash(dl);
       document.getElementById('pollDeadlineTime').value = src && src.deadline && !copyFrom ? src.deadline.slice(11, 16) : '23:59';
@@ -11742,7 +11751,8 @@
         deadline,
         options: pollEditor.options,
         targets: isEveryone ? [] : targets,
-        settings: { allowMaybe: document.getElementById('pollAllowMaybe').checked, autoRemind: document.getElementById('pollAutoRemind').checked, allowOthersDecide: document.getElementById('pollAllowOthersDecide').checked, mode: pollEditor.mode }
+        settings: { allowMaybe: document.getElementById('pollAllowMaybe').checked, autoRemind: document.getElementById('pollAutoRemind').checked, allowOthersDecide: document.getElementById('pollAllowOthersDecide').checked, mode: pollEditor.mode,
+          label: pollEditor.mode === 'staff' ? document.getElementById('pollLabel').value.trim() : '' }
       };
       try {
         const r = await callAPI('savePoll', { adminId: currentUser.id, poll, notify: !pollEditor.id && pollState.teamsEnabled && document.getElementById('pollNotify').checked }, { overlayMessage: pollEditor.id ? '保存しています…' : '作成しています…' });
@@ -12641,6 +12651,8 @@
             ['場所', vals['場所']],
             ['備考', vals['備考']]
           ].filter(x => x[1]).map(x => `<dt>${x[0]}</dt><dd>${escapeHtml(x[1])}</dd>`).join('')}</dl>
+          <div class="tp-action"><span class="tp-btn">${r.target === 'candidates' ? '発表者を決める' : 'ゼミを確認'}</span></div>
+          <div class="tp-hint">ホーム画面のアプリでは「ゼミ」タブから開けます</div>
         </div>`;
     }
 
