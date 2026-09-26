@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
+  <meta name="app-build" content="20260927-054926">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -7150,8 +7152,10 @@
       try { pendingPollId_ = new URLSearchParams(location.search).get('poll') || ''; } catch (_) {}
       try { pendingSwapId_ = new URLSearchParams(location.search).get('swap') || ''; } catch (_) {}
       try { pendingTab_ = new URLSearchParams(location.search).get('tab') || ''; } catch (_) {}
-      // 読み直したときに同じ画面をまた開かないよう、アドレス欄から消しておく
-      ['poll', 'swap', 'tab'].forEach(stripQueryParam_);
+      // 読み直したときに同じ画面をまた開かないよう、アドレス欄から消しておく（b は新しい版の読み込み用）
+      ['poll', 'swap', 'tab', 'b'].forEach(stripQueryParam_);
+      // 開いたページが古い版（キャッシュ）なら、少し後で新しい版に読み込み直す
+      setTimeout(() => { updateIfNewBuild_(); }, 3000);
       // メールのリンク（?login=鍵）：鍵は 1 回しか使えないので、先にアドレス欄から消す
       let loginLink = '';
       try { loginLink = new URLSearchParams(location.search).get('login') || ''; } catch (_) {}
@@ -8205,10 +8209,31 @@
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
     })();
 
-    /** 今の画面を読み直す（引っぱって更新）。入力中の NG は消さない */
+    /**
+     * 新しい版のページが公開されていたら読み込み直す（ホーム画面のアプリは閉じるまで同じページを使い続けるため）。
+     * 公開中のページの先頭だけ取り寄せて、版の印（meta app-build）を比べる。入力途中の NG があるときはしない
+     */
+    const APP_BUILD_ = (document.querySelector('meta[name="app-build"]') || {}).content || '';
+    async function updateIfNewBuild_() {
+      if (!APP_BUILD_ || APP_BUILD_ === '0') return false;
+      let latest = '';
+      try {
+        const r = await fetch(location.pathname + '?check=' + Date.now(), { cache: 'no-store', headers: { Range: 'bytes=0-2047' } });
+        const m = (await r.text()).match(/<meta name="app-build" content="([^"]+)"/);
+        latest = m ? m[1] : '';
+      } catch (_) { return false; }
+      if (!latest || latest === APP_BUILD_) return false;
+      if (typeof hasUnsavedNgEdits === 'function' && hasUnsavedNgEdits()) return false;
+      // アドレスを変えて読み込み、古いページのキャッシュを使わないようにする（b は読み込み後に消す）
+      location.replace(location.pathname + '?b=' + encodeURIComponent(latest) + location.hash);
+      return true;
+    }
+
+    /** 今の画面を読み直す（引っぱって更新）。新しい版があればページごと読み込み直す。入力中の NG は消さない */
     async function refreshCurrentScreen_() {
       const tab = currentTabId();
       if (!tab) return;
+      if (await updateIfNewBuild_()) return;
       const t0 = Date.now();
       markStale(['seminars', 'events', 'chicken', 'calendar', 'admin', 'form', 'polls']);
       pollState.loadedAt = 0;
@@ -8310,6 +8335,8 @@
       }
       if (!currentUser || !hiddenAt_ || Date.now() - hiddenAt_ < 3 * 60000) return;
       hiddenAt_ = 0;
+      // 新しい版が公開されていれば、ページごと読み込み直す（その場合はここで終わり）
+      updateIfNewBuild_();
       markStale(['seminars', 'events', 'chicken', 'calendar', 'admin', 'form', 'polls']);
       const tab = currentTabId();
       // 設定の入力中は上書きしないよう読み直さない
