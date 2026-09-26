@@ -690,6 +690,34 @@
       min-width: 0;
       max-width: 100%;
     }
+    /* iPhone（iOS のブラウザ）：日付・時刻の入力欄は独自の最小幅があって縮まず、枠からはみ出して
+       画面が横にも動いてしまう。独自の見た目を外して縮むようにする（押すと今までどおり選ぶ画面が出る） */
+    @supports (-webkit-touch-callout: none) {
+      input[type="date"],
+      input[type="time"],
+      input[type="month"],
+      input[type="datetime-local"] {
+        -webkit-appearance: none;
+        appearance: none;
+        text-align: left;
+      }
+      /* 値の行を 1 行分確保（空のときに欄の高さがつぶれないように）・左寄せ */
+      input[type="date"]::-webkit-date-and-time-value,
+      input[type="time"]::-webkit-date-and-time-value,
+      input[type="month"]::-webkit-date-and-time-value,
+      input[type="datetime-local"]::-webkit-date-and-time-value {
+        min-height: 1.4em;
+        margin: 0;
+        text-align: left;
+      }
+      /* 横に並ぶ入力欄は均等に縮む（ボタンや「〜」と並んでも枠に収まる） */
+      .other-input > input,
+      .end-picker > input,
+      .end-picker > select {
+        flex: 1 1 0;
+        min-width: 0;
+      }
+    }
     
     .form-input:focus,
     .form-select:focus,
