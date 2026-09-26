@@ -3868,9 +3868,15 @@
     .my-date { flex: 0 0 44px; display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
     .my-date b { font-size: 15px; color: var(--text); }
     .my-date small { font-size: 11px; color: var(--text-light); }
-    .my-chips { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 5px; }
-    .my-chip { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; color: #fff; background: var(--c, #6b7a86); }
-    .my-chip small { font-weight: 500; opacity: 0.9; }
+    .my-items { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+    .my-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+    .my-chip { flex: 0 0 auto; display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; line-height: 1.5; color: #fff; background: var(--c, #6b7a86); white-space: nowrap; }
+    /* ゼミ・イベント：1 行ずつ。名前は文字として折り返す */
+    .my-line { display: flex; align-items: flex-start; gap: 7px; min-width: 0; font-size: 13px; line-height: 1.5; }
+    .my-line .my-chip { margin-top: -1px; }
+    .my-dot { flex: 0 0 8px; width: 8px; height: 8px; margin-top: calc((1.5em - 8px) / 2); border-radius: 50%; background: var(--c, #6b7a86); }
+    .my-text { min-width: 0; font-weight: 700; color: var(--text); overflow-wrap: anywhere; }
+    .my-text small { font-size: 12px; font-weight: 500; color: var(--text-light); margin-right: 5px; font-variant-numeric: tabular-nums; }
     .my-chip.feed { --c: #e08a3c; }
     .my-chip.clean { --c: #3f9a63; }
     .my-chip.sem { --c: var(--sem); }
@@ -6058,7 +6064,7 @@
   
   <script>
     // GAS API URL（デプロイ時に設定）
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzzyNvTgnXtg4jd2r5rSWdOwKXJleJF3N-U70eIICZLLq6xJrB7LzgJYl9EbwwviUko/exec';
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwfdNvopI8O99uAtVPgMpaUnMyCzb5EVZvFLO8SojFohtHSJPyQk-vqI5Y_uBVrav0z/exec';
     
     // セッション管理
     let currentUser = null;
@@ -15560,16 +15566,21 @@
       const mine = [];
       rows.forEach(ds => {
         const info = memberDayInfo_(data, ds);
-        const chips = [];
-        if (info.feeders.includes(me)) chips.push({ k: 'feed', t: '餌番' });
-        if (info.cleaners.includes(me)) chips.push({ k: 'clean', t: '掃除' });
+        // 短い種類（餌番・掃除）はラベル、ゼミはラベル＋名前、イベントは色の点＋名前（長い名前でも形が崩れない）
+        const duties = [];
+        const lines = [];
+        if (info.feeders.includes(me)) duties.push({ k: 'feed', t: '餌番' });
+        if (info.cleaners.includes(me)) duties.push({ k: 'clean', t: '掃除' });
         info.seminars.forEach(s => {
           if (!s || s.type === 'ゼミなし') return;
-          if ((s.presenters || []).includes(me)) chips.push({ k: 'sem', t: 'ゼミ発表', sub: s.type });
-          else if (!(s.presenters || []).length && (s.candidates || []).includes(me)) chips.push({ k: 'cand', t: '発表者候補', sub: s.type });
+          const time = s.startTime ? formatStartTimeDisplay(s.startTime) : '';
+          if ((s.presenters || []).includes(me)) lines.push({ chip: 'sem', label: 'ゼミ発表', time, text: s.type || 'ゼミ' });
+          else if (!(s.presenters || []).length && (s.candidates || []).includes(me)) lines.push({ chip: 'cand', label: '発表者候補', time, text: s.type || 'ゼミ' });
         });
-        info.events.forEach(e => { if ((e.participants || []).includes(me)) chips.push({ k: 'event', t: e.name, color: e.color }); });
-        if (chips.length && ds >= today) mine.push({ ds, chips });
+        info.events.forEach(e => {
+          if ((e.participants || []).includes(me)) lines.push({ color: eventColor_(e.color), time: e.startTime ? formatStartTimeDisplay(e.startTime) : '', text: e.name });
+        });
+        if ((duties.length || lines.length) && ds >= today) mine.push({ ds, duties, lines });
       });
       const rel = ds => {
         const n = Math.round((parseYmd(ds) - parseYmd(today)) / 86400000);
@@ -15582,7 +15593,10 @@
         return `
           <button type="button" class="my-row${m.ds === today ? ' is-today' : ''}" onclick="selectMemberDay(${jsArg(m.ds)}, true)">
             <span class="my-date"><b>${d.getMonth() + 1}/${d.getDate()}</b><small>${WEEKDAY_JA[d.getDay()]}</small></span>
-            <span class="my-chips">${m.chips.map(c => `<span class="my-chip ${c.k}"${c.color ? ` style="--c:${eventColor_(c.color)}"` : ''}>${escapeHtml(c.t)}${c.sub ? `<small>${escapeHtml(c.sub)}</small>` : ''}</span>`).join('')}</span>
+            <span class="my-items">
+              ${m.duties.length ? `<span class="my-chips">${m.duties.map(c => `<span class="my-chip ${c.k}">${c.t}</span>`).join('')}</span>` : ''}
+              ${m.lines.map(l => `<span class="my-line">${l.chip ? `<span class="my-chip ${l.chip}">${l.label}</span>` : `<i class="my-dot" style="--c:${l.color}"></i>`}<span class="my-text">${l.time ? `<small>${escapeHtml(l.time)}</small>` : ''}${escapeHtml(l.text)}</span></span>`).join('')}
+            </span>
             <span class="my-rel">${rel(m.ds)}</span>
           </button>`;
       }).join('')}</div>` : '<p class="bulk-empty">これからの担当・発表はありません</p>';
@@ -16918,17 +16932,27 @@
       document.getElementById('calLinkGoogle').href = 'https://calendar.google.com/calendar/r?cid=' + encodeURIComponent(webcal);
       document.getElementById('calLinkModal').classList.add('show');
     }
+    /** カレンダーの URL：この画面が接続しているウェブアプリの URL で作る（デプロイが複数あっても確実に同じ所を指す） */
+    function calendarUrlFrom_(r) {
+      if (r && r.token && /^https?:\/\//.test(GAS_API_URL)) {
+        return GAS_API_URL + (GAS_API_URL.indexOf('?') >= 0 ? '&' : '?') + 'cal=' + encodeURIComponent(r.token);
+      }
+      if (r && r.url) return r.url;
+      throw new Error('URL を作れませんでした');
+    }
     async function openCalendarLink() {
       try {
         const r = await callAPI('getCalendarLink', { studentId: currentUser.id });
-        showCalendarLink_(r.url);
-      } catch (_) {}
+        showCalendarLink_(calendarUrlFrom_(r));
+      } catch (e) {
+        if (e && e.message === 'URL を作れませんでした') showToast(e.message, 'error');
+      }
     }
     async function resetCalendarLink() {
       if (!(await showConfirmModal('URL を作り直しますか？前の URL で追加したカレンダーは更新されなくなります。', 'URL の作り直し'))) return;
       try {
         const r = await callAPI('getCalendarLink', { studentId: currentUser.id, reset: true });
-        showCalendarLink_(r.url);
+        showCalendarLink_(calendarUrlFrom_(r));
         showToast('新しい URL を作りました。カレンダーに追加し直してください', 'success');
       } catch (_) {}
     }
