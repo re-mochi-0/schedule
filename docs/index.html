@@ -3970,23 +3970,27 @@
     .my-row { display: flex; align-items: center; gap: 12px; padding: 9px 4px; border: none; border-bottom: 1px solid var(--border); background: transparent; font: inherit; text-align: left; cursor: pointer; color: inherit; width: 100%; }
     .my-row:last-child { border-bottom: none; }
     .my-row.is-today { background: #f3f9fb; border-radius: 10px; }
-    .my-date { flex: 0 0 44px; display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
+    /* 日付の下に「◯日後」を置き、名前に横幅を回す */
+    .my-date { flex: 0 0 48px; display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
     .my-date b { font-size: 15px; color: var(--text); }
     .my-date small { font-size: 11px; color: var(--text-light); }
     .my-items { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
     .my-chips { display: flex; flex-wrap: wrap; gap: 5px; }
     .my-chip { flex: 0 0 auto; display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; line-height: 1.5; color: #fff; background: var(--c, #6b7a86); white-space: nowrap; }
     /* ゼミ・イベント：1 行ずつ。名前は文字として折り返す */
-    .my-line { display: flex; align-items: flex-start; gap: 7px; min-width: 0; font-size: 13px; line-height: 1.5; }
-    .my-line .my-chip { margin-top: -1px; }
-    .my-dot { flex: 0 0 8px; width: 8px; height: 8px; margin-top: calc((1.5em - 8px) / 2); border-radius: 50%; background: var(--c, #6b7a86); }
-    .my-text { min-width: 0; font-weight: 700; color: var(--text); overflow-wrap: anywhere; }
-    .my-text small { font-size: 12px; font-weight: 500; color: var(--text-light); margin-right: 5px; font-variant-numeric: tabular-nums; }
+    .my-line { display: grid; grid-template-columns: 8px minmax(0, 1fr); column-gap: 7px; row-gap: 3px; min-width: 0; font-size: 13px; line-height: 1.5; }
+    .my-dot { grid-column: 1; grid-row: 1; width: 8px; height: 8px; margin-top: calc((1.5em - 8px) / 2); border-radius: 50%; background: var(--c, #6b7a86); }
+    /* 名前は 1 行分の幅を使い、折り返すときは語のまとまり（body の auto-phrase）で折る */
+    .my-text { grid-column: 2; grid-row: 1; min-width: 0; font-weight: 700; color: var(--text); overflow-wrap: anywhere; }
+    .my-meta { grid-column: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+    .my-meta small { font-size: 12px; color: var(--text-light); font-variant-numeric: tabular-nums; }
+    .my-meta .my-chip { font-size: 11px; padding: 0 8px; }
     .my-chip.feed { --c: #e08a3c; }
     .my-chip.clean { --c: #3f9a63; }
     .my-chip.sem { --c: var(--sem); }
     .my-chip.cand { background: #fff4e0; color: #9c6a14; }
-    .my-rel { flex: 0 0 auto; font-size: 12px; color: var(--text-light); }
+    .my-date small.my-rel { margin-top: 4px; font-size: 10.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .my-row.is-today .my-rel { color: var(--primary-dark); font-weight: 700; }
     .mc-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0 0 10px; font-size: 11.5px; color: var(--text-light); }
     .mc-legend span { display: inline-flex; align-items: center; gap: 4px; }
     .mc-legend i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
@@ -4281,6 +4285,13 @@
     .dd-meta span { min-width: 0; }
     .nm { white-space: nowrap; }
     .nm.me { font-weight: 700; color: var(--me); }
+    /* 「ほか◯人」：押すと残りの名前を出す */
+    .nl-more {
+      display: inline; margin-left: 6px; padding: 2px 2px; border: none; background: none;
+      font: inherit; font-weight: 700; color: var(--primary-dark); cursor: pointer; white-space: nowrap;
+    }
+    .nl-more:hover { text-decoration: underline; }
+    .nl-more:focus-visible { outline: 2px solid var(--primary-dark); outline-offset: 1px; border-radius: 4px; }
     .sep { color: #b0b7bb; }
     .dd-none { color: var(--text-light); }
     .dd-sub { color: var(--text-light); font-weight: 700; margin-right: 6px; }
@@ -4359,12 +4370,13 @@
     .sb-legend { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #5f6c72; white-space: nowrap; }
     .sb-legend i { width: 14px; height: 14px; border-radius: 4px; background: var(--me-bg); border: 1px solid var(--me-line); display: inline-block; }
     .sb-grid {
+      --sb-r: 12px;
       display: grid;
       grid-template-columns: repeat(7, minmax(0, 1fr));
       gap: 1px;
       background: #d9e1e4;
       border: 1px solid #d9e1e4;
-      border-radius: 12px;
+      border-radius: var(--sb-r);
       overflow: hidden;
       position: relative;
     }
@@ -4383,6 +4395,8 @@
       outline: none;
       position: relative;
     }
+    .sb-grid > .is-bl { border-bottom-left-radius: calc(var(--sb-r) - 1px); }
+    .sb-grid > .is-br { border-bottom-right-radius: calc(var(--sb-r) - 1px); }
     .sb-cell[role="button"] { cursor: pointer; }
     .sb-cell[role="button"]:hover { background: #f6fafb; }
     .sb-cell.is-blank { background: #f5f7f8; }
@@ -4520,7 +4534,7 @@
     .sb-sheet-title .sb-sheet-note { font-size: 14px; color: #9aa5aa; margin-left: 14px; font-weight: 500; }
     .sb-sheet .sb-legend { font-size: 14px; color: #4f5d63; }
     .sb-sheet .sb-legend i { width: 16px; height: 16px; }
-    .sb-sheet .sb-grid { border-radius: 10px; }
+    .sb-sheet .sb-grid { --sb-r: 10px; }
     .sb-sheet .sb-wd { font-size: 14px; padding: 9px 0; }
     .sb-sheet .sb-cell { min-height: 128px; padding: 8px 9px 10px; gap: 5px; }
     .sb-sheet .sb-num { font-size: 17px; width: auto; min-width: 26px; height: 26px; }
@@ -7688,6 +7702,9 @@
         setLoginStep_('id');
         return;
       }
+      // 前の人の画面・先読みを使わない
+      formDataRendered_ = false;
+      formDataPrefetch_ = null;
       clearInterval(loginState_.resendTimer);
       stopLoginPolling_();
       const canSwitch = u.isAdmin === true && !u.emergency && !!res.token;
@@ -7849,6 +7866,8 @@
           loadResultCalendar().catch(() => {});
         }
         loadChickenSchedule(false, 'admin-chicken').catch(() => {});
+        // メンバー画面へ待たずに切り替えられるよう、シフト提出のデータを裏で取っておく
+        if (currentUser.token) setTimeout(prefetchFormData_, 1500);
       } else if (currentUser && currentUser.role === 'member') {
         document.body.setAttribute('data-user-role', 'member');
         memberTabs.style.display = 'flex';
@@ -7866,9 +7885,16 @@
         
         if (isActive) {
           // 最初の画面（シフト提出）に必要なのは getFormData だけ。カレンダーは裏で読み込む
-          if (globalLoading) globalLoading.style.display = 'flex';
+          // 管理者画面から来たときは、先に取っておいたデータ（または前に表示した画面）で待たずに出す
+          const ready = formDataReady_();
+          if (globalLoading && !ready) globalLoading.style.display = 'flex';
           switchTab('member-form', { skipLoad: true });
-          loadFormData().finally(hideGlobalLoading);
+          if (formDataRendered_) {
+            hideGlobalLoading();
+            if (!hasUnsavedNgEdits()) loadFormData(false, { background: true }).catch(() => {});
+          } else {
+            loadFormData(!ready).finally(hideGlobalLoading);
+          }
           loadMemberResultCalendar({ background: true }).catch(() => {});
         } else {
           // 前回のカレンダーがこの端末に残っていれば、待たずにすぐ表示する
@@ -10849,7 +10875,7 @@
             <span><i class="fa-regular fa-clock"></i> 未回答 ${p.nonRespondents.length}人</span>
             ${pollCanDecide(p) && p.status === 'open' ? `<button type="button" class="btn btn-outline btn-xs" onclick="remindPoll()"><i class="fa-regular fa-bell"></i> リマインド</button>` : ''}
           </div>
-          <div class="poll-nonresp-names">${(pollState.showAllNonResp ? p.nonRespondents : p.nonRespondents.slice(0, 10)).map(n => `<span class="${n === pollState.me ? 'me' : ''}">${escapeHtml(n)}</span>`).join('')}${!pollState.showAllNonResp && p.nonRespondents.length > 10 ? `<button type="button" class="link-btn" onclick="pollState.showAllNonResp = true; rerenderPollKeepScroll_();">他 ${p.nonRespondents.length - 10} 人</button>` : ''}</div>
+          <div class="poll-nonresp-names">${(pollState.showAllNonResp ? meFirst_(p.nonRespondents, pollState.me) : meFirst_(p.nonRespondents, pollState.me).slice(0, 10)).map(n => `<span class="${n === pollState.me ? 'me' : ''}">${escapeHtml(n)}</span>`).join('')}${!pollState.showAllNonResp && p.nonRespondents.length > 10 ? `<button type="button" class="link-btn" onclick="pollState.showAllNonResp = true; rerenderPollKeepScroll_();">他 ${p.nonRespondents.length - 10} 人</button>` : ''}</div>
         </div>`;
       } else if (p.answers.length && p.status !== 'decided') {
         html += '<div class="poll-allin"><i class="fa-solid fa-circle-check"></i> 全員回答済み</div>';
@@ -10867,7 +10893,7 @@
         const names = (label, arr, cls) => arr.length ? `
           <div class="pr-group ${cls}">
             <div class="pr-group-head"><span class="pr-mark">${label}</span>${GROUP_LABEL[cls]}<span class="pr-n">${arr.length}人</span></div>
-            <ul class="pr-list">${arr.map(n => `<li class="${n === pollState.me ? 'me' : ''}"><span class="pr-name">${escapeHtml(n)}${n === pollState.me ? '<span class="pr-you">自分</span>' : ''}</span>${noteOf(n) ? `<span class="pr-note">${escapeHtml(noteOf(n))}</span>` : ''}</li>`).join('')}</ul>
+            <ul class="pr-list">${meFirst_(arr, pollState.me).map(n => `<li class="${n === pollState.me ? 'me' : ''}"><span class="pr-name">${escapeHtml(n)}${n === pollState.me ? '<span class="pr-you">自分</span>' : ''}</span>${noteOf(n) ? `<span class="pr-note">${escapeHtml(noteOf(n))}</span>` : ''}</li>`).join('')}</ul>
           </div>` : '';
         return `
         <div class="poll-result ${isBest ? 'best' : ''} ${isDecided ? 'decided' : ''}">
@@ -10878,7 +10904,7 @@
               ${isDecided ? '<span class="poll-tag decided">決定</span>' : isBest ? '<span class="poll-tag best">最有力</span>' : ''}
               ${staffMode ? `<span class="poll-need">${t.yes.length >= (o.need || 1) ? '' : '<i class="fa-solid fa-triangle-exclamation"></i>'}必要 ${o.need || 1}人</span>` : ''}
             </div>
-            ${staffMode && p.status === 'decided' ? `<div class="poll-assigned-line"><i class="fa-solid fa-user-check"></i>${assigned.length ? assigned.map(n => `<span class="${n === pollState.me ? 'me' : ''}">${escapeHtml(n)}</span>`).join('') : '<span class="dd-none">担当なし</span>'}</div>` : ''}
+            ${staffMode && p.status === 'decided' ? `<div class="poll-assigned-line"><i class="fa-solid fa-user-check"></i>${assigned.length ? meFirst_(assigned, pollState.me).map(n => `<span class="${n === pollState.me ? 'me' : ''}">${escapeHtml(n)}</span>`).join('') : '<span class="dd-none">担当なし</span>'}</div>` : ''}
             <div class="poll-result-bar">
               <span class="yes" style="width: ${t.yes.length / total * 100}%"></span>
               <span class="maybe" style="width: ${t.maybe.length / total * 100}%"></span>
@@ -12540,9 +12566,42 @@
       return html;
     }
     /** 名前の一覧（自分の名前は太字） */
+    /** 自分を先頭にした並び（ほかの人の順番はそのまま） */
+    function meFirst_(list, me) {
+      const a = (list || []).slice();
+      const i = me ? a.indexOf(me) : -1;
+      if (i > 0) { a.splice(i, 1); a.unshift(me); }
+      return a;
+    }
+
+    const NAME_LIST_LIMIT_ = 6;
+    /**
+     * 名前の並び（表示用）。自分を先頭にし、NAME_LIST_LIMIT_ 人を超えたら 5 人まで出して「ほか◯人」で残りを開く。
+     * 名前の途中では折り返さない（区切りの「、」で折り返す）。prefix 'ag-' は一覧（イベント・ゼミ・入雛）の書式
+     */
+    function nameListHtml_(list, me, prefix) {
+      const p = prefix || '';
+      const sep = `<span class="${p}sep">、</span>`;
+      const one = n => n === me
+        ? (p ? `<b class="ag-me ag-nm">${escapeHtml(n)}</b>` : `<span class="nm me">${escapeHtml(n)}</span>`)
+        : `<span class="${p}nm">${escapeHtml(otherPresenterLabel_(n))}</span>`;
+      const names = meFirst_(list, me);
+      if (names.length <= NAME_LIST_LIMIT_) return names.map(one).join(sep);
+      const shown = names.slice(0, NAME_LIST_LIMIT_ - 1);
+      const rest = names.slice(NAME_LIST_LIMIT_ - 1);
+      return shown.map(one).join(sep)
+        + `<span class="nl-rest" hidden>${sep}${rest.map(one).join(sep)}</span>`
+        + `<button type="button" class="nl-more" onclick="expandNames_(event, this)">ほか${rest.length}人</button>`;
+    }
+    function expandNames_(e, btn) {
+      e.stopPropagation();
+      const rest = btn.previousElementSibling;
+      if (rest) rest.hidden = false;
+      btn.remove();
+    }
+
     function agendaNamesHtml_(names, myName) {
-      // 名前の途中では折り返さない（区切りの「、」で折り返す）
-      return (names || []).map(n => n === myName ? `<b class="ag-me ag-nm">${escapeHtml(n)}</b>` : `<span class="ag-nm">${escapeHtml(otherPresenterLabel_(n))}</span>`).join('<span class="ag-sep">、</span>');
+      return nameListHtml_(names, myName, 'ag-');
     }
     
     // ==============================================
@@ -14108,6 +14167,22 @@
      * シフト提出フォームのデータを読み込む。
      * opts.keepEditsExcept: 提出したばかりの月（この月以外で未提出の入力中データは消さずに残す）
      */
+    // シフト提出の画面：一度表示したか・管理者画面にいる間に先に取っておいたデータ（メンバー画面へ待たずに切り替えるため）
+    let formDataRendered_ = false;
+    let formDataPrefetch_ = null; // { at, promise, done }
+    const FORM_PREFETCH_MAX_AGE_ = 2 * 60 * 1000;
+    function prefetchFormData_() {
+      if (!currentUser || currentUser.emergency || !isShiftTarget_(currentUser) || formDataRendered_) return;
+      if (formDataPrefetch_ && Date.now() - formDataPrefetch_.at < FORM_PREFETCH_MAX_AGE_) return;
+      const promise = callAPI('getFormData', { studentId: currentUser.id }, { silent: true });
+      const entry = { at: Date.now(), promise, done: false };
+      formDataPrefetch_ = entry;
+      promise.then(() => { entry.done = true; }, () => { if (formDataPrefetch_ === entry) formDataPrefetch_ = null; });
+    }
+    function formDataReady_() {
+      return formDataRendered_ || !!(formDataPrefetch_ && formDataPrefetch_.done && Date.now() - formDataPrefetch_.at < FORM_PREFETCH_MAX_AGE_);
+    }
+
     async function loadFormData(showLoading = true, opts = {}) {
       const prevNgByMonth = {};
       if (opts.keepEditsExcept) {
@@ -14125,9 +14200,12 @@
       }
       
       try {
-        const result = await callAPI('getFormData', {
-          studentId: currentUser.id
-        });
+        const pre = formDataPrefetch_ && Date.now() - formDataPrefetch_.at < FORM_PREFETCH_MAX_AGE_ ? formDataPrefetch_.promise : null;
+        formDataPrefetch_ = null;
+        const fetchNow = () => callAPI('getFormData', { studentId: currentUser.id }, opts.background ? { silent: true } : undefined);
+        const result = pre ? await pre.catch(fetchNow) : await fetchNow();
+        // 裏での更新中に入力を始めていたら、上書きしない
+        if (opts.background && hasUnsavedNgEdits()) return;
         // 稼働状態・班がスプレッドシート側で変わっていたら反映（ログインし直さなくてよいように）
         if (result.me && currentUser) {
           const changed = currentUser.isActive !== (result.me.isActive === true) || (currentUser.team || '') !== (result.me.team || '');
@@ -14199,6 +14277,7 @@
           clearUndo_('ng');
           refreshCalendarSets();
           renderCalendar();
+          formDataRendered_ = true;
           // loadTodaySchedule()とloadMyShifts()は削除されたため、呼び出しを削除
           updateSubmitButtonText();
         }
@@ -15939,7 +16018,7 @@
       const mine = [];
       rows.forEach(ds => {
         const info = memberDayInfo_(data, ds);
-        // 短い種類（餌番・掃除）はラベル、ゼミはラベル＋名前、イベントは色の点＋名前（長い名前でも形が崩れない）
+        // 餌番・掃除はラベル。ゼミ・イベントは「色の点＋名前」の下に時刻と印（名前に 1 行分の幅を使い、細切れに折り返さない）
         const duties = [];
         const lines = [];
         if (info.feeders.includes(me)) duties.push({ k: 'feed', t: '餌番' });
@@ -15965,12 +16044,16 @@
         const d = parseYmd(m.ds);
         return `
           <button type="button" class="my-row${m.ds === today ? ' is-today' : ''}" onclick="selectMemberDay(${jsArg(m.ds)}, true)">
-            <span class="my-date"><b>${d.getMonth() + 1}/${d.getDate()}</b><small>（${WEEKDAY_JA[d.getDay()]}）</small></span>
+            <span class="my-date"><b>${d.getMonth() + 1}/${d.getDate()}</b><small>（${WEEKDAY_JA[d.getDay()]}）</small><small class="my-rel">${rel(m.ds)}</small></span>
             <span class="my-items">
               ${m.duties.length ? `<span class="my-chips">${m.duties.map(c => `<span class="my-chip ${c.k}">${c.t}</span>`).join('')}</span>` : ''}
-              ${m.lines.map(l => `<span class="my-line">${l.chip ? `<span class="my-chip ${l.chip}">${l.label}</span>` : `<i class="my-dot" style="--c:${l.color}"></i>`}<span class="my-text">${l.time ? `<small>${escapeHtml(l.time)}</small>` : ''}${escapeHtml(l.text)}</span></span>`).join('')}
+              ${m.lines.map(l => `
+                <span class="my-line">
+                  <i class="my-dot" style="--c:${l.chip ? 'var(--sem)' : l.color}"></i>
+                  <span class="my-text">${escapeHtml(l.text)}</span>
+                  ${l.time || l.chip ? `<span class="my-meta">${l.time ? `<small>${escapeHtml(l.time)}</small>` : ''}${l.chip ? `<span class="my-chip ${l.chip}">${l.label}</span>` : ''}</span>` : ''}
+                </span>`).join('')}
             </span>
-            <span class="my-rel">${rel(m.ds)}</span>
           </button>`;
       }).join('')}</div>` : '<p class="bulk-empty">これからの担当・発表はありません</p>';
     }
@@ -16090,7 +16173,7 @@
       const admin = !!opts.admin;
       const info = memberDayInfo_(data, ds);
       const row = info.row || {};
-      const names = list => list.map(n => `<span class="nm${me && n === me ? ' me' : ''}">${escapeHtml(otherPresenterLabel_(n))}</span>`).join('<span class="sep">、</span>');
+      const names = list => nameListHtml_(list, me);
       const swapBtn = role => ds >= todayYmd() ? `<button type="button" class="link-btn dd-act" onclick="openSwapCreate(${jsArg(ds)}, '${role}')">交代を依頼</button>` : '';
       const editBtn = role => `<button type="button" class="link-btn dd-act" onclick="editConfirmedShift(${jsArg(ds)}, '${role}', event)">変更</button>`;
       const items = [];
@@ -16220,7 +16303,7 @@
       const w = date.getDay();
       const hol = sbHoliday_(data, ds);
       const today = todayYmd();
-      const names = list => `<span class="sb-names">${list.map(n => `<span class="sb-nm${me && n === me ? ' me' : ''}">${escapeHtml(sbShortName_(data, n))}</span>`).join('')}</span>`;
+      const names = list => `<span class="sb-names">${meFirst_(list, me).map(n => `<span class="sb-nm${me && n === me ? ' me' : ''}">${escapeHtml(sbShortName_(data, n))}</span>`).join('')}</span>`;
       // 餌番・掃除はどの日も日付のすぐ下に置き、同じ週で高さがそろうようにする（入構規制は日付の横に出す）
       const lines = [];
       if (info.feeders.length) lines.push(`<div class="sb-duty feed"><span class="sb-k">餌番</span>${names(info.feeders)}</div>`);
@@ -16261,6 +16344,13 @@
     }
 
     /** 月カレンダー（7 列）。opts: me / sel / forImage / loading */
+    /** 最後の行の左端・右端のマスに印を付け、表の角に合わせて丸める（選択中の枠が角で欠けないように） */
+    function sbMarkCorners_(cells) {
+      const mark = (i, cls) => { cells[i] = cells[i].replace('class="', `class="${cls} `); };
+      mark(cells.length - 7, 'is-bl');
+      mark(cells.length - 1, 'is-br');
+    }
+
     function shiftBoardGridHtml_(data, ym, opts) {
       opts = opts || {};
       const [y, m] = ym.split('/').map(Number);
@@ -16271,6 +16361,7 @@
       for (let d = 1; d <= last; d++) cells.push(sbCellHtml_(data, `${ym}/${String(d).padStart(2, '0')}`, opts));
       const trail = (7 - ((firstW + last) % 7)) % 7;
       for (let i = 0; i < trail; i++) cells.push('<div class="sb-cell is-blank"></div>');
+      sbMarkCorners_(cells);
       return `<div class="sb-grid${opts.loading ? ' is-loading' : ''}">${cells.join('')}${opts.loading ? '<div class="sb-loading"><i class="fa-solid fa-spinner fa-spin"></i> 読み込み中</div>' : ''}</div>`;
     }
 
@@ -16843,6 +16934,7 @@
       }
       const trail = (7 - ((firstDay + daysInMonth) % 7)) % 7;
       for (let i = 0; i < trail; i++) cells.push('<div class="sb-cell is-blank"></div>');
+      sbMarkCorners_(cells);
       const isCur = targetMonth === getCurrentMonth();
       container.innerHTML = `
         <div class="sb-bar">
