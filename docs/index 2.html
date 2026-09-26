@@ -2580,7 +2580,6 @@
     }
     .ag-series { margin-right: auto; font-size: 11.5px; color: #8b8579; white-space: nowrap; flex: 0 0 auto; }
     .ag-series-meta { display: none; }
-    .ag-nm, .nm { white-space: nowrap; }
     /* ボタンは縮めず、文字も折り返さない（iPhone では 1 文字ずつ縦に折り返してしまうため） */
     .ag-actions > * { flex-shrink: 0; white-space: nowrap; }
     .ag-btn {
@@ -3736,9 +3735,8 @@
 
     /* 日本語の不自然な改行を防ぐ（文節で折り返し、1 文字だけの行を作らない） */
     body { word-break: auto-phrase; line-break: strict; overflow-wrap: break-word; }
-    /* 行末をそろえるだけ（text-wrap-style）。text-wrap を使うと「折り返さない」指定まで打ち消してしまう */
-    p, li, .field-hint, .ag-note, .ag-meta span, .toast, .confirm-modal-box, .bulk-empty { text-wrap-style: pretty; }
-    .card-title, .form-label, .modal-title, .sheet-head-title, .sf-title, .set-name, .data-name, label, .btn, .seg-tab, .tag, .ag-title { text-wrap-style: balance; }
+    p, li, .field-hint, .ag-note, .ag-meta span, .toast, .confirm-modal-box, .bulk-empty { text-wrap: pretty; }
+    .card-title, .form-label, .modal-title, .sheet-head-title, .sf-title, .set-name, .data-name, label, .btn, .seg-tab, .tag, .ag-title { text-wrap: balance; }
 
     .poll-split { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: nowrap; }
     .poll-split .form-select { width: auto; min-width: 104px; flex: 0 0 auto; padding: 7px 10px; }
@@ -4186,7 +4184,7 @@
     .audit-head { display: flex; align-items: center; gap: 8px; min-height: 20px; }
     .audit-cat { flex: 0 0 auto; font-size: 11px; font-weight: 700; color: var(--primary-dark); background: #eaf4f7; border-radius: 6px; padding: 0 7px; line-height: 20px; white-space: nowrap; }
     .audit-who { min-width: 0; font-size: 12px; color: var(--text-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .audit-text { margin-top: 4px; font-size: 13.5px; line-height: 1.6; color: var(--text); overflow-wrap: anywhere; text-wrap-style: pretty; }
+    .audit-text { margin-top: 4px; font-size: 13.5px; line-height: 1.6; color: var(--text); overflow-wrap: anywhere; text-wrap: pretty; }
     /* 学年の一括更新 */
     .grade-summary { padding: 10px 12px; border-radius: 12px; background: #f5f9fa; font-size: 13.5px; margin-bottom: 8px; }
     .grade-summary b { font-size: 16px; color: var(--primary-dark); }
@@ -4284,8 +4282,6 @@
     .sb-nav .mc-nav-btn { width: 34px; flex: 0 0 34px; }
     .sb-title { font-size: 20px; font-weight: 700; color: #2c3a40; min-width: 124px; text-align: center; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
     .sb-state { margin-left: 6px; font-size: 12.5px; color: var(--text-light); white-space: nowrap; }
-    .sb-state.cs-dirty { margin-left: 0; color: #9c6a14; font-weight: 700; }
-    .sb-state.cs-dirty::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #d49a2a; margin-right: 6px; vertical-align: 0.1em; }
     .sb-legend { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #5f6c72; white-space: nowrap; }
     .sb-legend i { width: 14px; height: 14px; border-radius: 4px; background: var(--me-bg); border: 1px solid var(--me-line); display: inline-block; }
     .sb-grid {
@@ -5736,7 +5732,7 @@
         <div class="sheet-head-title" id="auditTitle">変更履歴</div>
       </div>
       <div class="sheet-body">
-        <div class="chip-row wrap" id="auditFilter"></div>
+        <div class="chip-row" id="auditFilter"></div>
         <div id="auditList" class="audit-list"></div>
       </div>
     </div>
@@ -5774,10 +5770,10 @@
             <div class="chip-row semrem-types" id="semremTypes"></div>
           </div>
           <div class="form-group">
-            <label class="form-label">通知の対象<button type="button" class="info-tip" data-tip="候補者（未定時）：発表者が決まっていないゼミだけ、候補の人に送ります" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></label>
+            <label class="form-label">通知の対象</label>
             <div class="seg-tabs small" id="semremTarget">
               <button type="button" class="seg-tab active" data-t="presenters" onclick="setSemremTarget('presenters')">発表者</button>
-              <button type="button" class="seg-tab" data-t="candidates" onclick="setSemremTarget('candidates')">候補者（未定時）</button>
+              <button type="button" class="seg-tab" data-t="candidates" onclick="setSemremTarget('candidates')">発表者未定のときの候補者</button>
             </div>
           </div>
           <div class="form-group">
@@ -7699,15 +7695,12 @@
       saveSession(currentUser, sessionIsRemembered_());
       const ls = safeStorage_('localStorage');
       try { if (ls) ls.setItem(lastViewKey_(currentUser.id), view); } catch (_) {}
-      // ページは読み込み直さずに切り替える（重くならないように）。
-      // 日程調整・交代はサーバーが「管理者として見るか」で中身を変えるので取り直す。
-      // ゼミ・イベント・カレンダーなどは同じデータなので、手元のものを今の画面用に描き直す
-      markStale(['polls']);
-      pollState.loadedAt = 0;
-      swapState.loadedAt = 0;
-      document.querySelectorAll('.modal-overlay.show').forEach(o => o.classList.remove('show'));
-      window.scrollTo(0, 0);
-      showAppScreen();
+      // 画面の状態を持ち越さないよう読み込み直す（その間は切り替え中の表示）
+      ensureNetUi_();
+      document.getElementById('busyOverlayMsg').textContent = (view === 'admin' ? '管理者画面' : 'メンバー画面') + 'に切り替えています…';
+      document.getElementById('busyOverlaySub').textContent = '';
+      document.getElementById('busyOverlay').classList.add('show');
+      location.reload();
     }
 
     function updateViewSwitch_() {
@@ -11465,27 +11458,27 @@
       {
         key: '文面_日程調整_作成', title: '日程調整の作成',
         vars: ['タイトル', '説明', '場所', '候補一覧', '回答期限', 'URL', '作成者'],
-        def: '【日程調整のお願い】{タイトル}\n\n{説明}\n場所：{場所}\n\n候補日\n{候補一覧}\n\n回答期限：{回答期限}\n下のリンクから回答をお願いします🙏\n{URL}\n（ホーム画面のアプリでは「日程調整」タブから）'
+        def: '【日程調整のお願い】{タイトル}\n\n{説明}\n場所：{場所}\n\n候補日\n{候補一覧}\n\n回答期限：{回答期限}\n下のリンクから回答をお願いします🙏\n{URL}'
       },
       {
         key: '文面_日程調整_リマインド', title: '日程調整のリマインド',
         vars: ['タイトル', '未回答者', '回答期限', 'URL'],
-        def: '【日程調整の回答のお願い】{タイトル}\n\n{未回答者}\nまだ回答がないようです。回答期限は {回答期限} です。\n{URL}\n（ホーム画面のアプリでは「日程調整」タブから）'
+        def: '【日程調整の回答のお願い】{タイトル}\n\n{未回答者}\nまだ回答がないようです。回答期限は {回答期限} です。\n{URL}'
       },
       {
         key: '文面_日程調整_決定', title: '日程の決定',
         vars: ['タイトル', '決定日時', '場所', '参加者', '説明', 'URL'],
-        def: '【日程決定】{タイトル}\n\n{決定日時} に決定しました。\n場所：{場所}\n参加：{参加者}\n\n{説明}\n{URL}\n（ホーム画面のアプリでは「日程調整」タブから）'
+        def: '【日程決定】{タイトル}\n\n{決定日時} に決定しました。\n場所：{場所}\n参加：{参加者}\n\n{説明}\n{URL}'
       },
       {
         key: '文面_シフト募集', title: 'シフト募集のお知らせ',
         vars: ['対象月', '回答期限', 'URL'],
-        def: '【シフト募集】\n\n{対象月}のシフト募集を開始いたします。\n\n回答期限：{回答期限}\n以下から回答をお願いいたします。\n{URL}\n（ホーム画面のアプリでは「シフト提出」タブから）'
+        def: '【シフト募集】\n\n{対象月}のシフト募集を開始いたします。\n\n回答期限：{回答期限}\n以下から回答をお願いいたします。\n{URL}'
       },
       {
         key: '文面_シフト催促', title: 'シフト提出の催促',
         vars: ['未提出者', '回答期限', 'URL'],
-        def: '【シフト提出のお願い】\n\n{未提出者}\n\nシフト提出の期限が{回答期限}に迫っております。\nお忙しい中恐縮ですが、以下から回答をお願いいたします。\n\n{URL}\n（ホーム画面のアプリでは「シフト提出」タブから）'
+        def: '【シフト提出のお願い】\n\n{未提出者}\n\nシフト提出の期限が{回答期限}に迫っております。\nお忙しい中恐縮ですが、以下から回答をお願いいたします。\n\n{URL}'
       }
     ];
     let messageTemplateOverrides = {}; // サーバーに保存されたテンプレート（Config「文面_〜」）
@@ -12424,8 +12417,7 @@
     }
     /** 名前の一覧（自分の名前は太字） */
     function agendaNamesHtml_(names, myName) {
-      // 名前の途中では折り返さない（区切りの「、」で折り返す）
-      return (names || []).map(n => n === myName ? `<b class="ag-me ag-nm">${escapeHtml(n)}</b>` : `<span class="ag-nm">${escapeHtml(otherPresenterLabel_(n))}</span>`).join('<span class="ag-sep">、</span>');
+      return (names || []).map(n => n === myName ? `<b class="ag-me">${escapeHtml(n)}</b>` : escapeHtml(otherPresenterLabel_(n))).join('<span class="ag-sep">、</span>');
     }
     
     // ==============================================
@@ -16733,9 +16725,9 @@
             <button type="button" class="mc-nav-btn" onclick="shiftCleaningMonth(-1)" aria-label="前の月"><i class="fa-solid fa-chevron-left"></i></button>
             <div class="sb-title">${y}年${m}月</div>
             <button type="button" class="mc-nav-btn" onclick="shiftCleaningMonth(1)" aria-label="次の月"><i class="fa-solid fa-chevron-right"></i></button>
+            ${cleaningDirty_ ? '<span class="sb-state">未保存の変更あり</span>' : ''}
           </div>
           <div class="cs-legend"><span><i class="clean"></i>掃除日</span><span><i class="temp"></i>臨時掃除</span><span><i class="cancel"></i>中止</span></div>
-          ${cleaningDirty_ ? '<span class="sb-state cs-dirty">未保存の変更あり</span>' : ''}
         </div>
         <div class="sb-grid cs-grid">${cells.join('')}</div>`;
     }
