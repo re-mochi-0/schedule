@@ -240,15 +240,37 @@
       overflow-wrap: anywhere;
     }
     .login-sent b { color: var(--text); font-weight: 700; }
-    .login-step .login-input.login-code {
-      text-align: center;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-      font-size: 26px;
-      font-weight: 700;
-      letter-spacing: 0.35em;
-      padding: 10px 14px 10px calc(14px + 0.35em);
-      font-variant-numeric: tabular-nums;
+    .login-sent-exp { display: block; margin-top: 1px; }
+    /* ログインコード：6 マス */
+    .otp { position: relative; margin: 4px 0 10px; }
+    .otp-input {
+      position: absolute; inset: 0; z-index: 2;
+      width: 100%; height: 100%; margin: 0; padding: 0; border: 0;
+      opacity: 0; font-size: 16px; /* iPhone で拡大されないように 16px */
+      color: transparent; caret-color: transparent; background: transparent;
     }
+    .otp-boxes { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 7px; }
+    .otp-boxes span {
+      height: 52px; display: grid; place-items: center;
+      border: 2px solid var(--border); border-radius: 12px; background: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      font-size: 24px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums;
+      transition: border-color 0.15s;
+    }
+    .otp-boxes span.is-filled { border-color: #b9ccd3; }
+    .otp.is-focus .otp-boxes span.is-active { border-color: var(--primary-dark); }
+    /* 入力中のマスに点滅する線 */
+    .otp.is-focus .otp-boxes span.is-active:empty::after { content: ''; width: 2px; height: 26px; background: var(--primary-dark); animation: otp-caret 1s steps(1) infinite; }
+    @keyframes otp-caret { 50% { opacity: 0; } }
+    .otp.is-error .otp-boxes span { border-color: #e79aa3; }
+    .login-spam { display: flex; align-items: center; justify-content: center; gap: 2px; margin: 0 0 14px; font-size: 12.5px; color: var(--text-light); white-space: nowrap; }
+    /* スマホ：カードの余白を詰めて、6 マスを正方形に近づける */
+    @media (max-width: 480px) {
+      .login-card { padding: 30px 20px; }
+      .otp-boxes { gap: 6px; }
+      .otp-boxes span { height: 48px; font-size: 22px; }
+    }
+    .login-spam .info-tip { margin: 0; }
     .login-sub-actions {
       display: flex;
       justify-content: space-between;
@@ -2819,7 +2841,7 @@
       .poll-card-top .poll-me { order: 1; }
       .poll-card-top .poll-deadline { order: 2; flex: 0 0 100%; overflow: visible; white-space: normal; }
     }
-    .poll-me.todo { background: #fff; color: #56646a; outline: 1px dashed #7f8d93; outline-offset: -1px; }
+    .poll-me.todo { background: #fff; color: #56646a; border: 1px dashed #7f8d93; padding: 2px 7px; }
     .poll-me.done { background: #eef0f2; color: #6b767c; }
     .poll-title { margin-top: 8px; font-size: 17px; font-weight: 700; color: #2f3a40; word-break: break-word; }
     .poll-progress { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 12px; color: #6b767c; white-space: nowrap; }
@@ -2892,7 +2914,7 @@
     .poll-nonresp-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 700; color: #56646a; }
     .poll-nonresp-names, .poll-names { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 8px; font-size: 13px; }
     .poll-nonresp-names span, .poll-names span:not(.poll-count) { background: #fff; border: 1px solid #ebe7e0; border-radius: 999px; padding: 2px 9px; }
-    .poll-nonresp-names span { border: 0; outline: 1px dashed #7f8d93; outline-offset: -1px; }
+    .poll-nonresp-names span { border: 1px dashed #7f8d93; }
     .poll-nonresp-names span.me, .poll-names span.me { color: var(--me); font-weight: 700; }
     .poll-allin { padding: 10px 14px; border-radius: 12px; background: #eef8f2; color: #2f7d52; font-weight: 700; font-size: 13px; margin-bottom: 12px; }
     .poll-result-list { display: flex; flex-direction: column; gap: 8px; }
@@ -3131,7 +3153,7 @@
     .sf-deadline { color: #55626a; }
     .sf-deadline.soon { color: #b7791f; font-weight: 700; }
     .sf-chip { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
-    .sf-chip.todo { background: #fff; color: #56646a; outline: 1px dashed #7f8d93; outline-offset: -1px; }
+    .sf-chip.todo { background: #fff; color: #56646a; border: 1px dashed #7f8d93; padding: 2px 9px; }
     .sf-chip.done { background: #e3f3ea; color: #2f7d52; }
     .sf-chip.changed { background: #fff1d6; color: #9a6b00; }
     .sf-months { margin-bottom: 12px; }
@@ -3813,11 +3835,11 @@
     .mem-tag { display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; color: #9a5a1f; line-height: 1.7; }
     .mem-tag .ck-dot { margin-right: 3px; vertical-align: 0; }
     .mem-sub { font-size: 12px; color: var(--text-light); }
-    .mem-status { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; border: none; font-family: inherit; }
+    .mem-status { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; line-height: 17px; padding: 3px 9px; border-radius: 999px; border: none; font-family: inherit; }
     .mem-status i { font-size: 9px; }
     .mem-status.done { color: #2f855a; background: #e8f6ee; }
     /* 未提出：どの画面でも灰色の点線枠（赤は NG の意味なので使わない） */
-    .mem-status.todo { color: #56646a; background: #fff; outline: 1px dashed #7f8d93; outline-offset: -1px; }
+    .mem-status.todo { color: #56646a; background: #fff; border: 1px dashed #7f8d93; padding: 2px 8px; }
     .mem-status.off { color: #97a3aa; background: #f1f3f4; }
     .mem-status.ng { color: #b8404a; background: #fdeeee; }
     .mem-status.as-btn { cursor: pointer; }
@@ -3846,7 +3868,8 @@
     .dd-group-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-size: 12.5px; color: var(--text-light); }
     .dd-group-names { display: flex; flex-wrap: wrap; gap: 5px; }
     .dd-group-names span:not(.dd-none) { font-size: 13px; padding: 3px 10px; border-radius: 999px; background: #f4f7f8; color: #2c3a40; }
-    .dd-group.todo .dd-group-names span:not(.dd-none), .sc-todo-names span { background: #fff; border: 0; outline: 1px dashed #7f8d93; outline-offset: -1px; }
+    .dd-group.todo .dd-group-names span:not(.dd-none) { background: #fff; border: 1px dashed #7f8d93; padding: 2px 9px; }
+    .sc-todo-names span { border: 1px dashed #7f8d93; }
     .card-title-actions { display: inline-flex; align-items: center; gap: 6px; }
     .mem-login { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 2px 2px 4px; }
     .mem-login-name { display: flex; align-items: center; font-size: 13.5px; font-weight: 700; color: var(--text); }
@@ -4023,7 +4046,7 @@
     .dl-names { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 5px; }
     .dl-names .sb-nmb { font-size: 13px; padding: 3px 8px; background: #f4f7f8; }
     .dl-names .sb-nmb.ng { background: #ffdfe3; }
-    .dl-names .sb-nmb.unsub { background: #fff; outline: 1px dashed #7f8d93; outline-offset: -1px; }
+    .dl-names .sb-nmb.unsub { background: #fff; border: 1px dashed #7f8d93; padding: 2px 7px; }
     .dl-empty { font-size: 12.5px; color: var(--text-light); }
     .dl-edit { flex: 0 0 auto; width: 32px; height: 32px; border: none; border-radius: 50%; background: #eef4f6; color: var(--primary-dark); cursor: pointer; }
     #admin-shift-create .dl-edit, #admin-shift-create .sc-savebar button { width: auto; margin-top: 0; }
@@ -4357,7 +4380,7 @@
     .sb-nmb.ng { background: #ffdfe3; color: #a8232f; font-weight: 700; }
     .sb-nmb.ng i { font-size: 10px; }
     /* 未提出は点線の枠（黄色は「自分」の色なので使わない） */
-    .sb-nmb.unsub { background: rgba(255, 255, 255, 0.7); outline: 1px dashed #7f8d93; outline-offset: -1px; }
+    .sb-nmb.unsub { background: rgba(255, 255, 255, 0.7); border: 1px dashed #7f8d93; padding: 0 3px; }
     .sb-none { font-size: 12px; color: #a0692a; font-weight: 700; padding: 1px 2px; }
     .sb-duty.clean .sb-none { color: #2f7a4d; }
     .sb-k-btn { border: none; font-family: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; }
@@ -4514,7 +4537,12 @@
       <form class="login-step" data-step="code" onsubmit="event.preventDefault(); verifyLoginCode();" autocomplete="off" hidden>
         <label class="login-label" for="loginCode">ログインコード</label>
         <div class="login-sent" id="loginSentTo"></div>
-        <input type="text" id="loginCode" class="login-input login-code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6" spellcheck="false" enterkeyhint="done" aria-describedby="loginSentTo">
+        <!-- 見た目は 6 マス。入力は 1 つの欄（自動入力・貼り付けに対応するため、マスの上に透明で重ねる） -->
+        <div class="otp" id="loginOtp">
+          <input type="text" id="loginCode" class="otp-input" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" spellcheck="false" enterkeyhint="done" aria-label="6桁のログインコード" aria-describedby="loginSentTo">
+          <div class="otp-boxes" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        </div>
+        <div class="login-spam">届かないときは迷惑メールも確認<button type="button" class="info-tip" data-tip="大学のメールでは、迷惑メールに振り分けられることがあります。差出人は「栄制スケジュール管理」、件名は「【栄制スケジュール管理】ログインコード」です" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></div>
         <button class="login-btn" type="submit" id="loginVerifyBtn">ログイン</button>
         <div class="login-sub-actions">
           <button type="button" class="link-btn" onclick="backToLoginId()"><i class="fa-solid fa-arrow-left"></i> 学籍番号を変更</button>
@@ -5372,9 +5400,13 @@
           <div class="seg-tabs small inline-seg" id="seminarPresenterMode">
             <button type="button" class="seg-tab active" data-mode="fixed" onclick="setSeminarPresenterMode('fixed')">決定</button>
             <button type="button" class="seg-tab" data-mode="candidates" onclick="setSeminarPresenterMode('candidates')">未定（候補）</button>
+            <button type="button" class="seg-tab" data-mode="other" onclick="setSeminarPresenterMode('other')">その他</button>
           </div>
         </div>
         <div id="seminarPresentersCheckbox"></div>
+        <div id="seminarOtherPresenterWrap" hidden>
+          <input type="text" id="seminarOtherPresenter" class="form-input" maxlength="40" placeholder="例: 〇〇先生（空欄でも可）" aria-label="発表者の名前">
+        </div>
       </div>
       <div class="form-group" id="seminarFormFreeNotesGroup">
         <label class="form-label">メモ</label>
@@ -7321,10 +7353,13 @@
       }
       loginState_.id = id;
       loginState_.lastCode = '';
+      // 1 行目：送り先、2 行目：有効時間（途中で折り返さないように分ける）
       document.getElementById('loginSentTo').innerHTML = res.issued
-        ? `管理者が発行したコード（あと${Number(res.expiresInMin) || 15}分有効）`
-        : `<b>${escapeHtml(res.email || '')}</b> に送信（${Number(res.expiresInMin) || 15}分間有効）`;
+        ? `管理者が発行したコード<span class="login-sent-exp">あと${Number(res.expiresInMin) || 15}分有効</span>`
+        : `<b>${escapeHtml(res.email || '')}</b> に送信<span class="login-sent-exp">${Number(res.expiresInMin) || 15}分間有効</span>`;
       document.getElementById('loginCode').value = '';
+      document.getElementById('loginOtp').classList.remove('is-error');
+      renderOtp_();
       setLoginStep_('code');
       startResendCooldown_();
       if (resend && !res.issued) showToast('コードを再送しました', 'success');
@@ -7349,16 +7384,40 @@
         const res = await callAPI('verifyLogin', { id: loginState_.id, code }, { button: btn, noOverlay: true });
         completeLogin_(res);
       } catch (_) {
+        // 間違えたときは枠を赤くして、選択した状態に（そのまま打ち直せる）
+        document.getElementById('loginOtp').classList.add('is-error');
+        input.focus();
         input.select();
       }
     }
 
+    /** 6 マスに今の入力を映す */
+    function renderOtp_() {
+      const input = document.getElementById('loginCode');
+      const wrap = document.getElementById('loginOtp');
+      if (!input || !wrap) return;
+      const v = loginCodeDigits_(input.value);
+      wrap.querySelectorAll('.otp-boxes span').forEach((b, i) => {
+        b.textContent = v[i] || '';
+        b.classList.toggle('is-filled', !!v[i]);
+        b.classList.toggle('is-active', i === Math.min(v.length, 5));
+      });
+    }
     // 6 桁そろったら自動でログイン（同じコードで続けて失敗しないよう、直前と同じなら待つ）
     document.addEventListener('input', e => {
       if (!e.target || e.target.id !== 'loginCode') return;
       const digits = loginCodeDigits_(e.target.value);
       if (e.target.value !== digits) e.target.value = digits;
+      const wrap = document.getElementById('loginOtp');
+      if (wrap) wrap.classList.remove('is-error');
+      renderOtp_();
       if (digits.length === 6 && digits !== loginState_.lastCode) verifyLoginCode();
+    });
+    document.addEventListener('focusin', e => {
+      if (e.target && e.target.id === 'loginCode') { document.getElementById('loginOtp').classList.add('is-focus'); renderOtp_(); }
+    });
+    document.addEventListener('focusout', e => {
+      if (e.target && e.target.id === 'loginCode') document.getElementById('loginOtp').classList.remove('is-focus');
     });
 
     /** メールのリンク（?login=鍵）から開いたとき */
@@ -10031,7 +10090,7 @@
           document.getElementById('seminarLocationOther').value = loc;
         }
         document.getElementById('seminarStartTime').value = d.startTime || '';
-        renderMemberPicker(document.getElementById('seminarPresentersCheckbox'), { selected: d.presenters || [] });
+        applySeminarPresentersToForm_(d.presenters || [], d.candidates || []);
         const box = document.getElementById('seminarFreeNotesContainer');
         box.innerHTML = '';
         (d.freeNotes || []).forEach(n => {
@@ -11715,7 +11774,8 @@
       const uniq = a => a.filter((x, i) => x && a.indexOf(x) === i);
       const presenters = uniq(sems.flatMap(s => s.presenters || []));
       const candidates = uniq(sems.flatMap(s => s.candidates || []));
-      const withSan = names => names.map(n => String(n).replace(/\s+/g, '') + 'さん').join('、');
+      // 「その他」（学生以外）は名前だけ（さんを付けない・メンションしない）
+      const withSan = names => names.map(n => isOtherPresenter_(n) ? otherPresenterLabel_(n) : String(n).replace(/\s+/g, '') + 'さん').join('、');
       return {
         '何日後': semremWhenLabel(rule.daysBefore),
         '種類': uniq(sems.map(s => s.type)).join('・'),
@@ -11725,7 +11785,8 @@
         '発表者': withSan(presenters),
         '候補': withSan(candidates),
         '備考': uniq(sems.flatMap(s => s.freeNotes || [])).join(' ／ '),
-        _presenters: presenters,
+        _presenters: presenters.filter(n => !isOtherPresenter_(n)),
+        _presenterLabels: presenters.map(otherPresenterLabel_),
         _candidates: candidates
       };
     }
@@ -11862,7 +11923,7 @@
                   <div class="up-when">${escapeHtml(fmtAt_(p.at))}</div>
                   <div class="up-what">
                     <div class="up-title">${escapeHtml(head)}</div>
-                    <div class="up-sub">${escapeHtml(fmtMdW(p.date))} ${escapeHtml(vals['種類'])}${p.rule.target === 'candidates' ? (vals._candidates.length ? ' ・ 候補 ' + escapeHtml(vals['候補']) : '') : (vals._presenters.length ? ' ・ ' + escapeHtml(vals['発表者']) : '')}</div>
+                    <div class="up-sub">${escapeHtml(fmtMdW(p.date))} ${escapeHtml(vals['種類'])}${p.rule.target === 'candidates' ? (vals._candidates.length ? ' ・ 候補 ' + escapeHtml(vals['候補']) : '') : (vals._presenterLabels.length ? ' ・ ' + escapeHtml(vals['発表者']) : '')}</div>
                   </div>
                 </div>`;
             }).join('')}
@@ -12047,7 +12108,7 @@
             <div class="tp-date">日にち：${escapeHtml(d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日（' + WEEKDAY_JA[d.getDay()] + '）')}</div>
             <div class="tp-line">種類：${dash(vals['種類'])}</div>
             <div class="tp-line">時間：${dash(vals['時間'])}</div>
-            <div class="tp-line accent">発表者：${vals._presenters.length ? escapeHtml(vals._presenters.join('、')) : vals._candidates.length ? '未定（候補: ' + escapeHtml(vals._candidates.join('、')) + '）' : '—'}</div>
+            <div class="tp-line accent">発表者：${vals._presenterLabels.length ? escapeHtml(vals._presenterLabels.join('、')) : vals._candidates.length ? '未定（候補: ' + escapeHtml(vals._candidates.join('、')) + '）' : '—'}</div>
             <div class="tp-line">場所：${dash(vals['場所'])}</div>
             <div class="tp-line">備考：${dash(vals['備考'])}</div>
           </div>
@@ -12165,7 +12226,7 @@
       return `<div class="${cls}">
           <span class="ag-m">${d.getMonth() + 1}月</span>
           <span class="ag-d">${d.getDate()}</span>
-          <span class="ag-w">${WEEKDAY_JA[wd]}</span>
+          <span class="ag-w">（${WEEKDAY_JA[wd]}）</span>
         </div>
         ${rel ? `<span class="ag-rel">${escapeHtml(rel)}</span>` : ''}`;
     }
@@ -12193,7 +12254,7 @@
     }
     /** 名前の一覧（自分の名前は太字） */
     function agendaNamesHtml_(names, myName) {
-      return (names || []).map(n => n === myName ? `<b class="ag-me">${escapeHtml(n)}</b>` : escapeHtml(n)).join('<span class="ag-sep">、</span>');
+      return (names || []).map(n => n === myName ? `<b class="ag-me">${escapeHtml(n)}</b>` : escapeHtml(otherPresenterLabel_(n))).join('<span class="ag-sep">、</span>');
     }
     
     // ==============================================
@@ -12239,7 +12300,9 @@
         type: document.getElementById('seminarType').value,
         location: locSel === 'その他' ? document.getElementById('seminarLocationOther').value.trim() : locSel,
         startTime: document.getElementById('seminarStartTime').value,
-        presenters: seminarPresenterMode === 'candidates' ? [] : picked,
+        presenters: seminarPresenterMode === 'other'
+          ? [(n => n ? 'その他：' + n : 'その他')(document.getElementById('seminarOtherPresenter').value.trim())]
+          : seminarPresenterMode === 'candidates' ? [] : picked,
         candidates: seminarPresenterMode === 'candidates' ? picked : seminarModalCandidates_,
         freeNotes: []
       };
@@ -12330,12 +12393,34 @@
     }
     let seminarModalCandidates_ = []; // 開いたときの候補（「決定」で保存しても記録として残す）
     function setSeminarPresenterMode(m) {
-      seminarPresenterMode = m === 'candidates' ? 'candidates' : 'fixed';
+      seminarPresenterMode = m === 'candidates' ? 'candidates' : m === 'other' ? 'other' : 'fixed';
       if (typeof renderSeminarNotices_ === 'function') setTimeout(renderSeminarNotices_, 0);
       document.querySelectorAll('#seminarPresenterMode .seg-tab').forEach(b => b.classList.toggle('active', b.dataset.mode === seminarPresenterMode));
+      const other = seminarPresenterMode === 'other';
+      document.getElementById('seminarPresentersCheckbox').hidden = other;
+      document.getElementById('seminarOtherPresenterWrap').hidden = !other;
       document.getElementById('seminarPresentersLabel').innerHTML = seminarPresenterMode === 'candidates'
         ? '発表者候補' + infoTipHtml('候補の人は、ゼミ一覧から自分を発表者に登録できます')
+        : other ? '発表者' + infoTipHtml('先生や外部の方など、学生以外が行う回。Teams のメンションはしません')
         : '発表者';
+    }
+    /** 発表者の「その他」（学生以外）。保存は「その他」または「その他：名前」 */
+    function isOtherPresenter_(n) {
+      return /^その他(?:[：:]|$)/.test(String(n == null ? '' : n).trim());
+    }
+    function otherPresenterLabel_(n) {
+      const m = String(n == null ? '' : n).trim().match(/^その他[：:]\s*(.+)$/);
+      return m ? m[1] : String(n == null ? '' : n).trim();
+    }
+    /** 発表者をフォームに入れる（決定・未定（候補）・その他を見分ける） */
+    function applySeminarPresentersToForm_(pres, cands) {
+      pres = pres || [];
+      cands = cands || [];
+      const other = pres.find(isOtherPresenter_);
+      const mode = other ? 'other' : (!pres.length && cands.length ? 'candidates' : 'fixed');
+      document.getElementById('seminarOtherPresenter').value = other && other.trim() !== 'その他' ? otherPresenterLabel_(other) : '';
+      renderMemberPicker(document.getElementById('seminarPresentersCheckbox'), { selected: mode === 'candidates' ? cands : mode === 'other' ? [] : pres });
+      setSeminarPresenterMode(mode);
     }
 
     /** モーダルを「追加」または「編集」の状態で開く（前回の編集状態が残らないよう毎回すべて設定し直す） */
@@ -12368,12 +12453,10 @@
       document.getElementById('seminarStartTime').value = seminar ? (formatStartTimeDisplay(s.startTime) || '') : (def.startTime || '');
       const pres = s.presenters || [];
       const cands = s.candidates || [];
-      const presenterMode = !pres.length && cands.length ? 'candidates' : 'fixed';
       seminarModalCandidates_ = cands.slice();
       seminarModalReminders_ = semRemindersOf_(s);
       seminarNoticeEditKey_ = '';
-      renderMemberPicker(document.getElementById('seminarPresentersCheckbox'), { selected: presenterMode === 'candidates' ? cands : pres });
-      setSeminarPresenterMode(presenterMode);
+      applySeminarPresentersToForm_(pres, cands);
       const freeNotesContainer = document.getElementById('seminarFreeNotesContainer');
       freeNotesContainer.innerHTML = '';
       (s.freeNotes || []).forEach(note => {
@@ -12406,7 +12489,8 @@
       const type = document.getElementById('seminarType').value;
       const picked = getPickerSelection(document.getElementById('seminarPresentersCheckbox'));
       const byCandidates = seminarPresenterMode === 'candidates';
-      const presenters = byCandidates ? [] : picked;
+      const otherName = document.getElementById('seminarOtherPresenter').value.trim().replace(/[、,，]/g, ' ');
+      const presenters = seminarPresenterMode === 'other' ? [otherName ? 'その他：' + otherName : 'その他'] : byCandidates ? [] : picked;
       const candidates = byCandidates ? picked : seminarModalCandidates_;
       const freeNotes = Array.from(document.querySelectorAll('#seminarFreeNotesContainer input')).map(input => input.value.trim()).filter(v => v);
       const isNone = type === 'ゼミなし';
@@ -15150,7 +15234,7 @@
         return `
           <div class="dl-day${warn ? ' has-warn' : ''}${changed ? ' is-changed' : ''}" id="dl-${d.dateStr.replace(/\//g, '-')}">
             <div class="dl-head">
-              <span class="dl-date${w === 0 ? ' sun' : w === 6 ? ' sat' : ''}"><b>${dt ? (dt.getMonth() + 1) + '/' + dt.getDate() : d.dateStr}</b>${dt ? WEEKDAY_JA[w] : ''}</span>
+              <span class="dl-date${w === 0 ? ' sun' : w === 6 ? ' sat' : ''}"><b>${dt ? (dt.getMonth() + 1) + '/' + dt.getDate() : d.dateStr}</b>${dt ? '（' + WEEKDAY_JA[w] + '）' : ''}</span>
               ${chicken.length ? `<span class="dl-tag">${escapeHtml(chicken.join('・'))}</span>` : ''}
               ${sems.map(x => `<span class="dl-tag sem">${escapeHtml(x)}</span>`).join('')}
               ${changed ? '<span class="dl-tag changed">変更</span>' : ''}
@@ -15278,7 +15362,7 @@
         return `
           <div class="mv-row">
             <div class="mv-main">
-              <span class="mv-date${w === 0 ? ' sun' : w === 6 ? ' sat' : ''}"><b>${dt.getMonth() + 1}/${dt.getDate()}</b>${WEEKDAY_JA[w]}</span>
+              <span class="mv-date${w === 0 ? ' sun' : w === 6 ? ' sat' : ''}"><b>${dt.getMonth() + 1}/${dt.getDate()}</b>（${WEEKDAY_JA[w]}）</span>
               <span class="mv-names">${list.length ? list.map(n => escapeHtml(short(n))).join('、') : '<span class="mv-empty">未定</span>'}</span>
               <button type="button" class="link-btn mv-move" data-to="${escapeForAttr(ds)}"><i class="fa-solid fa-arrow-right"></i> 移動</button>
             </div>
@@ -15592,7 +15676,7 @@
         const d = parseYmd(m.ds);
         return `
           <button type="button" class="my-row${m.ds === today ? ' is-today' : ''}" onclick="selectMemberDay(${jsArg(m.ds)}, true)">
-            <span class="my-date"><b>${d.getMonth() + 1}/${d.getDate()}</b><small>${WEEKDAY_JA[d.getDay()]}</small></span>
+            <span class="my-date"><b>${d.getMonth() + 1}/${d.getDate()}</b><small>（${WEEKDAY_JA[d.getDay()]}）</small></span>
             <span class="my-items">
               ${m.duties.length ? `<span class="my-chips">${m.duties.map(c => `<span class="my-chip ${c.k}">${c.t}</span>`).join('')}</span>` : ''}
               ${m.lines.map(l => `<span class="my-line">${l.chip ? `<span class="my-chip ${l.chip}">${l.label}</span>` : `<i class="my-dot" style="--c:${l.color}"></i>`}<span class="my-text">${l.time ? `<small>${escapeHtml(l.time)}</small>` : ''}${escapeHtml(l.text)}</span></span>`).join('')}
@@ -15717,7 +15801,7 @@
       const admin = !!opts.admin;
       const info = memberDayInfo_(data, ds);
       const row = info.row || {};
-      const names = list => list.map(n => `<span class="nm${me && n === me ? ' me' : ''}">${escapeHtml(n)}</span>`).join('<span class="sep">、</span>');
+      const names = list => list.map(n => `<span class="nm${me && n === me ? ' me' : ''}">${escapeHtml(otherPresenterLabel_(n))}</span>`).join('<span class="sep">、</span>');
       const swapBtn = role => ds >= todayYmd() ? `<button type="button" class="link-btn dd-act" onclick="openSwapCreate(${jsArg(ds)}, '${role}')">交代を依頼</button>` : '';
       const editBtn = role => `<button type="button" class="link-btn dd-act" onclick="editConfirmedShift(${jsArg(ds)}, '${role}', event)">変更</button>`;
       const items = [];
