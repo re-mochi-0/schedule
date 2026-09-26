@@ -3550,6 +3550,8 @@
     .dest-save { margin-top: 14px; width: 100%; }
     .dest-sample { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border); }
     .dest-sample .btn { flex: 0 0 auto; white-space: nowrap; }
+    .semrem-sample { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 8px; }
+    .semrem-sample .btn { white-space: nowrap; }
 
     /* 自動のお知らせ */
     .auto-master {
@@ -3691,17 +3693,14 @@
     .tp-sender { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; color: #616161; }
     .tp-sender b { color: #242424; }
     .tp-avatar { width: 28px; height: 28px; border-radius: 50%; background: #5b5fc7; color: #fff; display: grid; place-items: center; font-size: 12px; }
-    .tp-card { background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
-    .tp-band { background: #f7f7f7; padding: 12px 14px; }
+    .tp-card { background: #fff; border: 1px solid #e3e3e3; border-radius: 8px; padding: 12px 14px 14px; }
     .tp-mention { color: #5b5fc7; font-weight: 600; }
-    .tp-title { margin-top: 4px; font-size: 19px; font-weight: 700; color: #5b5fc7; line-height: 1.3; }
-    .tp-headline { margin-top: 10px; font-size: 16px; font-weight: 700; color: #5b5fc7; line-height: 1.35; white-space: pre-wrap; }
+    .tp-title { margin-top: 4px; font-size: 18px; font-weight: 700; color: #5b5fc7; line-height: 1.3; }
+    .tp-headline { margin-top: 6px; font-size: 15px; font-weight: 700; color: #242424; line-height: 1.4; white-space: pre-wrap; }
     .tp-body { margin-top: 4px; color: #616161; white-space: pre-wrap; word-break: break-word; }
-    .tp-section { margin: 8px 0 0; padding: 12px 14px 14px; background: #f7f7f7; }
-    .tp-section-title { font-size: 15px; font-weight: 700; color: #5b5fc7; }
-    .tp-date { margin: 6px 0 4px; padding: 6px 10px; background: #e8ebfa; font-weight: 700; }
-    .tp-line { margin-top: 3px; word-break: break-word; }
-    .tp-line.accent { color: #5b5fc7; }
+    .tp-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 3px 14px; margin: 12px 0 0; padding: 10px 12px; background: #f5f5f5; border-radius: 4px; }
+    .tp-facts dt { font-weight: 700; white-space: nowrap; }
+    .tp-facts dd { margin: 0; word-break: break-word; }
     @media (min-width: 900px) {
       #semremModal .sheet-box { width: min(1060px, 92vw); max-width: 1060px; }
       .semrem-editor { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 24px; align-items: start; }
@@ -5937,6 +5936,10 @@
         <div class="semrem-preview-wrap">
           <div class="semrem-preview-label" id="semremPreviewLabel">プレビュー</div>
           <div class="teams-preview" id="semremPreview"></div>
+          <div class="semrem-sample">
+            <button type="button" class="btn btn-outline btn-xs" onclick="sendSemremSample()"><i class="fa-regular fa-paper-plane"></i> エラー・テストに送信</button>
+            <button type="button" class="info-tip" data-tip="このルールの見本を 1 枚、次に当てはまるゼミで作って「エラー・テスト」の送信先に送ります（保存前でも送れます）。メンションは自分だけです" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button>
+          </div>
         </div>
       </div>
       <div class="sheet-foot">
@@ -7106,11 +7109,16 @@
 
     let pendingPollId_ = '';
     let pendingSwapId_ = '';
+    let pendingTab_ = ''; // 通知のリンク（?tab=shift など）で開く画面
+    let linkWantsForm_ = false; // ?tab=shift で来た（受付が終わっていたら知らせる）
     function initApp() {
       if (initApp.done) return;
       initApp.done = true;
       try { pendingPollId_ = new URLSearchParams(location.search).get('poll') || ''; } catch (_) {}
       try { pendingSwapId_ = new URLSearchParams(location.search).get('swap') || ''; } catch (_) {}
+      try { pendingTab_ = new URLSearchParams(location.search).get('tab') || ''; } catch (_) {}
+      // 読み直したときに同じ画面をまた開かないよう、アドレス欄から消しておく
+      ['poll', 'swap', 'tab'].forEach(stripQueryParam_);
       // メールのリンク（?login=鍵）：鍵は 1 回しか使えないので、先にアドレス欄から消す
       let loginLink = '';
       try { loginLink = new URLSearchParams(location.search).get('login') || ''; } catch (_) {}
@@ -7991,6 +7999,50 @@
         switchTab('polls');
         openPoll(id);
       }
+      // 交代のリンクは、メンバー画面で開く（管理者画面にいたら切り替える）
+      if (pendingSwapId_ && currentUser && currentUser.role === 'admin' && canSwitchView_()) {
+        switchView('member');
+        return;
+      }
+      // タブのリンク（?tab=）
+      if (pendingTab_) {
+        const t = pendingTab_;
+        pendingTab_ = '';
+        openLinkedTab_(t);
+      }
+    }
+
+    function canSwitchView_() {
+      return !!(currentUser && currentUser.isAdmin && !currentUser.emergency && currentUser.token);
+    }
+
+    /**
+     * 通知のリンク（?tab=shift / calendar / polls / seminar / events / chicken）から来たとき、その画面を開く。
+     * シフト提出・（スマホの）カレンダーはメンバー画面にしか無いので、管理者画面にいたら切り替える。
+     * 開けないとき（シフトの対象外・受付終了・鶏班以外の入雛）は、今の画面のまま短く知らせる
+     */
+    function openLinkedTab_(t) {
+      const memberTab = { shift: 'member-form', calendar: 'member-result', polls: 'polls', seminar: 'admin-seminar', events: 'admin-events', chicken: 'member-chicken' }[t];
+      if (!memberTab || !currentUser) return;
+      if (currentUser.role === 'admin') {
+        const adminTab = { polls: 'polls', seminar: 'admin-seminar', events: 'admin-events', chicken: 'admin-chicken', calendar: window.innerWidth >= 768 ? 'admin-result' : '' }[t];
+        if (adminTab) { switchTab(adminTab); return; }
+        if (!canSwitchView_()) return;
+        pendingTab_ = t;
+        switchView('member');
+        return;
+      }
+      if (t === 'shift') {
+        if (!isShiftTarget_(currentUser)) { showToast('シフト提出の対象ではありません', 'info'); return; }
+        const formTab = document.querySelector('#memberTabs .tab[onclick*="member-form"]');
+        // 受付中かは読み込みが終わると分かる（受付終了ならカレンダーに切り替わる）
+        if (formDataRendered_ && formTab && formTab.style.display === 'none') { showToast('シフトの受付は終了しています', 'info'); return; }
+        linkWantsForm_ = true;
+        switchTab('member-form', { skipLoad: true }); // 読み込みは画面の表示（showAppScreen）で始めている
+        return;
+      }
+      if (t === 'chicken' && currentUser.team !== '鶏班') return;
+      switchTab(memberTab);
     }
     
     /** 管理者タブの表示（スマホではシフト作成・カレンダー・ログ管理を出さない） */
@@ -9270,7 +9322,7 @@
       const recruitMonth = document.getElementById('recruitMonth')?.value || '';
       const recruitMonth2 = document.getElementById('recruitMonth2')?.value || '';
       const deadline = document.getElementById('recruitDeadline')?.value || '';
-      const formUrl = document.getElementById('formUrl')?.value || siteUrlFor('');
+      const formUrl = document.getElementById('formUrl')?.value || siteUrlFor('tab=shift');
       const ymLabel = ym => { const [y, m] = ym.split('-'); return `${y}年${parseInt(m, 10)}月`; };
       const deadlineLabel = deadline ? (() => { const [dy, dm, dd] = deadline.split('-'); return `${dy}年${parseInt(dm, 10)}月${parseInt(dd, 10)}日`; })() : '';
       
@@ -12090,8 +12142,8 @@
         </details>
         <button type="button" class="btn btn-primary dest-save" onclick="saveTeamsDest()"><i class="fa-solid fa-save"></i> 送信先を保存</button>
         <div class="dest-sample">
-          <div class="dest-name">カードの見本${infoTipHtml('通知ごとの見本（13 枚）を「エラー」の送信先に送ります。メンションは自分だけです')}</div>
-          <button type="button" class="btn btn-outline btn-xs" onclick="sendTeamsSamples()"><i class="fa-regular fa-paper-plane"></i> エラーに送信</button>
+          <div class="dest-name">カードの見本${infoTipHtml('通知ごとの見本を「エラー・テスト」の送信先に送ります（ゼミ通知はルールごと）。メンションは自分だけです')}</div>
+          <button type="button" class="btn btn-outline btn-xs" onclick="sendTeamsSamples()"><i class="fa-regular fa-paper-plane"></i> エラー・テストに送信</button>
         </div>`;
     }
 
@@ -12135,14 +12187,14 @@
       } catch (_) {}
     }
 
-    /** 通知ごとの見本のカードを「エラー」の送信先にまとめて送る */
+    /** 通知ごとの見本のカードを「エラー・テスト」の送信先にまとめて送る */
     async function sendTeamsSamples() {
       const err = (teamsState.dests || []).find(d => d.key === 'error');
       if (!err || !err.url) {
-        showToast('エラーの送信先を保存してから送ってください', 'error');
+        showToast('エラー・テストの送信先を保存してから送ってください', 'error');
         return;
       }
-      const ok = await showConfirmModal('通知ごとの見本（13 枚）を「エラー」の送信先に送りますか？', 'カードの見本');
+      const ok = await showConfirmModal('通知ごとの見本を「エラー・テスト」の送信先に送りますか？', 'カードの見本');
       if (!ok) return;
       try {
         const r = await callAPI('sendTeamsSamples', { adminId: currentUser.id });
@@ -12577,22 +12629,37 @@
       document.getElementById('semremPreview').innerHTML = `
         <div class="tp-sender"><span class="tp-avatar"><i class="fa-solid fa-bell"></i></span><b>ワークフロー</b><span>${escapeHtml(fmtAt_(sendAt))}</span></div>
         <div class="tp-card">
-          <div class="tp-band">
-            ${(() => { const to = r.target === 'candidates' ? vals._candidates : vals._presenters; return r.mention && to.length ? `<div class="tp-mention">${to.map(n => '@' + escapeHtml(n)).join(' ')}</div>` : ''; })()}
-            <div class="tp-title">ゼミのお知らせ（${escapeHtml(semremTimingLabel(r.daysBefore))}）</div>
-            ${headline ? `<div class="tp-headline">${escapeHtml(headline)}</div>` : ''}
-            ${body ? `<div class="tp-body">${escapeHtml(body)}</div>` : ''}
-          </div>
-          <div class="tp-section">
-            <div class="tp-section-title">発表</div>
-            <div class="tp-date">日にち：${escapeHtml(d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日（' + WEEKDAY_JA[d.getDay()] + '）')}</div>
-            <div class="tp-line">種類：${dash(vals['種類'])}</div>
-            <div class="tp-line">時間：${dash(vals['時間'])}</div>
-            <div class="tp-line accent">発表者：${vals._presenterLabels.length ? escapeHtml(vals._presenterLabels.join('、')) : vals._candidates.length ? '未定（候補: ' + escapeHtml(vals._candidates.join('、')) + '）' : '—'}</div>
-            <div class="tp-line">場所：${dash(vals['場所'])}</div>
-            <div class="tp-line">備考：${dash(vals['備考'])}</div>
-          </div>
+          ${(() => { const to = r.target === 'candidates' ? vals._candidates : vals._presenters; return r.mention && to.length ? `<div class="tp-mention">${to.map(n => '@' + escapeHtml(n)).join(' ')}</div>` : ''; })()}
+          <div class="tp-title">ゼミのお知らせ（${escapeHtml(semremTimingLabel(r.daysBefore))}）</div>
+          ${headline ? `<div class="tp-headline">${escapeHtml(headline)}</div>` : ''}
+          ${body ? `<div class="tp-body">${escapeHtml(body)}</div>` : ''}
+          <dl class="tp-facts">${[
+            ['日にち', d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日（' + WEEKDAY_JA[d.getDay()] + '）'],
+            ['時間', vals['時間']],
+            ['種類', vals['種類']],
+            ['発表者', vals._presenterLabels.length ? vals._presenterLabels.join('、') : vals._candidates.length ? '未定（候補: ' + vals._candidates.join('、') + '）' : ''],
+            ['場所', vals['場所']],
+            ['備考', vals['備考']]
+          ].filter(x => x[1]).map(x => `<dt>${x[0]}</dt><dd>${escapeHtml(x[1])}</dd>`).join('')}</dl>
         </div>`;
+    }
+
+    /** 編集中のルールの見本を 1 枚、「エラー・テスト」の送信先に送る */
+    async function sendSemremSample() {
+      if (!semremEditing) return;
+      onSemremInput();
+      const r = semremEditing.rule;
+      if (!r.title.trim() && !r.body.trim()) {
+        showToast('見出しまたは本文を入力してください', 'error');
+        return;
+      }
+      const body = { adminId: currentUser.id, rule: Object.assign({}, r) };
+      // このゼミだけの通知は、編集中のゼミで作る（保存済みのゼミのとき）
+      if (semremEditing.ctx && editingSeminarIndex != null && seminarData[editingSeminarIndex]) body.seminarId = seminarData[editingSeminarIndex].id;
+      try {
+        const res = await callAPI('sendTeamsSamples', body);
+        showToast(res.message || '見本を送りました', 'success');
+      } catch (_) {}
     }
 
     async function saveSemremRule() {
@@ -14490,6 +14557,7 @@
             const memberResultArea = document.getElementById('member-result');
             
             if (!shouldShowFormTab) {
+              if (linkWantsForm_) showToast('シフトの受付は終了しています', 'info');
               // シフト提出タブを非表示にする場合、カレンダータブをアクティブにする
               formTab.classList.remove('active');
               
@@ -14511,6 +14579,9 @@
                   memberResultArea.style.transition = 'opacity 0.3s ease-in';
                 }, 100);
               }
+            } else if (currentTabId() && currentTabId() !== 'member-form') {
+              // 読み込み中に別のタブへ移っていた（通知のリンク・自分で押した）ときは、タブを出すだけで選び直さない
+              formTab.style.display = 'flex';
             } else {
               // シフト提出タブを表示する場合、アクティブにする
               // 他のタブからactiveクラスを削除
@@ -14545,6 +14616,7 @@
             }
           }
           
+          linkWantsForm_ = false;
           // noPermとformContentの表示/非表示も更新
           if (noPerm) noPerm.style.display = shouldShowFormTab ? 'none' : 'block';
           if (formContent) formContent.style.display = shouldShowFormTab ? 'block' : 'none';
