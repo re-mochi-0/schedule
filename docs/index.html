@@ -3461,6 +3461,44 @@
     .dest-more > summary:focus-visible, .howto > summary:focus-visible, .sc-stats > summary:focus-visible,
     .day-status > summary:focus-visible, .tpl-item > summary:focus-visible, .help-box > summary:focus-visible { outline: 2px solid var(--primary-dark); outline-offset: 2px; border-radius: 6px; }
     .dest-more .dest-list { margin-top: 10px; }
+    /* 通知ごとの送信先（種類の枠の中） */
+    .dest-sub { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; }
+    .dest-sub > summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 28px;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--primary-dark);
+      user-select: none;
+    }
+    .dest-sub > summary::-webkit-details-marker { display: none; }
+    .dest-sub > summary::after {
+      content: '\f078';
+      font-family: 'Font Awesome 6 Free';
+      font-weight: 900;
+      font-size: 10px;
+      margin-left: auto;
+      padding-left: 8px;
+      transition: transform 0.2s;
+    }
+    .dest-sub[open] > summary::after { transform: rotate(180deg); }
+    .dest-sub > summary:focus-visible { outline: 2px solid var(--primary-dark); outline-offset: 2px; border-radius: 6px; }
+    .dest-sub-count {
+      font-size: 11px;
+      font-weight: 700;
+      color: #2f855a;
+      background: #e6f4ec;
+      border-radius: 999px;
+      padding: 1px 8px;
+    }
+    .dest-sub-row { padding: 10px 0 2px; }
+    .dest-sub-row + .dest-sub-row { border-top: 1px dashed var(--border); margin-top: 8px; }
+    .dest-sub-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dest-sub-row .dest-input { margin-top: 6px; }
     .howto ol { margin: 8px 0 4px; padding-left: 1.4em; font-size: 13px; line-height: 1.8; }
     .dest-save { margin-top: 14px; width: 100%; }
 
@@ -3619,7 +3657,11 @@
       #semremModal .sheet-box { width: min(1060px, 92vw); max-width: 1060px; }
       .semrem-editor { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 24px; align-items: start; }
       .semrem-preview-wrap { margin-top: 0; position: sticky; top: 0; }
-      .dest-more .dest-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      /* 種類は 1 列、枠の中の通知は 2 列（種類ごとに通知の数が違うため、種類を横に並べると枠の高さがそろわない） */
+      .dest-sub-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; }
+      .dest-sub-row { border-top: 1px dashed var(--border); padding-bottom: 8px; }
+      .dest-sub-row + .dest-sub-row { margin-top: 0; }
+      .dest-sub-row:nth-child(-n+2) { border-top: none; }
       .up-row { grid-template-columns: 120px minmax(0, 1fr); }
     }
 
@@ -11721,7 +11763,7 @@
     // ==============================================
     const teamsState = {
       loadedAt: 0, loading: null, error: '',
-      dests: [], automations: [], dailyEnabled: true,
+      dests: [], notices: [], automations: [], dailyEnabled: true,
       rules: [], seminars: [], lastSent: {}, isDefault: false
     };
 
@@ -11740,6 +11782,7 @@
             callAPI('getSeminarReminders', { adminId: currentUser.id }, { silent: true })
           ]);
           teamsState.dests = t.destinations || [];
+          teamsState.notices = t.notices || [];
           teamsState.automations = t.automations || [];
           applySemremResult_(r);
           teamsState.error = '';
@@ -11783,24 +11826,55 @@
     }
 
     // ---------- 送り先 ----------
+    function destLastHtml_(last) {
+      if (!last) return '';
+      return last.ok
+        ? `<span class="dest-last ok" title="最終送信日時"><i class="fa-solid fa-check"></i> ${escapeHtml(shortStamp_(last.at))}</span>`
+        : `<span class="dest-last err" title="最後の送信は失敗しました"><i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(shortStamp_(last.at))} 失敗</span>`;
+    }
+
     function destStateHtml_(d, commonUrl) {
       let cls = 'off';
       let text = '未設定';
       if (d.url) { cls = 'ok'; text = '設定済み'; }
       else if (d.key && !d.noCommon && commonUrl) { cls = 'off'; text = '共通を使用'; }
       else if (d.legacy) { cls = 'warn'; text = '従来の方法'; }
-      let last = '';
-      if (d.last) {
-        last = d.last.ok
-          ? `<span class="dest-last ok" title="最終送信日時"><i class="fa-solid fa-check"></i> ${escapeHtml(shortStamp_(d.last.at))}</span>`
-          : `<span class="dest-last err" title="最後の送信は失敗しました"><i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(shortStamp_(d.last.at))} 失敗</span>`;
-      }
-      return `<span class="dest-state ${cls}">${text}</span>${last}`;
+      return `<span class="dest-state ${cls}">${text}</span>${destLastHtml_(d.last)}`;
+    }
+
+    /** 通知ごとの状態：通知の URL → 種類の URL → 共通 → 従来の方法 */
+    function noticeStateHtml_(n, cat, commonUrl) {
+      let cls = 'off';
+      let text = '未設定';
+      if (n.url) { cls = 'ok'; text = '設定済み'; }
+      else if (cat.url) text = `${cat.label}を使用`;
+      else if (!cat.noCommon && commonUrl) text = '共通を使用';
+      else if (n.legacy) { cls = 'warn'; text = '従来の方法'; }
+      return `<span class="dest-state ${cls}">${escapeHtml(text)}</span>${destLastHtml_(n.last)}`;
     }
 
     function destRowHtml_(d, commonUrl, isMain) {
       const id = 'teamsUrl_' + (d.key || 'common');
-      const ph = isMain ? 'https://…' : (d.noCommon ? '空欄の場合は送信しない' : '空欄の場合は共通を使用');
+      const ph = isMain ? 'https://…' : (d.noCommon ? '空欄は送信なし' : '共通を使用');
+      // 通知が 2 つ以上ある種類は、通知ごとにも送信先を指定できる
+      const notices = isMain ? [] : (teamsState.notices || []).filter(n => n.cat === d.key);
+      const custom = notices.filter(n => n.url).length;
+      const sub = notices.length < 2 ? '' : `
+          <details class="dest-sub"${custom ? ' open' : ''}>
+            <summary>通知ごとに指定${custom ? `<span class="dest-sub-count">${custom}件</span>` : ''}</summary>
+            <div class="dest-sub-list">${notices.map(n => `
+              <div class="dest-sub-row">
+                <div class="dest-head">
+                  <div class="dest-name-wrap"><div class="dest-sub-name">${escapeHtml(n.label)}</div></div>
+                  <div class="dest-states">${noticeStateHtml_(n, d, commonUrl)}</div>
+                </div>
+                <div class="dest-input">
+                  <input type="url" class="form-input" id="teamsNotice_${escapeForAttr(n.id)}" value="${escapeForAttr(n.url || '')}" placeholder="${escapeForAttr(`${d.label}を使用`)}" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="${escapeForAttr(d.label + '・' + n.label + 'の送信先')}">
+                  <button type="button" class="btn btn-outline btn-xs" onclick="testTeamsDest(${jsArg(d.key)}, ${jsArg(n.id)})"><i class="fa-regular fa-paper-plane"></i> テスト</button>
+                </div>
+              </div>`).join('')}
+            </div>
+          </details>`;
       return `
         <div class="dest-row${isMain ? ' is-main' : ''}">
           <div class="dest-head">
@@ -11812,7 +11886,7 @@
           <div class="dest-input">
             <input type="url" class="form-input" id="${id}" value="${escapeForAttr(d.url || '')}" placeholder="${escapeForAttr(ph)}" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="${escapeForAttr(d.label + 'の送信先')}">
             <button type="button" class="btn btn-outline btn-xs" onclick="testTeamsDest(${jsArg(d.key)})"><i class="fa-regular fa-paper-plane"></i> テスト</button>
-          </div>
+          </div>${sub}
         </div>`;
     }
 
@@ -11823,7 +11897,7 @@
       if (!teamsState.loadedAt) { box.innerHTML = teamsLoadingHtml_; return; }
       const main = teamsState.dests.find(d => !d.key) || { key: '', label: '共通', hint: '', url: '' };
       const others = teamsState.dests.filter(d => d.key);
-      const anyCustom = others.some(d => d.url);
+      const anyCustom = others.some(d => d.url) || (teamsState.notices || []).some(n => n.url);
       box.innerHTML = `
         <div class="dest-list">${destRowHtml_(main, main.url, true)}</div>
         <details class="dest-more"${anyCustom ? ' open' : ''}>
@@ -11852,32 +11926,47 @@
       return urls;
     }
 
+    function readNoticeInputs_() {
+      const urls = {};
+      (teamsState.notices || []).forEach(n => {
+        const el = document.getElementById('teamsNotice_' + n.id);
+        if (el) urls[n.id] = el.value.trim();
+      });
+      return urls;
+    }
+
     async function saveTeamsDest() {
       const urls = readDestInputs_();
-      const bad = Object.keys(urls).find(k => urls[k] && !/^https:\/\/\S+$/.test(urls[k]));
-      if (bad != null) {
+      const noticeUrls = readNoticeInputs_();
+      const isBad = u => u && !/^https:\/\/\S+$/.test(u);
+      const bad = Object.keys(urls).find(k => isBad(urls[k]));
+      const badNotice = Object.keys(noticeUrls).find(k => isBad(noticeUrls[k]));
+      if (bad != null || badNotice != null) {
         showToast('送信先には https:// で始まる URL を入力してください', 'error');
-        const el = document.getElementById('teamsUrl_' + (bad || 'common'));
+        const el = document.getElementById(bad != null ? 'teamsUrl_' + (bad || 'common') : 'teamsNotice_' + badNotice);
         if (el) el.focus();
         return;
       }
       try {
-        const r = await callAPI('saveTeamsSettings', { adminId: currentUser.id, urls }, { overlayMessage: '保存しています…' });
+        const r = await callAPI('saveTeamsSettings', { adminId: currentUser.id, urls, noticeUrls }, { overlayMessage: '保存しています…' });
         if (r.destinations) teamsState.dests = r.destinations;
+        if (r.notices) teamsState.notices = r.notices;
         if (r.automations) teamsState.automations = r.automations;
         renderTeamsDest_();
         showToast('送信先を保存しました', 'success');
       } catch (_) {}
     }
 
-    async function testTeamsDest(key) {
+    /** テスト送信：通知の URL → 種類の URL → 共通 の順に、入力中の値で送る */
+    async function testTeamsDest(key, noticeId) {
       const urls = readDestInputs_();
       const d = teamsState.dests.find(x => x.key === key) || {};
-      let url = urls[key] || '';
+      let url = noticeId ? (readNoticeInputs_()[noticeId] || '') : '';
+      if (!url) url = urls[key] || '';
       if (!url && key && !d.noCommon) url = urls[''] || '';
       if (!url) {
         showToast('URL を入力してください', 'error');
-        const el = document.getElementById('teamsUrl_' + (key || 'common'));
+        const el = document.getElementById(noticeId ? 'teamsNotice_' + noticeId : 'teamsUrl_' + (key || 'common'));
         if (el) el.focus();
         return;
       }
@@ -11886,7 +11975,7 @@
         return;
       }
       try {
-        const r = await callAPI('testTeams', { adminId: currentUser.id, category: key, url }, { overlayMessage: 'テスト送信中…' });
+        const r = await callAPI('testTeams', { adminId: currentUser.id, category: key, notice: noticeId || '', url }, { overlayMessage: 'テスト送信中…' });
         showToast(r.message || 'テスト送信しました', 'success');
       } catch (_) {}
     }
