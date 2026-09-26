@@ -2651,7 +2651,8 @@
       margin-right: -6px;
     }
     .ag-series { margin-right: auto; font-size: 11.5px; color: #8b8579; white-space: nowrap; flex: 0 0 auto; }
-    .ag-series-meta { display: none; }
+    /* 繰り返しの印：スマホはタイトルの行の右端（PC はボタンの並びの左） */
+    .ag-repeat { display: none; margin-left: auto; align-items: center; gap: 4px; font-size: 11.5px; color: #8b8579; white-space: nowrap; }
     .ag-nm, .nm { white-space: nowrap; }
     /* ボタンは縮めず、文字も折り返さない（iPhone では 1 文字ずつ縦に折り返してしまうため） */
     .ag-actions > * { flex-shrink: 0; white-space: nowrap; }
@@ -2687,9 +2688,9 @@
       .ag-note { order: 3; flex: 0 0 100%; margin-top: 4px; }
     }
     @media (max-width: 767.98px) {
-      /* スマホでは「繰り返し」をボタンの行ではなく、場所・発表者と同じ並びに出す */
+      /* スマホでは「繰り返し」をボタンの行ではなく、タイトルの行の右端に出す */
       .ag-actions .ag-series { display: none; }
-      .ag-series-meta { display: flex !important; }
+      .ag-repeat { display: inline-flex; }
       .ag-day { gap: 10px; }
       .ag-date-col { flex-basis: 46px; }
       .ag-date { width: 46px; }
@@ -13296,11 +13297,11 @@
               <span class="ag-title">${escapeHtml(s.type || 'ゼミ')}</span>
               ${s === nextSem ? '<span class="ag-badge next">次のゼミ</span>' : ''}
               ${isMine ? '<span class="ag-badge me">自分の発表</span>' : ''}
+              ${s.seriesId ? '<span class="ag-repeat" title="一括追加したゼミ"><i class="fa-solid fa-repeat"></i>繰り返し</span>' : ''}
             </div>
             ${!isNone && s.location ? `<div class="ag-meta"><i class="fa-solid fa-location-dot"></i><span>${escapeHtml(s.location)}</span></div>` : ''}
             ${!isNone && s.presenters && s.presenters.length ? `<div class="ag-meta"><i class="fa-solid fa-person-chalkboard"></i><span>${agendaNamesHtml_(s.presenters, myName)}</span></div>` : ''}
             ${undecided ? `<div class="ag-meta"><i class="fa-solid fa-person-chalkboard"></i><span><span class="ag-undecided">発表者未定</span>${cands.length ? ` 候補: ${agendaNamesHtml_(cands, myName)}` : ''}</span></div>` : ''}
-            ${s.seriesId ? '<div class="ag-meta ag-series-meta"><i class="fa-solid fa-repeat"></i><span>繰り返し</span></div>' : ''}
             ${!isNone && s.freeNotes && s.freeNotes.length ? `<div class="ag-note">${escapeHtml(s.freeNotes.join('\n'))}</div>` : ''}
             ${(() => {
               // 発表者になる・登録・取り消しは、編集などと同じ見た目で同じ並びに（スマホでは上の段）
