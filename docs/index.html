@@ -1992,6 +1992,8 @@
       margin: -6px 0 0 0;
       border-width: 2px;
     }
+    /* ヘッダーの上では白いスピナー（青緑の地でも見えるように） */
+    .app-header .is-busy::after { border-color: rgba(255, 255, 255, 0.35); border-top-color: #fff; }
     @keyframes busySpin { to { transform: rotate(360deg); } }
     #busyOverlay {
       position: fixed;
@@ -4705,7 +4707,7 @@
         <span class="role-badge">管理者</span>
       </div>
       <div class="app-header-actions">
-        <button type="button" class="view-switch" id="viewSwitchBtn" onclick="toggleView()" hidden>
+        <button type="button" class="view-switch" id="viewSwitchBtn" onclick="toggleView()" data-no-busy hidden>
           <i class="fa-solid fa-arrow-right-arrow-left"></i><span id="viewSwitchLabel">メンバー画面へ</span>
         </button>
         <button class="logout-btn" onclick="handleLogout()" aria-label="ログアウト" title="ログアウト">
@@ -7213,6 +7215,8 @@
       if (!el && lastPressed && performance.now() - lastPressed.t < 2500 && lastPressed.el.isConnected) {
         el = lastPressed.el;
       }
+      // 押した瞬間に役目が終わるボタン（画面の切り替えなど）は、続く読み込みで「処理中」にしない
+      if (el && el.closest('[data-no-busy]')) el = null;
       markBusy_(el, true);
       if (isWrite && !opts.noOverlay) {
         netState.writes++;
