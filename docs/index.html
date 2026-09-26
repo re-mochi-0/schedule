@@ -3548,6 +3548,8 @@
     .dest-sub-row .dest-input { margin-top: 6px; }
     .howto ol { margin: 8px 0 4px; padding-left: 1.4em; font-size: 13px; line-height: 1.8; }
     .dest-save { margin-top: 14px; width: 100%; }
+    .dest-sample { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border); }
+    .dest-sample .btn { flex: 0 0 auto; white-space: nowrap; }
 
     /* 自動のお知らせ */
     .auto-master {
@@ -5157,7 +5159,7 @@
       </div>
       <!-- Teams: 送信先・自動通知・ゼミ通知 -->
       <div class="card" data-stab="teams" id="teamsDestCard">
-        <div class="card-title"><i class="fa-solid fa-paper-plane"></i> 送信先<button type="button" class="info-tip" data-tip="未設定の間は従来の方法で送信されます" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></div>
+        <div class="card-title"><i class="fa-solid fa-paper-plane"></i> 送信先<button type="button" class="info-tip" data-tip="通知 → 種類 → 共通の順に、入力のある送信先に送ります。どれも空の通知は送られません" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></div>
         <div id="teamsDestBody"><div class="bulk-empty">読み込み中…</div></div>
       </div>
       <div class="card" data-stab="teams" id="automationCard">
@@ -7180,6 +7182,7 @@
       saveSeminarReminders: '保存しています…',
       saveTeamsSettings: '送り先を保存しています…',
       testTeams: 'テストを送っています…',
+      sendTeamsSamples: '見本を送っています…',
       installAutomations: '有効にしています…',
       claimSeminar: '登録しています…',
       createSwap: '依頼しています…',
@@ -12005,29 +12008,28 @@
         : `<span class="dest-last err" title="最後の送信は失敗しました"><i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(shortStamp_(last.at))} 失敗</span>`;
     }
 
+    // 状態：設定済み（緑）／共通・種類を使用（灰）／未設定＝送られない（黄土。共通の欄は空でもよいので灰）
     function destStateHtml_(d, commonUrl) {
-      let cls = 'off';
+      let cls = d.key ? 'warn' : 'off';
       let text = '未設定';
       if (d.url) { cls = 'ok'; text = '設定済み'; }
       else if (d.key && !d.noCommon && commonUrl) { cls = 'off'; text = '共通を使用'; }
-      else if (d.legacy) { cls = 'warn'; text = '従来の方法'; }
       return `<span class="dest-state ${cls}">${text}</span>${destLastHtml_(d.last)}`;
     }
 
-    /** 通知ごとの状態：通知の URL → 種類の URL → 共通 → 従来の方法 */
+    /** 通知ごとの状態：通知の URL → 種類の URL → 共通 */
     function noticeStateHtml_(n, cat, commonUrl) {
-      let cls = 'off';
+      let cls = 'warn';
       let text = '未設定';
       if (n.url) { cls = 'ok'; text = '設定済み'; }
-      else if (cat.url) text = `${cat.label}を使用`;
-      else if (!cat.noCommon && commonUrl) text = '共通を使用';
-      else if (n.legacy) { cls = 'warn'; text = '従来の方法'; }
+      else if (cat.url) { cls = 'off'; text = `${cat.label}を使用`; }
+      else if (!cat.noCommon && commonUrl) { cls = 'off'; text = '共通を使用'; }
       return `<span class="dest-state ${cls}">${escapeHtml(text)}</span>${destLastHtml_(n.last)}`;
     }
 
     function destRowHtml_(d, commonUrl, isMain) {
       const id = 'teamsUrl_' + (d.key || 'common');
-      const ph = isMain ? 'https://…' : (d.noCommon ? '空欄は送信なし' : '共通を使用');
+      const ph = isMain ? 'https://…' : (d.noCommon || !commonUrl ? '空欄は送信なし' : '共通を使用');
       // 通知が 2 つ以上ある種類は、通知ごとにも送信先を指定できる
       const notices = isMain ? [] : (teamsState.notices || []).filter(n => n.cat === d.key);
       const custom = notices.filter(n => n.url).length;
@@ -12086,7 +12088,11 @@
           </ol>
           <p class="field-hint">管理者の交代時は、新しい管理者がこの手順で URL を作成して差し替えます。</p>
         </details>
-        <button type="button" class="btn btn-primary dest-save" onclick="saveTeamsDest()"><i class="fa-solid fa-save"></i> 送信先を保存</button>`;
+        <button type="button" class="btn btn-primary dest-save" onclick="saveTeamsDest()"><i class="fa-solid fa-save"></i> 送信先を保存</button>
+        <div class="dest-sample">
+          <div class="dest-name">カードの見本${infoTipHtml('通知ごとの見本（13 枚）を「エラー」の送信先に送ります。メンションは自分だけです')}</div>
+          <button type="button" class="btn btn-outline btn-xs" onclick="sendTeamsSamples()"><i class="fa-regular fa-paper-plane"></i> エラーに送信</button>
+        </div>`;
     }
 
     function readDestInputs_() {
@@ -12126,6 +12132,21 @@
         if (r.automations) teamsState.automations = r.automations;
         renderTeamsDest_();
         showToast('送信先を保存しました', 'success');
+      } catch (_) {}
+    }
+
+    /** 通知ごとの見本のカードを「エラー」の送信先にまとめて送る */
+    async function sendTeamsSamples() {
+      const err = (teamsState.dests || []).find(d => d.key === 'error');
+      if (!err || !err.url) {
+        showToast('エラーの送信先を保存してから送ってください', 'error');
+        return;
+      }
+      const ok = await showConfirmModal('通知ごとの見本（13 枚）を「エラー」の送信先に送りますか？', 'カードの見本');
+      if (!ok) return;
+      try {
+        const r = await callAPI('sendTeamsSamples', { adminId: currentUser.id });
+        showToast(r.message || '見本を送りました', 'success');
       } catch (_) {}
     }
 
