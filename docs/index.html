@@ -7913,7 +7913,8 @@
         // 日程調整（未回答があればタブに件数を出す）
         loadPolls(true, { background: true }).then(() => {
           const n = pollState.list.filter(pollNeedsMyAnswer).length;
-          if (n > 0 && !pendingPollId_) showToast(`未回答の日程調整が ${n} 件あります`, 'info');
+          // 読み込み中に管理者画面へ戻っていたら知らせない
+          if (n > 0 && !pendingPollId_ && currentUser && currentUser.role === 'member') showToast(`未回答の日程調整が ${n} 件あります`, 'info');
         });
       } else {
         // ロールが不明な場合、ログアウト
@@ -14314,7 +14315,13 @@
           const debugInfo = `設定値: ${shiftAnswerAcceptingValue} (型: ${typeof shiftAnswerAcceptingValue}), 受付中: ${isShiftAnswerAccepting}, 稼働中: ${isActive}, 表示: ${shouldShowFormTab}`;
           console.log('シフト回答受付状態チェック:', debugInfo);
           
-          if (formTab) {
+          // 読み込み中に管理者画面へ戻っていたら、メンバーのタブ・画面には触らない。
+          // 裏での更新（opts.background）では、今開いているタブを変えない
+          const onMemberView = !!(currentUser && currentUser.role === 'member');
+          if (formTab && onMemberView && opts.background) {
+            formTab.style.display = shouldShowFormTab ? 'flex' : 'none';
+            if (!shouldShowFormTab && formTab.classList.contains('active')) switchTab('member-result');
+          } else if (formTab && onMemberView) {
             formTab.style.display = shouldShowFormTab ? 'flex' : 'none';
             const resultTab = document.querySelector('#memberTabs .tab[onclick*="member-result"]');
             const memberFormArea = document.getElementById('member-form');
@@ -14387,7 +14394,7 @@
           console.warn('result.configが存在しません');
           // デバッグ用：設定が取得できない場合でも、稼働中の人はシフト提出タブを表示してみる
           const isActive = isShiftTarget_(currentUser);
-          if (isActive) {
+          if (isActive && currentUser.role === 'member' && !opts.background) {
             const formTab = document.querySelector('#memberTabs .tab[onclick*="member-form"]');
             if (formTab) {
               formTab.style.display = 'flex';
