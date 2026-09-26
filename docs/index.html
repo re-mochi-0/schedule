@@ -3818,6 +3818,37 @@
     }
     .ag-btn.primary { color: var(--primary-dark); font-weight: 700; }
     .ag-btn.primary:hover { background: rgba(90, 159, 176, 0.1); }
+    /* 主な操作の段（発表者になる・登録・取り消し）：枠付きのボタンを折り返して並べる（横スクロールにしない） */
+    .ag-cta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .ag-cta .ag-btn, #admin-seminar .ag-cta button {
+      width: auto; margin-top: 0; padding: 6px 12px; min-height: 34px; font-size: 12.5px;
+      border: 1.5px solid var(--border); background: var(--card); color: #4f5d63; border-radius: 10px;
+    }
+    .ag-cta .ag-btn.primary, #admin-seminar .ag-cta button.primary { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; }
+    .ag-cta .ag-btn.primary:hover { background: #4d8e9f; }
+    @media (min-width: 900px) { .ag-cta { order: 2; margin-top: 0; } }
+    /* スマホ：同じ幅で横に並べる（1 つだけなら横いっぱい） */
+    @media (max-width: 899.98px) {
+      .ag-cta { flex-wrap: nowrap; }
+      .ag-cta .ag-btn, #admin-seminar .ag-cta button { flex: 1 1 0; min-width: 0; justify-content: center; padding: 6px 8px; }
+    }
+    /* 発表者を選ぶシート */
+    .pp-lead { font-size: 13px; color: var(--text-light); margin-bottom: 12px; }
+    .pp-label { font-size: 12px; font-weight: 700; color: var(--primary-dark); margin-bottom: 6px; }
+    .pp-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .pp-chip {
+      display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 14px; font-weight: 700;
+      padding: 8px 14px; border-radius: 999px; border: 1.5px solid var(--border); background: var(--card); color: var(--text); cursor: pointer;
+    }
+    .pp-chip small { font-size: 11px; font-weight: 700; color: var(--me); }
+    .pp-chip.on { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; }
+    .pp-chip.on small { color: #fff; opacity: 0.85; }
+    .pp-more { border-top: 1px dashed var(--border); padding-top: 10px; }
+    .pp-more > summary { cursor: pointer; list-style: none; display: flex; align-items: center; min-height: 32px; font-size: 13px; font-weight: 700; color: var(--primary-dark); user-select: none; }
+    .pp-more > summary::-webkit-details-marker { display: none; }
+    .pp-more > summary::after { content: '\f078'; font-family: 'Font Awesome 6 Free'; font-weight: 900; font-size: 11px; margin-left: auto; padding-left: 8px; transition: transform 0.2s; }
+    .pp-more[open] > summary::after { transform: rotate(180deg); }
+    .pp-more[open] > summary { margin-bottom: 8px; }
     .label-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
     .label-row .form-label { margin-bottom: 0; display: flex; align-items: center; }
     .inline-seg { margin: 0; flex: 0 0 auto; }
@@ -13279,10 +13310,17 @@
             ${undecided ? `<div class="ag-meta"><i class="fa-solid fa-person-chalkboard"></i><span><span class="ag-undecided">発表者未定</span>${cands.length ? ` 候補: ${agendaNamesHtml_(cands, myName)}` : ''}</span></div>` : ''}
             ${s.seriesId ? '<div class="ag-meta ag-series-meta"><i class="fa-solid fa-repeat"></i><span>繰り返し</span></div>' : ''}
             ${!isNone && s.freeNotes && s.freeNotes.length ? `<div class="ag-note">${escapeHtml(s.freeNotes.join('\n'))}</div>` : ''}
+            ${(() => {
+              // 主な操作（発表者になる・登録・取り消し）は、編集などとは別の段に枠付きのボタンで並べる
+              if (isNone || s.date < today) return '';
+              const b = [];
+              if (undecided && amCandidate) b.push(`<button type="button" class="ag-btn primary" onclick="openPresenterPicker(${index}, true)"><i class="fa-solid fa-hand"></i>発表者になる</button>`);
+              if (undecided) b.push(`<button type="button" class="ag-btn" onclick="openPresenterPicker(${index}, false)"><i class="fa-solid fa-user-check"></i>発表者を登録</button>`);
+              if (isMine && amCandidate) b.push(`<button type="button" class="ag-btn" onclick="claimSeminar(${index}, false)"><i class="fa-solid fa-rotate-left"></i>発表を取り消す</button>`);
+              return b.length ? `<div class="ag-cta">${b.join('')}</div>` : '';
+            })()}
             <div class="ag-actions">
               ${s.seriesId ? '<span class="ag-series" title="一括追加したゼミ"><i class="fa-solid fa-repeat"></i> 繰り返し</span>' : ''}
-              ${undecided && amCandidate && s.date >= today ? `<button type="button" class="ag-btn primary" onclick="claimSeminar(${index}, true)"><i class="fa-solid fa-hand"></i>発表者になる</button>` : ''}
-              ${isMine && amCandidate && s.date >= today ? `<button type="button" class="ag-btn" onclick="claimSeminar(${index}, false)"><i class="fa-solid fa-rotate-left"></i>発表を取り消す</button>` : ''}
               <button type="button" class="ag-btn" onclick="showEditSeminarModal(${index})"><i class="fa-solid fa-pen"></i>編集</button>
               <button type="button" class="ag-btn" onclick="duplicateSeminar(${index})" title="同じ内容で 1 週間後に追加"><i class="fa-regular fa-copy"></i>複製</button>
               <button type="button" class="ag-btn danger" onclick="removeSeminarEntry(${index})"><i class="fa-regular fa-trash-can"></i>削除</button>
@@ -13292,6 +13330,73 @@
       }));
     }
     
+    /**
+     * 発表者を選んで登録するシート。候補の人を上に、ほかの人は「ほかの人から選ぶ」から。
+     * withSelf: 「発表者になる」から開いたとき（自分に最初から印を付ける）
+     */
+    async function openPresenterPicker(index, withSelf) {
+      const s = seminarData[index];
+      if (!s) return;
+      try { await ensureMembersList(); } catch (_) { return; }
+      document.getElementById('presenterPicker')?.remove();
+      const me = currentUser && currentUser.role === 'member' ? currentUser.name : '';
+      const cands = (s.candidates || []).filter(Boolean);
+      const chosen = new Set(withSelf && me ? [me] : []);
+      const chip = n => `<button type="button" class="pp-chip${chosen.has(n) ? ' on' : ''}" data-name="${escapeForAttr(n)}" aria-pressed="${chosen.has(n)}">${escapeHtml(n)}${n === me ? '<small>自分</small>' : ''}</button>`;
+      const wrap = document.createElement('div');
+      wrap.className = 'modal-overlay sheet show';
+      wrap.id = 'presenterPicker';
+      wrap.innerHTML = `
+        <div class="modal-box sheet-box" role="dialog" aria-modal="true" aria-labelledby="ppTitle">
+          <div class="sheet-head">
+            <button type="button" class="sheet-close" data-act="close" aria-label="閉じる"><i class="fa-solid fa-xmark"></i></button>
+            <div class="sheet-head-title" id="ppTitle">${escapeHtml(fmtMdW(s.date))} ${escapeHtml(s.type || 'ゼミ')}の発表者</div>
+          </div>
+          <div class="sheet-body">
+            <div class="pp-lead">発表する人を選んでください（複数可）</div>
+            ${cands.length ? `<div class="pp-label">候補</div><div class="pp-chips">${cands.map(chip).join('')}</div>` : ''}
+            <details class="pp-more"${cands.length ? '' : ' open'}>
+              <summary>ほかの人から選ぶ</summary>
+              <div id="ppOthers"></div>
+            </details>
+          </div>
+          <div class="sheet-foot">
+            <button type="button" class="btn btn-outline" data-act="close">キャンセル</button>
+            <button type="button" class="btn btn-primary" data-act="save"><i class="fa-solid fa-check"></i> 登録</button>
+          </div>
+        </div>`;
+      document.body.appendChild(wrap);
+      renderMemberPicker(wrap.querySelector('#ppOthers'), {
+        selected: withSelf && me && !cands.includes(me) ? [me] : [],
+        filter: m => m.isActive !== false && !m.graduated && !cands.includes(m.name)
+      });
+      const close = () => wrap.remove();
+      wrap.addEventListener('click', async e => {
+        if (e.target === wrap || e.target.closest('[data-act="close"]')) { close(); return; }
+        const c = e.target.closest('.pp-chip');
+        if (c) {
+          const on = !c.classList.contains('on');
+          c.classList.toggle('on', on);
+          c.setAttribute('aria-pressed', on);
+          return;
+        }
+        if (!e.target.closest('[data-act="save"]')) return;
+        const names = [...wrap.querySelectorAll('.pp-chip.on')].map(x => x.dataset.name)
+          .concat([...wrap.querySelectorAll('#ppOthers input[type=checkbox]:checked')].map(x => x.value));
+        const presenters = Array.from(new Set(names));
+        if (!presenters.length) { showToast('発表する人を選んでください', 'error'); return; }
+        try {
+          const r = await callAPI('claimSeminar', { adminId: currentUser.id, id: s.id, presenters }, { overlayMessage: '登録しています…' });
+          if (r.seminar) Object.assign(s, r.seminar);
+          close();
+          renderSeminars();
+          showToast(r.message || '発表者を登録しました', 'success');
+        } catch (_) {
+          loadSeminars(true);
+        }
+      });
+    }
+
     /** 候補の人が自分を発表者にする（claim: false で取り消し） */
     async function claimSeminar(index, claim) {
       const s = seminarData[index];
