@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
-  <meta name="app-build" content="20260928-004252">
+  <meta name="app-build" content="20260928-032654">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -2701,9 +2701,11 @@
       .ag-note { order: 3; flex: 0 0 100%; margin-top: 4px; }
     }
     @media (max-width: 767.98px) {
-      /* スマホでは「繰り返し」をボタンの行ではなく、タイトルの行の右端に出す */
+      /* スマホでは「繰り返し」をボタンの行ではなく、カードの右上の角にアイコンだけで出す（「次のゼミ」などが並んでも落ちないように） */
       .ag-actions .ag-series { display: none; }
-      .ag-repeat { display: inline-flex; }
+      .ag-repeat { display: inline-flex; position: absolute; top: 14px; right: 12px; margin: 0; font-size: 12px; }
+      .ag-repeat-text { display: none; }
+      .ag-item.has-repeat .ag-top { padding-right: 20px; }
       .ag-day { gap: 10px; }
       .ag-date-col { flex-basis: 46px; }
       .ag-date { width: 46px; }
@@ -3063,6 +3065,13 @@
     .poll-options-head { display: flex; justify-content: space-between; align-items: center; margin: 14px 0 6px; font-size: 13px; font-weight: 700; color: #55626a; }
     .poll-option-list { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
     .poll-option-item { display: flex; align-items: center; gap: 6px; padding: 8px 6px 8px 12px; border: 1px solid #e7e3dc; border-radius: 10px; background: #fff; }
+    /* 回ごとに場所を指定：候補の 2 行目に場所の入力 */
+    .poll-option-item.has-place { flex-wrap: wrap; }
+    .poll-answer-place { display: flex; align-items: center; gap: 4px; margin-top: 1px; font-size: 12px; color: var(--text-light); overflow-wrap: anywhere; }
+    .poll-answer-place i { font-size: 10.5px; color: #8a96a0; }
+    .poll-option-item .poll-option-place { flex: 1 1 100%; order: 9; min-height: 36px; padding: 6px 10px; font-size: 14px; margin-right: 6px; }
+    .poll-place-group .set-row { margin: 0; }
+    .poll-place-group #pollOptionPlaceInput { margin-top: 8px; }
     /* 担当を決める：種類・人数 */
     .poll-mode-row { display: flex; align-items: center; gap: 6px; }
     .poll-mode-row .seg-tabs { flex: 1; margin: 0; }
@@ -3458,7 +3467,6 @@
     /* 送り先 */
     .dest-list { display: flex; flex-direction: column; gap: 10px; }
     .dest-row { border: 1.5px solid var(--border); border-radius: 14px; padding: 12px; background: var(--card); }
-    .dest-row.is-main { border-color: #cfe4eb; background: linear-gradient(180deg, #f3fafc, #fff 70%); }
     .dest-head { display: flex; align-items: flex-start; gap: 10px; }
     .dest-name-wrap { flex: 1; min-width: 0; }
     .dest-name { font-weight: 700; font-size: 14px; }
@@ -3484,8 +3492,8 @@
     .dest-input .form-input { flex: 1; min-width: 0; font-size: 13px; padding: 9px 10px; }
     .dest-input .btn { flex: 0 0 auto; white-space: nowrap; }
     .dest-note { margin: 8px 2px 0; }
-    .dest-more, .howto { margin-top: 12px; border-top: 1px dashed var(--border); padding-top: 10px; }
-    .dest-more > summary, .howto > summary {
+    .howto { margin-top: 12px; border-top: 1px dashed var(--border); padding-top: 10px; }
+    .howto > summary {
       cursor: pointer;
       font-size: 13px;
       font-weight: 700;
@@ -3495,15 +3503,15 @@
       align-items: center;
       gap: 6px;
     }
-    .dest-more > summary::-webkit-details-marker, .howto > summary::-webkit-details-marker { display: none; }
+    .howto > summary::-webkit-details-marker { display: none; }
     /* 折りたたみの見出しは、どれも右端の ∨ が開くと ∧ に回る形にそろえる */
-    .dest-more > summary, .howto > summary, .sc-stats > summary, .day-status > summary, .tpl-item > summary, .help-box > summary {
+    .howto > summary, .sc-stats > summary, .day-status > summary, .tpl-item > summary, .help-box > summary {
       display: flex;
       align-items: center;
       gap: 6px;
       user-select: none;
     }
-    .dest-more > summary::after, .howto > summary::after, .sc-stats > summary::after, .day-status > summary::after, .tpl-item > summary::after, .help-box > summary::after {
+    .howto > summary::after, .sc-stats > summary::after, .day-status > summary::after, .tpl-item > summary::after, .help-box > summary::after {
       content: '\f078';
       font-family: 'Font Awesome 6 Free';
       font-weight: 900;
@@ -3513,12 +3521,11 @@
       padding-left: 8px;
       transition: transform 0.2s;
     }
-    .dest-more[open] > summary::after, .howto[open] > summary::after, .sc-stats[open] > summary::after,
+    .howto[open] > summary::after, .sc-stats[open] > summary::after,
     .day-status[open] > summary::after, .tpl-item[open] > summary::after, .help-box[open] > summary::after { transform: rotate(180deg); }
     .sc-stats > summary, .day-status > summary, .tpl-item > summary { min-height: 32px; }
-    .dest-more > summary:focus-visible, .howto > summary:focus-visible, .sc-stats > summary:focus-visible,
+    .howto > summary:focus-visible, .sc-stats > summary:focus-visible,
     .day-status > summary:focus-visible, .tpl-item > summary:focus-visible, .help-box > summary:focus-visible { outline: 2px solid var(--primary-dark); outline-offset: 2px; border-radius: 6px; }
-    .dest-more .dest-list { margin-top: 10px; }
     /* 通知ごとの送信先（種類の枠の中） */
     .dest-sub { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; }
     .dest-sub > summary {
@@ -3993,8 +4000,9 @@
     .ms-num b { font-size: 20px; color: var(--primary-dark); margin-right: 2px; }
     .ms-bar { height: 8px; border-radius: 999px; background: #e3ecef; overflow: hidden; margin: 10px 0 12px; }
     .ms-bar span { display: block; height: 100%; border-radius: 999px; background: var(--primary-dark); transition: width 0.3s; }
-    .ms-actions { display: flex; gap: 8px; }
-    .ms-actions .btn { flex: 1 1 0; white-space: nowrap; }
+    /* スマホはボタンが 3 つあると窮屈なので 2 段に折り返す */
+    .ms-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .ms-actions .btn { flex: 1 1 calc(50% - 4px); white-space: nowrap; }
     .seg-count.muted { background: #b8c7cd; }
     .mem-group { margin-bottom: 10px; }
     .mem-group-head { display: flex; align-items: baseline; gap: 6px; padding: 8px 2px 4px; font-size: 12.5px; font-weight: 700; color: var(--text-light); }
@@ -4716,11 +4724,26 @@
   </style>
   <!-- 立ち上げ画面：ログイン済みで開いたときだけ、本体のプログラムを読む前から出す -->
   <style>
-    #bootSplash { display: none; position: fixed; inset: 0; z-index: 20000; background: #5b9bad; align-items: center; justify-content: center; }
+    #bootSplash { display: none; position: fixed; inset: 0; z-index: 20000; background: #5b9bad; flex-direction: column; align-items: center; justify-content: center; }
+    /* マークの下のひとこと（1 文字ずつ出て、最後に ▼ がゆっくり点滅する） */
+    /* 1 行で出す（改行しない）。小さい画面では文字を少し小さく */
+    #bootSplash .bs-say { margin-top: 30px; min-height: 22px; max-width: 94vw; padding: 0 12px; color: rgba(255, 255, 255, .95); font-size: min(15px, 3.9vw); font-weight: 700; letter-spacing: .01em; line-height: 1.6; text-align: center; white-space: nowrap; overflow: hidden; transition: opacity .2s ease; font-family: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', 'BIZ UDPGothic', 'Yu Gothic UI', sans-serif; }
+    #bootSplash .bs-say.out { opacity: 0; }
+    #bootSplash .bs-caret { display: inline-block; margin-left: 6px; font-size: 9px; vertical-align: 2px; opacity: 0; }
+    #bootSplash .bs-say.done .bs-caret { animation: bsCaret 1s ease-in-out infinite; }
+    @keyframes bsCaret { 0%, 100% { opacity: .25; transform: translateY(0); } 50% { opacity: .95; transform: translateY(2px); } }
     html.boot #bootSplash { display: flex; }
     html.boot #loginScreen { display: none !important; }
     #bootSplash svg { width: 96px; height: 96px; overflow: visible; }
     #bootSplash rect, #bootSplash circle { transform-box: fill-box; transform-origin: center; }
+    #bootSplash { -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+    #bootSplash rect, #bootSplash circle, #bootSplash .bs-say { cursor: pointer; }
+    /* ひみつの部屋：下に遊び方と「もどる」 */
+    #bootSplash .bs-room { position: absolute; left: 0; right: 0; bottom: calc(28px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 0 20px; font-family: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', 'BIZ UDPGothic', 'Yu Gothic UI', sans-serif; }
+    #bootSplash .bs-tips { margin: 0; padding: 0; list-style: none; color: rgba(255, 255, 255, .85); font-size: 12.5px; font-weight: 500; line-height: 1.9; text-align: center; }
+    #bootSplash .bs-tips b { font-weight: 700; color: #fff; margin-right: 6px; }
+    #bootSplash .bs-back { appearance: none; -webkit-appearance: none; border: 1.5px solid rgba(255, 255, 255, .85); background: transparent; color: #fff; font: inherit; font-size: 14px; font-weight: 700; padding: 9px 30px; border-radius: 999px; cursor: pointer; }
+    #bootSplash .bs-back:hover { background: rgba(255, 255, 255, .12); }
   </style>
   <script>
     (function () {
@@ -4752,9 +4775,135 @@
       function markup() {
         var h = '<svg viewBox="120 120 272 272">';
         P.forEach(function (p, i) {
-          h += '<rect x="' + p[0] + '" y="' + p[1] + '" width="72" height="72" rx="20" fill="#fff" fill-opacity="' + (i === 8 ? 0.3 : 0.92) + '"' + (i === 4 ? ' style="opacity:0"' : '') + '/>';
+          h += '<rect data-i="' + i + '" x="' + p[0] + '" y="' + p[1] + '" width="72" height="72" rx="20" fill="#fff" fill-opacity="' + (i === 8 ? 0.3 : 0.92) + '"' + (i === 4 ? ' style="opacity:0"' : '') + '/>';
         });
-        return h + '<circle cx="256" cy="256" r="36" fill="#ffc857"/></svg>';
+        return h + '<circle cx="256" cy="256" r="36" fill="#ffc857"/></svg><div class="bs-say" aria-live="polite"><span class="bs-text"></span><span class="bs-caret">▼</span></div>';
+      }
+
+      // ---------- ひとこと（どうぶつの森のように 1 文字ずつ流れる） ----------
+      var LINES = [
+        'ニワトリにごはんをあげています',
+        'ヒヨコをかぞえています…',
+        'ヒヨコが1羽まいごです…',
+        'たまごをそっと温めています',
+        'ニワトリがこちらを見ています',
+        'コケコッコー！…失礼しました',
+        'ヒヨコに名前をつけています',
+        '小屋のカギをさがしています',
+        'エサの量をはかっています',
+        'ニワトリのきげんをうかがい中',
+        'ヒヨコたちが整列しています',
+        'たまごが1つ動いた気がします',
+        'ヒヨコがあくびをしました',
+        '羽が1枚まいこんできました',
+        'ほうきで小屋をおそうじ中',
+        'ちりとりが見つかりません',
+        '長ぐつをはいています',
+        '小屋のまどをふいています',
+        'カレンダーをめくっています',
+        'シフト表に色をぬっています',
+        'NGの日をそっとよけています',
+        'マスをきれいにならべています',
+        'みんなの予定をあつめています',
+        '担当をあみだくじで…冗談です',
+        '餌番のバトンをみがいています',
+        '締切をちらっと見ています',
+        'ゼミの資料をそろえています',
+        'スライドの誤字をさがしています',
+        '発表の練習をしています',
+        'プロジェクターと格闘中です',
+        'コーヒーをいれています',
+        '研究室の電気をつけています',
+        '実験ノートをひらいています',
+        'ホワイトボードを消しています',
+        '白衣のしわをのばしています',
+        'パソコンが起きるのを待っています',
+        'Wi-Fiのきげんをとり中',
+        'いまマスがころがりました',
+        '右下のマスがそわそわしています',
+        '黄色い丸がはりきっています',
+        'データを小屋からはこんでいます',
+        'もうすこしで準備できます',
+        'きょうもいい一日になりますように',
+        'むりせずいきましょう',
+        '深呼吸…すって…はいて…',
+        'すこし寄り道しています',
+        '階段を1段ずつのぼっています'
+      ];
+      function greeting() {
+        var h = new Date().getHours();
+        var hello = h >= 5 && h < 10 ? 'おはようございます' : h >= 10 && h < 17 ? 'こんにちは' : 'こんばんは';
+        var name = '';
+        try {
+          var raw = (window.sessionStorage && sessionStorage.getItem('currentUser')) || (window.localStorage && localStorage.getItem('currentUser'));
+          var u = raw ? JSON.parse(raw) : null;
+          if (u && u.name) name = String(u.name).split(/\s+/)[0];
+        } catch (e) {}
+        return hello + (name ? '、' + name + 'さん' : '');
+      }
+      // 時間帯・曜日に合わせたひとこと（あいさつの次のあたりに混ぜる）
+      function seasonLines() {
+        var d = new Date(), h = d.getHours(), w = d.getDay(), out = [];
+        if (h >= 5 && h < 10) out.push(h < 7 ? 'ニワトリはとっくに起きています' : '朝の小屋はひんやりします');
+        else if (h >= 11 && h < 14) out.push(Math.random() < .5 ? 'そろそろお昼ごはんですね' : 'ニワトリもお昼寝中です');
+        else if (h >= 17 && h < 21) out.push(Math.random() < .5 ? '夕焼けがきれいな時間ですね' : 'きょうもおつかれさまです');
+        else if (h >= 21 || h < 5) out.push(Math.random() < .5 ? 'ニワトリたちはもう眠っています' : '夜ふかしはほどほどに…');
+        if (w === 1) out.push('月曜日…ゆっくりいきましょう');
+        else if (w === 5) out.push('金曜日！あとひといき');
+        else if (w === 0 || w === 6) out.push('休みの日もおつかれさまです');
+        return out;
+      }
+      // first: 最初のひとこと。以降は一通り出し終わるまで同じ文を出さない
+      // 返り値：tap()＝途中なら一気に出す・出し終わっていれば次の文（どうぶつの森の会話と同じ）、say(文)＝その文を出す
+      function talk(first) {
+        var box = el.querySelector('.bs-say'), txt = box && box.querySelector('.bs-text');
+        if (!box) return null;
+        var bag = [], prev = '', firstBag = true;
+        var next = function () {
+          // まれに出るレアな文
+          if (Math.random() < 1 / 40) return 'レア！金のたまごを見つけました';
+          if (!bag.length) {
+            bag = LINES.slice().sort(function () { return Math.random() - .5; });
+            // 最初の一巡だけ、時間帯・曜日のひとことを前の方に入れる
+            if (firstBag) { seasonLines().forEach(function (l, i) { bag.splice(i * 2, 0, l); }); firstBag = false; }
+            if (bag[0] === prev) bag.push(bag.shift());
+          }
+          return (prev = bag.shift());
+        };
+        var line = '', i = 0, typing = false, token = 0;
+        var hold = function (tk) {
+          later(1500, function () {
+            if (tk !== token) return;
+            box.classList.add('out');
+            later(220, function () { if (tk === token) say(next()); });
+          });
+        };
+        var type = function (tk) {
+          if (tk !== token) return;
+          if (i >= line.length) { typing = false; box.classList.add('done'); hold(tk); return; }
+          var ch = line.charAt(i++);
+          txt.textContent += ch;
+          later(/[、。…！？]/.test(ch) ? 190 : 55, function () { type(tk); });
+        };
+        var say = function (l) {
+          token++;
+          line = l; i = 0; typing = true;
+          box.classList.remove('done', 'out');
+          txt.textContent = '';
+          if (!canAnim) { txt.textContent = l; i = l.length; typing = false; box.classList.add('done'); return; }
+          type(token);
+        };
+        say(first || greeting());
+        return {
+          tap: function () {
+            if (!typing) { say(next()); return; }
+            token++;
+            txt.textContent = line; i = line.length; typing = false;
+            box.classList.add('done');
+            hold(token);
+          },
+          say: say
+        };
       }
       function later(ms, fn) {
         var g = st.gen;
@@ -4788,7 +4937,21 @@
         if (el.getAnimations) el.getAnimations().forEach(function (a) { a.cancel(); });
         el.innerHTML = markup();
         root.classList.add('boot');
-        later(MAX_MS, function () { finish(true); });
+        st.play = !!opts.play;
+        if (st.play) {
+          el.insertAdjacentHTML('beforeend', '<div class="bs-room">' +
+            '<ul class="bs-tips">' +
+            '<li><b>文字をタップ</b>次のひとこと</li>' +
+            '<li><b>マスや丸をタップ</b>いろいろ反応します</li>' +
+            '<li><b>四隅を時計回りにタップ</b>…ひみつ</li>' +
+            '</ul>' +
+            '<button type="button" class="bs-back">もどる</button>' +
+            '</div>');
+        }
+        st.taps = [];
+        st.fx = null;
+        if (!st.play) later(MAX_MS, function () { finish(true); });
+        st.talker = talk(opts.say);
         if (!canAnim) return Promise.resolve();
         var svg = el.firstChild, ts = [].slice.call(svg.querySelectorAll('rect')), dot = svg.querySelector('circle'), last = ts[8];
         var dotHop = function (h, delay) {
@@ -4821,6 +4984,7 @@
           stretch: function () { pivot('50% 100%', A(last, [{ transform: 'scale(1,1)' }, { transform: 'scale(1.1,.86)', offset: .2 }, { transform: 'scale(.8,1.45)', offset: .5 }, { transform: 'scale(.82,1.42)', offset: .62 }, { transform: 'scale(1.12,.88)', offset: .82 }, { transform: 'scale(1,1)' }], { duration: 1100, easing: 'ease-in-out' })); }
         };
         // くじ引き：一通り出し終わるまで同じ動きは出さない（続けて同じ動きにもしない）
+        st.fx = { acts: acts, ts: ts, dot: dot, last: last, dotHop: dotHop };
         var names = Object.keys(acts), bag = [], prev = '';
         var idle = function () {
           if (!bag.length) {
@@ -4878,12 +5042,15 @@
         // ヘッダーの形まで縮んだら、薄く消えてヘッダーの文字を見せる
         el.animate([{ clipPath: 'inset(0 0 0 0)', opacity: 1, offset: 0 }, { clipPath: 'inset(0 0 calc(100% - ' + hb + 'px) 0)', opacity: 1, offset: .78 }, { clipPath: 'inset(0 0 calc(100% - ' + hb + 'px) 0)', opacity: 0, offset: 1 }], { duration: 620, easing: IO, fill: 'forwards' }).onfinish = end;
         if (el.firstChild) el.firstChild.animate([{ transform: 'none', opacity: 1 }, { transform: 'translateY(-30vh) scale(.3)', opacity: 0 }], { duration: 400, easing: IO, fill: 'forwards' });
+        [].slice.call(el.querySelectorAll('.bs-say, .bs-room')).forEach(function (n) { n.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, fill: 'forwards' }); });
       }
 
       window.bootSplash = {
         active: function () { return st.on; },
         // ログインした直後・画面の切り替えで出す（{ drop: true } でヘッダーから下りてくる。覆い終わったら解決する Promise を返す）
         show: function (opts) { return st.on ? Promise.resolve() : start(false, opts); },
+        // ひみつの部屋（ヘッダーのマークを 5 回タップ）：自動では閉じない。「もどる」（または Esc キー）で閉じる
+        play: function () { if (!st.on) start(false, { drop: true, play: true, say: 'ようこそ、ひみつの部屋へ' }); },
         // 最初の画面の準備ができたら呼ぶ（短すぎると転がり込みが見えないので、最低 1 秒は見せる）
         done: function (opts) {
           if (!st.on) return;
@@ -4892,6 +5059,52 @@
           if (wait) later(wait, function () { finish(false); }); else finish(fast);
         }
       };
+      // ---------- 隠しコマンド ----------
+      var DOT_LINES = ['くすぐったいです…', 'ぽよん', 'そこはまんなかです', 'たまごではありません', 'はい、黄色い丸です'];
+      var LAST_LINES = ['ぴょん！', 'よんだ？', 'いつでもころがれます', 'すみっこがすきです'];
+      var CORNERS = [0, 2, 8, 6]; // 四隅を時計回り（左上 → 右上 → 右下 → 左下）
+      var pick = function (a) { return a[Math.floor(Math.random() * a.length)]; };
+      el.addEventListener('click', function (e) {
+        if (!st.on) return;
+        var t = e.target;
+        var fx = st.fx;
+        if (t.closest && t.closest('.bs-back')) { finish(false); return; }
+        if (t.closest && t.closest('.bs-say')) { if (st.talker) st.talker.tap(); return; }
+        if (t.tagName === 'circle') {
+          st.dotTaps = (st.dotTaps || []).filter(function (x) { return Date.now() - x < 4000; }).concat([Date.now()]);
+          if (fx) fx.dotHop(24, 0);
+          if (st.talker) st.talker.say(st.dotTaps.length >= 8 ? 'もうかんべんしてください…' : pick(DOT_LINES));
+          return;
+        }
+        if (t.tagName === 'rect') {
+          var i = +t.getAttribute('data-i');
+          // 四隅を時計回りに押したら、ひみつのコマンド
+          st.taps = (st.taps || []).concat([i]).slice(-4);
+          if (st.taps.join(',') === CORNERS.join(',')) {
+            st.taps = [];
+            if (fx) {
+              fx.ts.forEach(function (r, j) { if (j !== 4) A(r, [{ transform: 'rotate(0) scale(1)' }, { transform: 'rotate(180deg) scale(.8)' }, { transform: 'rotate(360deg) scale(1)' }], { duration: 760, delay: j * 60, easing: 'ease-in-out' }); });
+              A(fx.dot, [{ fill: '#ffc857', transform: 'scale(1)' }, { fill: '#fff1b8', transform: 'scale(1.35)' }, { fill: '#ffc857', transform: 'scale(1)' }], { duration: 900, delay: 500, easing: 'ease-in-out' });
+            }
+            if (st.talker) st.talker.say('ひみつのコマンド成功です！');
+            return;
+          }
+          if (!fx) return;
+          if (i === 8) { fx.acts.hop(); if (st.talker) st.talker.say(pick(LAST_LINES)); }
+          else A(t, [{ transform: 'scale(1)' }, { transform: 'scale(.82,1.12)' }, { transform: 'scale(1.08,.94)' }, { transform: 'scale(1)' }], { duration: 380 });
+          return;
+        }
+      });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && st.on && st.play) finish(false); });
+      // ヘッダーのマークを 3 秒以内に 5 回タップすると、ひみつの部屋が開く
+      var markTaps = [];
+      document.addEventListener('click', function (e) {
+        if (!e.target || !e.target.closest || !e.target.closest('.app-mark')) return;
+        var now = Date.now();
+        markTaps = markTaps.filter(function (x) { return now - x < 3000; }).concat([now]);
+        if (markTaps.length >= 5) { markTaps = []; window.bootSplash.play(); }
+      });
+
       if (root.classList.contains('boot')) {
         var resume = false;
         try { resume = sessionStorage.getItem('splashResume') === '1'; sessionStorage.removeItem('splashResume'); } catch (e) {}
@@ -5117,7 +5330,7 @@
               <button type="button" class="info-tip" data-tip="名前を押すと別の日へ移動・入れ替え、「餌番」「掃除」を押すとその日の担当をまとめて変更できます" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button>
             </div>
             <div id="scWarnings"></div>
-            <details id="draftEditStatsPanel" class="sc-stats">
+            <details id="draftEditStatsPanel" class="sc-stats" data-remember="draft-stats">
               <summary><i class="fa-solid fa-chart-bar"></i> メンバーごとの担当数</summary>
               <div id="draftEditStatsContent"></div>
             </details>
@@ -5166,7 +5379,7 @@
     <div id="admin-members" class="content-area">
       <div class="card">
         <div class="card-title" style="display: flex; align-items: center; justify-content: space-between;">
-          <span><i class="fa-solid fa-list-check"></i> 提出状況<button type="button" class="info-tip" data-tip="名前を押すと学年・班・担当回数の上限などを編集できます。スイッチは「稼働」（オフの人はシフトの対象外）" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></span>
+          <span><i class="fa-solid fa-list-check"></i> 提出状況<button type="button" class="info-tip" data-tip="名前を押すと学年・班・担当回数の上限などを編集できます。スイッチは「シフト参加」（オフの人は餌番・掃除の対象外で、NG日の提出も不要）" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></span>
           <span class="card-title-actions">
             <button type="button" class="btn btn-primary btn-xs" onclick="openAddMember()"><i class="fa-solid fa-plus"></i> 追加</button>
             <button class="btn btn-outline" onclick="loadAdminData()" style="padding: 4px 8px; font-size: 11px; min-width: auto;" title="再読み込み" aria-label="再読み込み">
@@ -5182,7 +5395,7 @@
           <button type="button" class="seg-tab" data-f="done" onclick="setMemberFilter('done')">提出済<span class="seg-count muted" id="memberDoneCount"></span></button>
         </div>
         <div id="memberList"></div>
-        <details id="memberDayStatusSection" class="day-status" style="display: none;">
+        <details id="memberDayStatusSection" class="day-status" data-remember="day-status" style="display: none;">
           <summary><i class="fa-solid fa-chart-simple"></i> 日ごとの状況</summary>
           <div id="memberDayStatusList"></div>
         </details>
@@ -5394,7 +5607,7 @@
       </div>
       <!-- Teams: 送信先・自動通知・ゼミ通知 -->
       <div class="card" data-stab="teams" id="teamsDestCard">
-        <div class="card-title"><i class="fa-solid fa-paper-plane"></i> 送信先<button type="button" class="info-tip" data-tip="通知 → 種類 → 共通の順に、入力のある送信先に送ります。どれも空の通知は送られません" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></div>
+        <div class="card-title"><i class="fa-solid fa-paper-plane"></i> 送信先<button type="button" class="info-tip" data-tip="通知ごとの送信先があればそこへ、無ければ種類の送信先へ送ります。どちらも空の通知は送られません" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></div>
         <div id="teamsDestBody"><div class="bulk-empty">読み込み中…</div></div>
       </div>
       <div class="card" data-stab="teams" id="automationCard">
@@ -6264,6 +6477,10 @@
             </div>
             <span class="need-unit">人</span>
           </div>
+          <div class="form-group poll-place-group">
+            <label class="set-row compact"><span class="set-name">回ごとに場所を指定<button type="button" class="info-tip" data-tip="候補ごとに場所を変えられます。空欄の候補は上の「場所」を使います" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></span><span class="sw"><input type="checkbox" id="pollOptionPlaces" onchange="togglePollOptionPlaces(this.checked)"><span></span></span></label>
+            <input type="text" id="pollOptionPlaceInput" class="form-input" maxlength="100" placeholder="③ 追加する候補の場所" hidden>
+          </div>
           <button type="button" class="btn btn-primary btn-block" id="pollMakeOptionsBtn" onclick="makePollOptions()">候補に追加</button>
           <div class="poll-options-head">
             <span id="pollOptionCount">候補 0 件</span>
@@ -7048,6 +7265,35 @@
         return null;
       }
     }
+
+    // ---------- 開閉の記憶：<details data-remember="キー"> は、前回の開閉をこの端末に覚えておく ----------
+    const DETAILS_OPEN_KEY_ = 'detailsOpen';
+    function detailsOpenState_() {
+      const ls = safeStorage_('localStorage');
+      try { return JSON.parse((ls && ls.getItem(DETAILS_OPEN_KEY_)) || '{}') || {}; } catch (_) { return {}; }
+    }
+    /** 前回の開閉（覚えていなければ def） */
+    function rememberedOpen_(key, def) {
+      const st = detailsOpenState_();
+      return Object.prototype.hasOwnProperty.call(st, key) ? st[key] === true : !!def;
+    }
+    /** 画面を組み立てるとき用：開いていれば ' open' */
+    function openAttr_(key, def) { return rememberedOpen_(key, def) ? ' open' : ''; }
+    // 開け閉めしたら覚える（toggle は伝わらないので、捕捉の段階で受け取る）
+    document.addEventListener('toggle', e => {
+      const d = e.target;
+      if (!d || d.tagName !== 'DETAILS' || !d.dataset || !d.dataset.remember) return;
+      const st = detailsOpenState_();
+      if (st[d.dataset.remember] === d.open) return;
+      st[d.dataset.remember] = d.open;
+      const ls = safeStorage_('localStorage');
+      try { if (ls) ls.setItem(DETAILS_OPEN_KEY_, JSON.stringify(st)); } catch (_) {}
+    }, true);
+    // ページに最初からある開閉は、読み込んだときに前回の状態に戻す
+    (function restoreStaticDetails_() {
+      const run = () => document.querySelectorAll('details[data-remember]').forEach(d => { d.open = rememberedOpen_(d.dataset.remember, d.open); });
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
+    })();
     function saveSession(user, remember) {
       const ls = safeStorage_('localStorage');
       const ss = safeStorage_('sessionStorage');
@@ -8076,7 +8322,7 @@
       document.querySelectorAll('.modal-overlay.show').forEach(o => o.classList.remove('show'));
       // ヘッダーから立ち上げ画面が下りてきて覆ってから、次の画面を用意する（準備ができたら showAppScreen の中でヘッダーに縮む）
       const go = () => { window.scrollTo(0, 0); showAppScreen(); };
-      if (window.bootSplash) bootSplash.show({ drop: true }).then(go, go); else go();
+      if (window.bootSplash) bootSplash.show({ drop: true, say: view === 'member' ? 'メンバー画面へいってきます' : '管理者画面へもどります' }).then(go, go); else go();
     }
 
     function updateViewSwitch_() {
@@ -8157,7 +8403,7 @@
         document.body.setAttribute('data-user-role', 'member');
         memberTabs.style.display = 'flex';
         
-        // 稼働中の人は「シフト提出」→ 受付状況がわかるまで仮表示、稼働中でない人は「カレンダー」
+        // シフトに参加する人は「シフト提出」→ 受付状況がわかるまで仮表示、シフトに参加しない人は「カレンダー」
         const isActive = isShiftTarget_(currentUser);
         const formTab = document.querySelector('#memberTabs .tab[onclick*="member-form"]');
         const resultTab = document.querySelector('#memberTabs .tab[onclick*="member-result"]');
@@ -9294,7 +9540,7 @@
               ${canSeeDays
                 ? `<button type="button" class="mem-status ${status[0]} as-btn" onclick="showMemberOkDaysModal(${jsArg(m.name)})" title="参加可能日を見る">${status[1]}<i class="fa-solid fa-chevron-right"></i></button>`
                 : `<span class="mem-status ${status[0]}">${status[1]}</span>`}
-              <label class="sw sm" title="稼働"><input type="checkbox" ${m.isActive ? 'checked' : ''} onchange="toggleMemberActive(${m.row}, this.checked)" aria-label="${escapeForAttr(m.name)}を稼働にする"><span></span></label>
+              <label class="sw sm" title="シフト参加"><input type="checkbox" ${m.isActive ? 'checked' : ''} onchange="toggleMemberActive(${m.row}, this.checked)" aria-label="${escapeForAttr(m.name)}のシフト参加"><span></span></label>
             </div>`;
           }).join('')}
           </div>
@@ -9320,10 +9566,28 @@
           <div class="ms-actions">
             <button type="button" class="btn btn-outline btn-xs" onclick="openMembersMessage('recruit')"><i class="fa-regular fa-paper-plane"></i> 募集の文面</button>
             <button type="button" class="btn btn-outline btn-xs" onclick="openMembersMessage('remind')" ${todo ? '' : 'disabled'}><i class="fa-regular fa-bell"></i> 未提出者へ連絡</button>
+            ${todo ? '<button type="button" class="btn btn-outline btn-xs" onclick="remindShiftByEmail()"><i class="fa-regular fa-envelope"></i> メールで催促</button>' : ''}
           </div>
           <button type="button" class="btn btn-primary btn-block ms-go-shift" onclick="switchTab('admin-shift-create')"><i class="fa-solid fa-wand-magic-sparkles"></i> シフトの作成・調整へ</button>
         </div>`;
     }
+    /** 管理者：シフトの未提出者に、大学のメールで催促する（同じ対象月は 1 日 1 回まで） */
+    async function remindShiftByEmail() {
+      let info;
+      try {
+        info = await callAPI('remindShiftByEmail', { adminId: currentUser.id, preview: true }, { overlayMessage: '確認しています…' });
+      } catch (_) { return; }
+      if (!info.accepting) { showToast('シフトの受付中ではありません', 'info'); return; }
+      if (!info.names.length) { showToast('未提出の人はいません', 'info'); return; }
+      if (info.sentToday) { showToast('今日はすでにメールで催促しました（1 日 1 回まで）', 'info'); return; }
+      const ok = await showConfirmModal(`未提出の ${info.names.length} 人に、大学のメールで提出をお願いしますか？\n\n${info.names.join('、')}\n\n同じ対象月には 1 日 1 回まで送れます。`, 'メールで催促');
+      if (!ok) return;
+      try {
+        const r = await callAPI('remindShiftByEmail', { adminId: currentUser.id }, { overlayMessage: '送信しています…' });
+        showToast(r.message || 'メールで催促しました', 'success');
+      } catch (_) {}
+    }
+
     function openMembersMessage(kind) {
       updateMessages();
       const recruit = (document.getElementById('recruitMessage') || {}).value || '';
@@ -9331,7 +9595,7 @@
       showMessageModal('送る文面', [{ label: '募集', text: recruit }, { label: '未提出者へ', text: remind }], kind === 'remind' ? 1 : 0);
     }
 
-    /** 餌番・掃除の対象（＝NG 日を提出する人）か。稼働中・卒業していない・豊田研以外 */
+    /** 餌番・掃除の対象（＝NG 日を提出する人）か。シフト参加・卒業していない・豊田研以外 */
     function isShiftMember_(m) {
       return !!m && !m.isGraduated && m.isActive !== false && (m.team || '') !== '豊田研';
     }
@@ -9354,7 +9618,7 @@
       }
       try {
         await callAPI('toggleMemberStatus', { adminId: currentUser.id, row: row, name: name, isActive: isActive }, { noOverlay: true });
-        showToast(`${name || 'メンバー'}を${isActive ? '稼働中' : '稼働停止'}にしました`, 'success');
+        showToast(`${name || 'メンバー'}を${isActive ? 'シフト参加' : 'シフト不参加'}にしました`, 'success');
         adminDataLoadedAt = 0;
       } catch (error) {
         if (m) {
@@ -9581,7 +9845,7 @@
               <label class="form-label" for="amSid">学籍番号<button type="button" class="info-tip" data-tip="ログインのコードは「学籍番号@mail.cc.niigata-u.ac.jp」に届きます" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></label>
               <input type="text" id="amSid" class="form-input" autocapitalize="characters" autocomplete="off" spellcheck="false">
             </div>
-            <label class="set-row compact"><span class="set-name">稼働<button type="button" class="info-tip" data-tip="オフの人は餌番・掃除の対象外" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></span><span class="sw"><input type="checkbox" id="amActive" checked><span></span></span></label>
+            <label class="set-row compact"><span class="set-name">シフト参加<button type="button" class="info-tip" data-tip="オフの人は餌番・掃除の対象外で、NG日の提出も不要" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></span><span class="sw"><input type="checkbox" id="amActive" checked><span></span></span></label>
             <label class="set-row compact"><span class="set-name">管理者</span><span class="sw"><input type="checkbox" id="amAdmin"><span></span></span></label>
           </div>
           <div class="sheet-foot">
@@ -10945,7 +11209,9 @@
 
     function pollOptionLabel(o) {
       const time = o.start ? o.start + '〜' + (o.end || '') : '終日';
-      return { date: fmtMdW(o.date), time: time };
+      // 候補ごとの場所があれば「10:00〜12:00・A棟」（回答・集計・割り当て・決定・文面のどこでも同じ形で出る）
+      const place = o.location ? String(o.location) : '';
+      return { date: fmtMdW(o.date), time: place ? time + '・' + place : time, place };
     }
     function pollDeadlineText(p) {
       if (!p.deadline) return '期限なし';
@@ -11274,11 +11540,12 @@
               ${selMode ? `<span class="poll-check ${isSel ? 'on' : ''}"><i class="fa-solid fa-check"></i></span>` : ''}
               <div class="poll-answer-when">
                 <div class="poll-answer-slot">${escapeHtml(o.start ? o.start + '〜' + (o.end || '') : '終日')}${selMode && cur ? `<span class="poll-cur ${cur}">${POLL_MARK[cur]}</span>` : ''}</div>
+                ${o.location ? `<div class="poll-answer-place"><i class="fa-solid fa-location-dot"></i>${escapeHtml(o.location)}</div>` : ''}
                 <div class="poll-answer-counts">${pollCountHtml_('yes', t.yes.length)}${allowMaybe ? `${pollCountHtml_('maybe', t.maybe.length)}` : ''}${pollCountHtml_('no', t.no.length)}</div>
                 ${note ? `<div class="poll-note-line"><i class="fa-regular fa-note-sticky"></i>${escapeHtml(note)}</div>` : ''}
               </div>
               ${selMode ? '' : `
-              <div class="poll-choice" role="radiogroup" aria-label="${escapeForAttr(fmtMdW(o.date) + ' ' + (o.start || '終日'))}">
+              <div class="poll-choice" role="radiogroup" aria-label="${escapeForAttr(fmtMdW(o.date) + ' ' + (o.start || '終日') + (o.location ? ' ' + o.location : ''))}">
                 ${choices.map(c => `<button type="button" role="radio" aria-checked="${cur === c}" class="poll-choice-btn ${c} ${cur === c ? 'on' : ''}" onclick="setPollDraft(${jsArg(o.id)}, '${c}')">${POLL_MARK[c]}</button>`).join('')}
                 <button type="button" class="poll-note-btn ${note ? 'has' : ''}" onclick="editPollNote([${jsArg(o.id)}])" aria-label="メモ"><i class="fa-regular fa-note-sticky"></i></button>
               </div>`}
@@ -11605,7 +11872,7 @@
       html += '</div>';
       return html;
     }
-    /** 割り当てに出す人（稼働中・卒業していない人。豊田研も含む） */
+    /** 割り当てに出す人（シフト参加・卒業していない人。豊田研も含む） */
     function isShiftMemberOrAny_(m) {
       return !!m && !m.isGraduated && m.isActive !== false;
     }
@@ -11857,8 +12124,13 @@
       pollEditor.id = id && src ? src.id : '';
       pollEditor.dates = [];
       pollEditor.times = [];
-      pollEditor.options = src ? src.options.map(o => ({ date: o.date, start: o.start, end: o.end, id: id ? o.id : '', need: o.need || 1 })) : [];
+      pollEditor.options = src ? src.options.map(o => ({ date: o.date, start: o.start, end: o.end, id: id ? o.id : '', need: o.need || 1, location: o.location || '' })) : [];
       pollEditor.defaultNeed = 1;
+      // 回ごとの場所：前の内容に候補ごとの場所があれば、オンで開く
+      pollEditor.optionPlaces = !!(src && src.options.some(o => o.location));
+      document.getElementById('pollOptionPlaces').checked = pollEditor.optionPlaces;
+      document.getElementById('pollOptionPlaceInput').value = '';
+      document.getElementById('pollOptionPlaceInput').hidden = !pollEditor.optionPlaces;
       pollEditor.fromSrc = !!src;
       document.getElementById('pollDefaultNeed').textContent = '1';
       // 時間の分割は毎回「1時間ごと」から
@@ -11878,8 +12150,8 @@
       document.getElementById('pollAllowOthersDecide').checked = !(src && src.settings.allowOthersDecide === false);
       document.getElementById('pollNotify').checked = true;
       document.querySelectorAll('.poll-teams-only').forEach(el => { el.style.display = pollState.teamsEnabled ? '' : 'none'; });
-      // 新規は既定で「稼働中の全員」
-      const everyone = membersList.filter(m => m.isActive !== false).map(m => m.name);
+      // 新規は既定で「全員」（卒業していない人。シフトに参加しない人・豊田研も含む）
+      const everyone = membersList.filter(m => !m.isGraduated).map(m => m.name);
       const defaultTargets = src && src.targets && src.targets.length ? src.targets : everyone;
       renderMemberPicker(document.getElementById('pollTargetsPicker'), { selected: defaultTargets });
       setPollTimeMode('time');
@@ -11991,17 +12263,28 @@
         }
       }
       let added = 0;
+      // 回ごとに場所を指定しているときは、入力中の場所で追加する（場所を変えて、続けて追加できるよう入力は残す）
+      const place = pollEditor.optionPlaces ? document.getElementById('pollOptionPlaceInput').value.trim() : '';
       pollEditor.dates.forEach(date => times.forEach(t => {
-        if (!pollEditor.options.some(o => o.date === date && o.start === t.start && o.end === t.end)) {
-          pollEditor.options.push({ date, start: t.start, end: t.end, id: '', need: pollEditor.defaultNeed || 1 });
+        if (!pollEditor.options.some(o => o.date === date && o.start === t.start && o.end === t.end && (o.location || '') === place)) {
+          pollEditor.options.push({ date, start: t.start, end: t.end, id: '', need: pollEditor.defaultNeed || 1, location: place });
           added++;
         }
       }));
-      pollEditor.options.sort((a, b) => (a.date + a.start + a.end).localeCompare(b.date + b.start + b.end));
+      pollEditor.options.sort((a, b) => (a.date + a.start + a.end + (a.location || '')).localeCompare(b.date + b.start + b.end + (b.location || '')));
       pollEditor.dates = [];
       pollEditor.times = [];
       renderPollEditorLists_();
       showToast(added ? `候補を ${added} 件追加しました` : 'すでに追加済みです', added ? 'success' : 'info');
+    }
+    function togglePollOptionPlaces(on) {
+      pollEditor.optionPlaces = !!on;
+      document.getElementById('pollOptionPlaceInput').hidden = !on;
+      renderPollEditorLists_();
+    }
+    function setPollOptionPlace(i, v) {
+      const o = pollEditor.options[i];
+      if (o) o.location = String(v || '');
     }
     function removePollOption(i) {
       pollEditor.options.splice(i, 1);
@@ -12022,11 +12305,14 @@
       document.getElementById('pollOptionList').innerHTML = pollEditor.options.length === 0
         ? '<div class="field-hint" style="padding: 8px 2px;">日付と時間を選択して「候補に追加」</div>'
         : pollEditor.options.map((o, i) => {
-          const l = pollOptionLabel(o);
+          const l = pollOptionLabel(Object.assign({}, o, { location: '' }));
+          const placeHtml = pollEditor.optionPlaces
+            ? `<input type="text" class="form-input poll-option-place" maxlength="100" value="${escapeForAttr(o.location || '')}" placeholder="場所（空欄は上の場所）" oninput="setPollOptionPlace(${i}, this.value)" aria-label="${escapeForAttr(l.date + ' ' + l.time + 'の場所')}">`
+            : '';
           const needHtml = pollEditor.mode === 'staff'
             ? `<div class="need-step sm"><button type="button" onclick="stepPollOptionNeed(${i}, -1)" aria-label="減らす"><i class="fa-solid fa-minus"></i></button><span>${o.need || 1}</span><button type="button" onclick="stepPollOptionNeed(${i}, 1)" aria-label="増やす"><i class="fa-solid fa-plus"></i></button></div><span class="need-unit">人</span>`
             : '';
-          return `<div class="poll-option-item"><span class="poll-answer-date">${escapeHtml(l.date)}</span><span class="poll-answer-time">${escapeHtml(l.time)}</span>${needHtml}<button type="button" class="g-del-btn" onclick="removePollOption(${i})" aria-label="削除">✕</button></div>`;
+          return `<div class="poll-option-item${placeHtml ? ' has-place' : ''}"><span class="poll-answer-date">${escapeHtml(l.date)}</span><span class="poll-answer-time">${escapeHtml(l.time)}</span>${needHtml}<button type="button" class="g-del-btn" onclick="removePollOption(${i})" aria-label="削除">✕</button>${placeHtml}</div>`;
         }).join('');
     }
 
@@ -12053,8 +12339,8 @@
         showToast('対象者を選択してください', 'error');
         return;
       }
-      // 稼働中の全員を選んだときは「全員」として保存（あとから入った人も対象になる）
-      const everyone = membersList.filter(m => m.isActive !== false).map(m => m.name);
+      // 全員（卒業していない人）を選んだときは「全員」として保存（あとから入った人も対象になる）
+      const everyone = membersList.filter(m => !m.isGraduated).map(m => m.name);
       const isEveryone = everyone.length === targets.length && everyone.every(n => targets.includes(n));
       const poll = {
         id: pollEditor.id || undefined,
@@ -12062,7 +12348,8 @@
         description: document.getElementById('pollDescription').value.trim(),
         location: document.getElementById('pollLocation').value.trim(),
         deadline,
-        options: pollEditor.options,
+        // 回ごとの場所をオフにしたら、候補の場所は使わない
+        options: pollEditor.optionPlaces ? pollEditor.options.map(o => Object.assign({}, o, { location: String(o.location || '').trim() })) : pollEditor.options.map(o => Object.assign({}, o, { location: '' })),
         targets: isEveryone ? [] : targets,
         settings: { allowMaybe: document.getElementById('pollAllowMaybe').checked, autoRemind: document.getElementById('pollAutoRemind').checked, allowOthersDecide: document.getElementById('pollAllowOthersDecide').checked, mode: pollEditor.mode,
           label: pollEditor.mode === 'staff' ? document.getElementById('pollLabel').value.trim() : '' }
@@ -12236,7 +12523,7 @@
       const box = document.getElementById('messageTemplateEditor');
       if (!box) return;
       box.innerHTML = MESSAGE_TEMPLATES.map((t, i) => `
-        <details class="tpl-item" ${i === 0 ? 'open' : ''}>
+        <details class="tpl-item" data-remember="tpl:${escapeForAttr(t.key)}"${openAttr_('tpl:' + t.key, false)}>
           <summary>${escapeHtml(t.title)}${messageTemplateOverrides[t.key] ? '<span class="tag" style="margin-left: 8px;">変更あり</span>' : ''}</summary>
           <div class="tpl-vars">
             ${t.vars.map(v => `<button type="button" class="mp-chip" onclick="insertTemplateVar(${i}, ${jsArg(v)})">{${escapeHtml(v)}}</button>`).join('')}
@@ -12383,39 +12670,34 @@
         : `<span class="dest-last err" title="最後の送信は失敗しました"><i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(shortStamp_(last.at))} 失敗</span>`;
     }
 
-    // 状態：設定済み（緑）／共通・種類を使用（灰）／未設定＝送られない（黄土。共通の欄は空でもよいので灰）
-    function destStateHtml_(d, commonUrl) {
-      let cls = d.key ? 'warn' : 'off';
-      let text = '未設定';
-      if (d.url) { cls = 'ok'; text = '設定済み'; }
-      else if (d.key && !d.noCommon && commonUrl) { cls = 'off'; text = '共通を使用'; }
-      return `<span class="dest-state ${cls}">${text}</span>${destLastHtml_(d.last)}`;
+    // 状態：設定済み（緑）／未設定＝送られない（黄土）
+    function destStateHtml_(d) {
+      const cls = d.url ? 'ok' : 'warn';
+      return `<span class="dest-state ${cls}">${d.url ? '設定済み' : '未設定'}</span>${destLastHtml_(d.last)}`;
     }
 
-    /** 通知ごとの状態：通知の URL → 種類の URL → 共通 */
-    function noticeStateHtml_(n, cat, commonUrl) {
+    /** 通知ごとの状態：通知の URL → 種類の URL */
+    function noticeStateHtml_(n, cat) {
       let cls = 'warn';
       let text = '未設定';
       if (n.url) { cls = 'ok'; text = '設定済み'; }
       else if (cat.url) { cls = 'off'; text = `${cat.label}を使用`; }
-      else if (!cat.noCommon && commonUrl) { cls = 'off'; text = '共通を使用'; }
       return `<span class="dest-state ${cls}">${escapeHtml(text)}</span>${destLastHtml_(n.last)}`;
     }
 
-    function destRowHtml_(d, commonUrl, isMain) {
-      const id = 'teamsUrl_' + (d.key || 'common');
-      const ph = isMain ? 'https://…' : (d.noCommon || !commonUrl ? '空欄は送信なし' : '共通を使用');
-      // 通知が 2 つ以上ある種類は、通知ごとにも送信先を指定できる
-      const notices = isMain ? [] : (teamsState.notices || []).filter(n => n.cat === d.key);
+    function destRowHtml_(d) {
+      const id = 'teamsUrl_' + d.key;
+      // 通知が 2 つ以上ある種類は、通知ごとにも送信先を指定できる（開閉は前回のまま）
+      const notices = (teamsState.notices || []).filter(n => n.cat === d.key);
       const custom = notices.filter(n => n.url).length;
       const sub = notices.length < 2 ? '' : `
-          <details class="dest-sub"${custom ? ' open' : ''}>
+          <details class="dest-sub" data-remember="teams-dest-sub:${escapeForAttr(d.key)}"${openAttr_('teams-dest-sub:' + d.key, false)}>
             <summary>通知ごとに指定${custom ? `<span class="dest-sub-count">${custom}件</span>` : ''}</summary>
             <div class="dest-sub-list">${notices.map(n => `
               <div class="dest-sub-row">
                 <div class="dest-head">
                   <div class="dest-name-wrap"><div class="dest-sub-name">${escapeHtml(n.label)}</div></div>
-                  <div class="dest-states">${noticeStateHtml_(n, d, commonUrl)}</div>
+                  <div class="dest-states">${noticeStateHtml_(n, d)}</div>
                 </div>
                 <div class="dest-input">
                   <input type="url" class="form-input" id="teamsNotice_${escapeForAttr(n.id)}" value="${escapeForAttr(n.url || '')}" placeholder="${escapeForAttr(`${d.label}を使用`)}" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="${escapeForAttr(d.label + '・' + n.label + 'の送信先')}">
@@ -12425,15 +12707,15 @@
             </div>
           </details>`;
       return `
-        <div class="dest-row${isMain ? ' is-main' : ''}">
+        <div class="dest-row">
           <div class="dest-head">
             <div class="dest-name-wrap">
               <div class="dest-name">${escapeHtml(d.label)}${d.hint ? infoTipHtml(d.hint) : ''}</div>
             </div>
-            <div class="dest-states">${destStateHtml_(d, commonUrl)}</div>
+            <div class="dest-states">${destStateHtml_(d)}</div>
           </div>
           <div class="dest-input">
-            <input type="url" class="form-input" id="${id}" value="${escapeForAttr(d.url || '')}" placeholder="${escapeForAttr(ph)}" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="${escapeForAttr(d.label + 'の送信先')}">
+            <input type="url" class="form-input" id="${id}" value="${escapeForAttr(d.url || '')}" placeholder="空欄は送信なし" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="${escapeForAttr(d.label + 'の送信先')}">
             <button type="button" class="btn btn-outline btn-xs" onclick="testTeamsDest(${jsArg(d.key)})"><i class="fa-regular fa-paper-plane"></i> テスト</button>
           </div>${sub}
         </div>`;
@@ -12444,16 +12726,10 @@
       if (!box) return;
       if (teamsState.error) { box.innerHTML = teamsErrorHtml_(); return; }
       if (!teamsState.loadedAt) { box.innerHTML = teamsLoadingHtml_; return; }
-      const main = teamsState.dests.find(d => !d.key) || { key: '', label: '共通', hint: '', url: '' };
-      const others = teamsState.dests.filter(d => d.key);
-      const anyCustom = others.some(d => d.url) || (teamsState.notices || []).some(n => n.url);
+      const dests = teamsState.dests.filter(d => d.key);
       box.innerHTML = `
-        <div class="dest-list">${destRowHtml_(main, main.url, true)}</div>
-        <details class="dest-more"${anyCustom ? ' open' : ''}>
-          <summary>通知の種類ごとに送信先を設定</summary>
-          <div class="dest-list">${others.map(d => destRowHtml_(d, main.url, false)).join('')}</div>
-        </details>
-        <details class="howto">
+        <div class="dest-list">${dests.map(d => destRowHtml_(d)).join('')}</div>
+        <details class="howto" data-remember="teams-howto"${openAttr_('teams-howto', false)}>
           <summary><i class="fa-regular fa-circle-question"></i> 送信先 URL の作成手順</summary>
           <ol>
             <li>Teams で送信先チャネルの「…」→「ワークフロー」</li>
@@ -12473,7 +12749,8 @@
     function readDestInputs_() {
       const urls = {};
       teamsState.dests.forEach(d => {
-        const el = document.getElementById('teamsUrl_' + (d.key || 'common'));
+        if (!d.key) return;
+        const el = document.getElementById('teamsUrl_' + d.key);
         if (el) urls[d.key] = el.value.trim();
       });
       return urls;
@@ -12496,7 +12773,7 @@
       const badNotice = Object.keys(noticeUrls).find(k => isBad(noticeUrls[k]));
       if (bad != null || badNotice != null) {
         showToast('送信先には https:// で始まる URL を入力してください', 'error');
-        const el = document.getElementById(bad != null ? 'teamsUrl_' + (bad || 'common') : 'teamsNotice_' + badNotice);
+        const el = document.getElementById(bad != null ? 'teamsUrl_' + bad : 'teamsNotice_' + badNotice);
         if (el) el.focus();
         return;
       }
@@ -12525,16 +12802,14 @@
       } catch (_) {}
     }
 
-    /** テスト送信：通知の URL → 種類の URL → 共通 の順に、入力中の値で送る */
+    /** テスト送信：通知の URL → 種類の URL の順に、入力中の値で送る */
     async function testTeamsDest(key, noticeId) {
       const urls = readDestInputs_();
-      const d = teamsState.dests.find(x => x.key === key) || {};
       let url = noticeId ? (readNoticeInputs_()[noticeId] || '') : '';
       if (!url) url = urls[key] || '';
-      if (!url && key && !d.noCommon) url = urls[''] || '';
       if (!url) {
         showToast('URL を入力してください', 'error');
-        const el = document.getElementById(noticeId ? 'teamsNotice_' + noticeId : 'teamsUrl_' + (key || 'common'));
+        const el = document.getElementById(noticeId ? 'teamsNotice_' + noticeId : 'teamsUrl_' + key);
         if (el) el.focus();
         return;
       }
@@ -12570,7 +12845,7 @@
                 <div class="auto-name">${escapeHtml(a.label)}</div>
                 <div class="auto-when">${escapeHtml(a.when)}</div>
               </div>
-              <span class="dest-state ${a.on === false ? 'err' : a.on ? 'ok' : 'off'}">${a.on === false ? '停止中' : a.on ? '稼働中' : '—'}</span>
+              <span class="dest-state ${a.on === false ? 'err' : a.on ? 'ok' : 'off'}">${a.on === false ? '停止中' : a.on ? '有効' : '—'}</span>
             </div>`).join('')}
         </div>
         ${anyOff
@@ -13551,13 +13826,13 @@
         return {
           date: s.date,
           html: `
-          <div class="ag-item ${isNone ? 'is-none' : ''} ${s === nextSem ? 'is-next' : ''} ${isMine ? 'is-mine' : ''}" style="${agendaColorVars_(color)}">
+          <div class="ag-item ${isNone ? 'is-none' : ''} ${s === nextSem ? 'is-next' : ''} ${isMine ? 'is-mine' : ''} ${s.seriesId ? 'has-repeat' : ''}" style="${agendaColorVars_(color)}">
             <div class="ag-top">
               ${time ? `<span class="ag-time">${escapeHtml(time)}</span>` : ''}
               <span class="ag-title">${escapeHtml(s.type || 'ゼミ')}</span>
               ${s === nextSem ? '<span class="ag-badge next">次のゼミ</span>' : ''}
               ${isMine ? '<span class="ag-badge me">自分の発表</span>' : ''}
-              ${s.seriesId ? '<span class="ag-repeat" title="一括追加したゼミ"><i class="fa-solid fa-repeat"></i>繰り返し</span>' : ''}
+              ${s.seriesId ? '<span class="ag-repeat" title="繰り返し（一括追加したゼミ）" aria-label="繰り返し"><i class="fa-solid fa-repeat"></i><span class="ag-repeat-text">繰り返し</span></span>' : ''}
             </div>
             ${!isNone && s.location ? `<div class="ag-meta ag-loc"><i class="fa-solid fa-location-dot"></i><span>${escapeHtml(s.location)}</span></div>` : ''}
             ${!isNone && s.presenters && s.presenters.length ? `<div class="ag-meta ag-names"><i class="fa-solid fa-person-chalkboard"></i><span>${agendaNamesHtml_(s.presenters, myName)}</span></div>` : ''}
@@ -14881,7 +15156,7 @@
         const fromCache = !!(opts.cachedResult && !opts.fresh);
         formDataStale_ = fromCache;
         if (fromCache) formDataStaleSig_ = formStructureSig_(result);
-        // 稼働状態・班がスプレッドシート側で変わっていたら反映（ログインし直さなくてよいように）
+        // シフト参加・班がスプレッドシート側で変わっていたら反映（ログインし直さなくてよいように）
         if (result.me && currentUser) {
           const changed = currentUser.isActive !== (result.me.isActive === true) || (currentUser.team || '') !== (result.me.team || '');
           currentUser.isActive = result.me.isActive === true;
@@ -14978,11 +15253,11 @@
           const formContent = document.getElementById('memberFormContent');
           const isActive = isShiftTarget_(currentUser);
           
-          // 稼働中ではない人は、シフト回答受付中に関わらず、常にシフト提出タブを非表示
+          // シフトに参加しない人は、シフト回答受付中に関わらず、常にシフト提出タブを非表示
           const shouldShowFormTab = isActive && isShiftAnswerAccepting;
           
           // デバッグ情報を画面に表示（一時的）
-          const debugInfo = `設定値: ${shiftAnswerAcceptingValue} (型: ${typeof shiftAnswerAcceptingValue}), 受付中: ${isShiftAnswerAccepting}, 稼働中: ${isActive}, 表示: ${shouldShowFormTab}`;
+          const debugInfo = `設定値: ${shiftAnswerAcceptingValue} (型: ${typeof shiftAnswerAcceptingValue}), 受付中: ${isShiftAnswerAccepting}, シフト参加: ${isActive}, 表示: ${shouldShowFormTab}`;
           console.log('シフト回答受付状態チェック:', debugInfo);
           
           // 読み込み中に管理者画面へ戻っていたら、メンバーのタブ・画面には触らない。
@@ -15067,7 +15342,7 @@
           updateMemberTabWidths();
         } else {
           console.warn('result.configが存在しません');
-          // デバッグ用：設定が取得できない場合でも、稼働中の人はシフト提出タブを表示してみる
+          // デバッグ用：設定が取得できない場合でも、シフトに参加する人はシフト提出タブを表示してみる
           const isActive = isShiftTarget_(currentUser);
           if (isActive && currentUser.role === 'member' && !opts.background) {
             const formTab = document.querySelector('#memberTabs .tab[onclick*="member-form"]');
@@ -15087,7 +15362,7 @@
           renderShiftStatus_();
         }
         
-        // エラー時でも、稼働中ではない人はシフト提出タブを非表示にする
+        // エラー時でも、シフトに参加しない人はシフト提出タブを非表示にする
         const isActive = isShiftTarget_(currentUser);
         if (!isActive) {
           const formTab = document.querySelector('#memberTabs .tab[onclick*="member-form"]');
@@ -15928,6 +16203,7 @@
             <div class="sc-todo-names">${todo.map(m => `<span>${escapeHtml(m.name)}</span>`).join('')}</div>
             <div class="sc-side-acts">
               <button type="button" class="btn btn-outline btn-xs" onclick="openMembersMessage('remind')"><i class="fa-regular fa-bell"></i> 未提出者へ連絡</button>
+              <button type="button" class="btn btn-outline btn-xs" onclick="remindShiftByEmail()"><i class="fa-regular fa-envelope"></i> メールで催促</button>
               <button type="button" class="btn btn-outline btn-xs" onclick="switchTab('admin-members')"><i class="fa-solid fa-users"></i> メンバー</button>
             </div>`
           : '<div class="sc-ok"><i class="fa-solid fa-circle-check"></i> 全員提出済み</div>'}
@@ -17475,7 +17751,7 @@
         return '';
       };
       const current = opts.current || [];
-      // 餌番・掃除に入れるのは稼働中・卒業していない人（豊田研は対象外）
+      // 餌番・掃除に入れるのはシフト参加・卒業していない人（豊田研は対象外）
       const eligible = members.filter(m => m.isActive && !m.isGraduated && m.team !== '豊田研');
       const known = new Set(eligible.map(m => m.name));
       const list = eligible.concat(current.filter(n => !known.has(n)).map(n => ({ name: n, grade: 'その他' })));
