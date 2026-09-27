@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
-  <meta name="app-build" content="20260927-054926">
+  <meta name="app-build" content="20260928-004252">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -875,6 +875,10 @@
       aspect-ratio: 1;
       min-height: auto;
     }
+    /* 日ごとの境目を薄く見せる（色が付いていない日もマスが分かるように）。NG を選んだ日はその色のまま */
+    #member-form .cal-day:not(.empty):not(.selected-full):not(.selected-feed-ng) { border: 1px solid #e9e2d7; }
+    #member-form .cal-day.is-sun:not(.empty):not(.selected-full):not(.selected-feed-ng),
+    #member-form .cal-day.is-holiday:not(.empty):not(.selected-full):not(.selected-feed-ng) { border-color: #f3d9d9; }
     
     #member-form .day-num {
       font-size: 16px;
@@ -2631,7 +2635,12 @@
       color: #55626a;
     }
     .ag-meta i { flex: 0 0 14px; text-align: center; font-size: 12px; color: var(--ev); }
-    .ag-meta span { min-width: 0; word-break: break-word; }
+    /* 折り返しは入りきらない長い語だけ（word-break: break-word だと、iPad の Safari で 1〜2 文字の幅まで縮められる） */
+    .ag-meta span { min-width: 0; overflow-wrap: break-word; }
+    /* 場所・期間・飼料などの短い項目は縮めない（入りきらなければ項目ごと次の行へ）。
+       名前は約 18 文字分より細くせず、入りきらなければ次の行へ */
+    .ag-meta.ag-loc, .ag-meta.ag-fix { flex-shrink: 0; max-width: 100%; }
+    .ag-meta.ag-names { min-width: min(100%, 18em); }
     .ag-me { color: var(--me); font-weight: 700; }
     .ag-sep { color: #b0b7bb; }
     .ag-note {
@@ -2683,8 +2692,10 @@
       .ag-item { display: flex; flex-wrap: wrap; align-items: center; align-content: center; gap: 4px 22px; padding: 10px 14px 10px 16px; }
       /* その日の予定が 1 件なら、カードを日付タイル（＋「3日後」）と同じ高さにそろえる */
       .ag-items > .ag-item:only-child { flex: 1 1 auto; }
-      .ag-top { flex: 0 1 auto; min-width: 0; }
+      .ag-top { flex: 0 1 auto; min-width: min(100%, 12em); }
       .ag-meta { order: 1; margin-top: 0; }
+      /* 短い項目は 1 行で（iPad などの WebKit は文字の幅を数 px 狭く見積もり、幅が足りていても 2 行に分けるため） */
+      .ag-meta.ag-loc span, .ag-meta.ag-fix span { white-space: nowrap; }
       .ag-actions { order: 2; flex: 0 0 auto; margin: -4px -8px -4px auto; }
       .ag-actions .ag-series { margin-right: 10px; }
       .ag-note { order: 3; flex: 0 0 100%; margin-top: 4px; }
@@ -4010,26 +4021,36 @@
     .day-status > summary::-webkit-details-marker { display: none; }
     .day-status #memberDayStatusList { margin-top: 8px; max-height: 280px; overflow-y: auto; font-size: 12px; }
     /* 日ごとの状況（メンバー画面） */
-    .day-status #memberDayStatusList { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); column-gap: 24px; max-height: 360px; }
-    .ds-row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 4px; border: none; border-bottom: 1px solid var(--border); background: transparent; font: inherit; text-align: left; cursor: pointer; color: inherit; }
+    .day-status #memberDayStatusList { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); column-gap: 24px; max-height: 360px; overflow-x: hidden; }
+    /* 1 日＝2 段（日付｜上に棒グラフ・下に名前付きの人数） */
+    .ds-row { display: grid; grid-template-columns: 64px minmax(0, 1fr); column-gap: 10px; row-gap: 5px; align-items: center; width: 100%; padding: 9px 4px; border: none; border-bottom: 1px solid var(--border); background: transparent; font: inherit; text-align: left; cursor: pointer; color: inherit; }
+    .ds-row .ds-date { grid-row: 1 / span 2; }
     .ds-row:hover { background: #f6fafb; }
-    .ds-date { flex: 0 0 58px; display: inline-flex; align-items: baseline; gap: 4px; font-size: 11.5px; color: var(--text-light); }
+    .ds-date { flex: 0 0 64px; display: inline-flex; align-items: baseline; gap: 4px; font-size: 11.5px; color: var(--text-light); white-space: nowrap; }
+    .ds-date i { font-size: 10px; color: #3f9a63; }
     .ds-date b { font-size: 14px; color: #2c3a40; font-variant-numeric: tabular-nums; }
     .ds-date.sun b { color: #c83f3f; }
     .ds-date.sat b { color: #2f6fb5; }
-    .ds-bar { flex: 1 1 auto; min-width: 40px; height: 6px; border-radius: 999px; background: #e9eef0; overflow: hidden; display: flex; }
+    .ds-bar { width: 100%; height: 6px; border-radius: 999px; background: #e9eef0; overflow: hidden; display: flex; }
     .ds-bar .ok { background: #3f9b6b; }
+    .ds-bar .feed { background: #e08a3c; }
     .ds-bar .ng { background: #d9534f; }
-    .ds-nums { flex: 0 0 auto; display: inline-flex; gap: 8px; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
-    .ds-nums .ok { color: #2f7d52; }
-    .ds-nums .ng { color: #b8404a; }
-    .ds-nums .un { color: #97a3aa; }
+    /* 名前付きの人数（餌番 NG は掃除の日だけ）。0 人は薄く */
+    .ds-nums { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 12px; color: var(--text-light); }
+    .ds-nums span { display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap; }
+    .ds-nums b { font-size: 13px; font-variant-numeric: tabular-nums; }
+    .ds-nums .ok b { color: #2f7d52; }
+    .ds-nums .feed b { color: #b86a1f; }
+    .ds-nums .ng b { color: #b8404a; }
+    .ds-nums .un b { color: #7f8d93; }
+    .ds-nums .zero { opacity: 0.45; }
     #admin-members .ds-row { width: 100%; margin: 0; }
     .dd-group + .dd-group { margin-top: 14px; }
     .dd-group-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-size: 12.5px; color: var(--text-light); }
     .dd-group-names { display: flex; flex-wrap: wrap; gap: 5px; }
     .dd-group-names span:not(.dd-none) { font-size: 13px; padding: 3px 10px; border-radius: 999px; background: #f4f7f8; color: #2c3a40; }
     .dd-group.todo .dd-group-names span:not(.dd-none) { background: #fff; border: 1px dashed #7f8d93; padding: 2px 9px; }
+    .mem-status.feed { color: #9a5a1f; background: #fdf1e6; }
     .sc-todo-names span { border: 1px dashed #7f8d93; }
     .card-title-actions { display: inline-flex; align-items: center; gap: 6px; }
     .mem-login { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 2px 2px 4px; }
@@ -4693,8 +4714,191 @@
     .sw-scope { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
     .sw-scope-label { font-size: 12.5px; color: var(--text-light); white-space: nowrap; }
   </style>
+  <!-- 立ち上げ画面：ログイン済みで開いたときだけ、本体のプログラムを読む前から出す -->
+  <style>
+    #bootSplash { display: none; position: fixed; inset: 0; z-index: 20000; background: #5b9bad; align-items: center; justify-content: center; }
+    html.boot #bootSplash { display: flex; }
+    html.boot #loginScreen { display: none !important; }
+    #bootSplash svg { width: 96px; height: 96px; overflow: visible; }
+    #bootSplash rect, #bootSplash circle { transform-box: fill-box; transform-origin: center; }
+  </style>
+  <script>
+    (function () {
+      try {
+        if (/[?&]login=/.test(location.search)) return; // メールのリンクから開いたときは、ログインの画面を先に
+        var raw = (window.sessionStorage && sessionStorage.getItem('currentUser')) || (window.localStorage && localStorage.getItem('currentUser'));
+        var u = raw ? JSON.parse(raw) : null;
+        if (u && u.token && !u.emergency) document.documentElement.classList.add('boot');
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
+  <!-- 立ち上げ画面（マークの右下の 1 枚が転がって来てぶつかり、待つ間はランダムに動く。読み込みが済んだらヘッダーに縮む） -->
+  <div id="bootSplash" aria-hidden="true"></div>
+  <script>
+    (function () {
+      var el = document.getElementById('bootSplash');
+      if (!el) return;
+      var root = document.documentElement;
+      var P = [[126,126],[220,126],[314,126],[126,220],[220,220],[314,220],[126,314],[220,314],[314,314]];
+      var W = 94, OV = 'cubic-bezier(.34,1.56,.64,1)', IO = 'cubic-bezier(.65,0,.35,1)';
+      var MIN_MS = 1000, MAX_MS = 15000, IDLE_MS = 1900;
+      var st = { on: false, gen: 0, t0: 0, min: MIN_MS, timers: [] };
+      var reduce = false;
+      try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+      var canAnim = typeof el.animate === 'function' && !reduce;
+
+      function markup() {
+        var h = '<svg viewBox="120 120 272 272">';
+        P.forEach(function (p, i) {
+          h += '<rect x="' + p[0] + '" y="' + p[1] + '" width="72" height="72" rx="20" fill="#fff" fill-opacity="' + (i === 8 ? 0.3 : 0.92) + '"' + (i === 4 ? ' style="opacity:0"' : '') + '/>';
+        });
+        return h + '<circle cx="256" cy="256" r="36" fill="#ffc857"/></svg>';
+      }
+      function later(ms, fn) {
+        var g = st.gen;
+        st.timers.push(setTimeout(function () { if (st.on && st.gen === g) fn(); }, ms));
+      }
+      function A(node, kf, o) {
+        var opt = { easing: 'ease-out' };
+        for (var k in o) opt[k] = o[k];
+        return node.animate(kf, opt);
+      }
+      // 右へ from 枚目の位置から to 枚目の位置まで、1 枚ずつ 90 度ずつ転がる
+      function roll(from, to) {
+        var kf = [], dir = to < from ? -1 : 1;
+        for (var k = from; k !== to; k += dir) {
+          var m = k + dir / 2;
+          kf.push({ transform: 'translate(' + k * W + 'px,0px) rotate(' + k * 90 + 'deg)', easing: 'ease-in' });
+          kf.push({ transform: 'translate(' + m * W + 'px,-15px) rotate(' + m * 90 + 'deg)', easing: 'ease-out' });
+        }
+        kf.push({ transform: 'translate(' + to * W + 'px,0px) rotate(' + to * 90 + 'deg)' });
+        return kf;
+      }
+
+      // opts.drop … 画面の切り替え：ヘッダーから下りてきて画面を覆う（覆い終わったら Promise が解決する）
+      function start(resume, opts) {
+        opts = opts || {};
+        var hb = opts.drop ? headerBottom() : 0;
+        st.gen++;
+        st.on = true;
+        st.t0 = Date.now();
+        st.min = resume ? 300 : MIN_MS;
+        if (el.getAnimations) el.getAnimations().forEach(function (a) { a.cancel(); });
+        el.innerHTML = markup();
+        root.classList.add('boot');
+        later(MAX_MS, function () { finish(true); });
+        if (!canAnim) return Promise.resolve();
+        var svg = el.firstChild, ts = [].slice.call(svg.querySelectorAll('rect')), dot = svg.querySelector('circle'), last = ts[8];
+        var dotHop = function (h, delay) {
+          A(dot, [{ transform: 'translateY(0) scale(1)' }, { transform: 'translateY(3px) scale(1.12,.88)', offset: .15 }, { transform: 'translateY(-' + h + 'px) scale(.94,1.06)', offset: .5 }, { transform: 'translateY(0) scale(1.08,.92)', offset: .85 }, { transform: 'translateY(0) scale(1)' }], { duration: 520, delay: delay || 0 });
+        };
+        var pivot = function (origin, anim) { last.style.transformOrigin = origin; anim.onfinish = function () { last.style.transformOrigin = ''; }; };
+        var acts = {
+          // ぴょん：その場で跳ね、点が返事をする
+          hop: function () { A(last, [{ transform: 'translateY(0) scale(1)' }, { transform: 'translateY(3px) scale(1.14,.86)', offset: .15 }, { transform: 'translateY(-34px) scale(.94,1.06) rotate(-8deg)', offset: .5 }, { transform: 'translateY(0) scale(1.1,.9)', offset: .85 }, { transform: 'translateY(0) scale(1)' }], { duration: 560 }); dotHop(18, 320); },
+          // のぞく：左下の角を支点に持ち上がる
+          peek: function () { pivot('0% 100%', A(last, [{ transform: 'rotate(0)' }, { transform: 'rotate(-26deg)', offset: .35 }, { transform: 'rotate(-20deg)', offset: .55 }, { transform: 'rotate(-26deg)', offset: .7 }, { transform: 'rotate(0)' }], { duration: 1100, easing: 'ease-in-out' })); A(dot, [{ transform: 'translate(0,0)' }, { transform: 'translate(5px,4px)', offset: .4 }, { transform: 'translate(5px,4px)', offset: .7 }, { transform: 'translate(0,0)' }], { duration: 1100, easing: 'ease-in-out' }); },
+          // くるっ：その場でひと回り
+          spin: function () { A(last, [{ transform: 'rotate(0) scale(1)' }, { transform: 'rotate(200deg) scale(.86)', offset: .55 }, { transform: 'rotate(372deg) scale(1.04)', offset: .85 }, { transform: 'rotate(360deg) scale(1)' }], { duration: 760, easing: 'ease-in-out' }); },
+          // ころん：右へ転がって戻る
+          trip: function () {
+            var a = last.animate(roll(0, 1), { duration: 420, fill: 'forwards' });
+            a.onfinish = function () { later(200, function () { var b = last.animate(roll(1, 0), { duration: 420, fill: 'forwards' }); b.onfinish = function () { b.cancel(); A(last, [{ transform: 'scale(1)' }, { transform: 'scale(.9,1.08)' }, { transform: 'scale(1)' }], { duration: 260 }); dotHop(12, 0); }; }); };
+          },
+          // ぷるぷる：ゼリーのように震える
+          jelly: function () { A(last, [{ transform: 'scale(1,1)' }, { transform: 'scale(1.2,.82)' }, { transform: 'scale(.86,1.16)' }, { transform: 'scale(1.1,.92)' }, { transform: 'scale(.96,1.05)' }, { transform: 'scale(1.02,.99)' }, { transform: 'scale(1,1)' }], { duration: 760 }); },
+          // うとうと：沈んで居眠りし、はっと起きる
+          doze: function () { A(last, [{ transform: 'translateY(0) scale(1) rotate(0)', opacity: 1 }, { transform: 'translateY(7px) scale(.88) rotate(-7deg)', opacity: .65, offset: .3 }, { transform: 'translateY(8px) scale(.86) rotate(-9deg)', opacity: .6, offset: .62 }, { transform: 'translateY(-12px) scale(1.1) rotate(4deg)', opacity: 1, offset: .74 }, { transform: 'translateY(0) scale(1) rotate(0)', opacity: 1 }], { duration: 1500, easing: 'ease-in-out' }); dotHop(14, 1080); },
+          // ぽよん：点が飛び乗って跳ね返る
+          ride: function () { A(dot, [{ transform: 'translate(0,0) scale(1)' }, { transform: 'translate(0,3px) scale(1.12,.88)', offset: .08 }, { transform: 'translate(47px,-26px) scale(.95,1.05)', offset: .26 }, { transform: 'translate(94px,94px) scale(1.12,.86)', offset: .42 }, { transform: 'translate(47px,-20px) scale(.95,1.05)', offset: .62 }, { transform: 'translate(0,0) scale(1.08,.92)', offset: .8 }, { transform: 'translate(0,0) scale(1)' }], { duration: 1300, easing: 'ease-in-out' }); A(last, [{ transform: 'scale(1)' }, { transform: 'scale(1)', offset: .36 }, { transform: 'scale(1.18,.78)', offset: .44 }, { transform: 'scale(.94,1.08)', offset: .54 }, { transform: 'scale(1)', offset: .64 }, { transform: 'scale(1)' }], { duration: 1300 }); },
+          // ウェーブ：跳ねた勢いが全体に伝わる
+          wave: function () { A(last, [{ transform: 'translateY(0)' }, { transform: 'translateY(-16px)' }, { transform: 'translateY(0)' }], { duration: 360 }); ts.concat([dot]).forEach(function (t, i) { if (t === last || i === 4) return; var p = t === dot ? [220, 220] : P[i], d = Math.sqrt((p[0] - 314) * (p[0] - 314) + (p[1] - 314) * (p[1] - 314)); A(t, [{ transform: 'translateY(0)' }, { transform: 'translateY(-14px)' }, { transform: 'translateY(0)' }], { duration: 380, delay: 120 + d * 1.6, easing: 'ease-in-out' }); }); },
+          // 二段ジャンプ：空中でもうひと跳ね
+          double: function () { A(last, [{ transform: 'translateY(0) rotate(0) scale(1)' }, { transform: 'translateY(3px) scale(1.14,.86)', offset: .1 }, { transform: 'translateY(-28px) rotate(-10deg)', offset: .32 }, { transform: 'translateY(-18px) rotate(0) scale(1.06,.94)', offset: .44 }, { transform: 'translateY(-56px) rotate(-180deg)', offset: .66 }, { transform: 'translateY(0) rotate(-360deg) scale(1.12,.88)', offset: .9 }, { transform: 'translateY(0) rotate(-360deg) scale(1)' }], { duration: 1100, easing: 'ease-in-out' }); dotHop(10, 980); },
+          // のびー：縦にのびて、ちぢむ
+          stretch: function () { pivot('50% 100%', A(last, [{ transform: 'scale(1,1)' }, { transform: 'scale(1.1,.86)', offset: .2 }, { transform: 'scale(.8,1.45)', offset: .5 }, { transform: 'scale(.82,1.42)', offset: .62 }, { transform: 'scale(1.12,.88)', offset: .82 }, { transform: 'scale(1,1)' }], { duration: 1100, easing: 'ease-in-out' })); }
+        };
+        // くじ引き：一通り出し終わるまで同じ動きは出さない（続けて同じ動きにもしない）
+        var names = Object.keys(acts), bag = [], prev = '';
+        var idle = function () {
+          if (!bag.length) {
+            bag = names.slice().sort(function () { return Math.random() - .5; });
+            if (bag[0] === prev) bag.push(bag.shift());
+          }
+          prev = bag.shift();
+          acts[prev]();
+          later(IDLE_MS, idle);
+        };
+        if (resume) { later(400, idle); return Promise.resolve(); }
+        if (hb > 0) {
+          // ヘッダーの帯から下へ広がって画面を覆い、マークは上から下りてきて着地する
+          var cover = el.animate([{ clipPath: 'inset(0 0 calc(100% - ' + hb + 'px) 0)', opacity: 0 }, { clipPath: 'inset(0 0 calc(100% - ' + hb + 'px) 0)', opacity: 1, offset: .18 }, { clipPath: 'inset(0 0 0 0)', opacity: 1 }], { duration: 560, easing: IO });
+          A(svg, [{ transform: 'translateY(-30vh) scale(.3)', opacity: 0 }, { transform: 'translateY(0) scale(1)', opacity: 1 }], { duration: 560, delay: 140, easing: OV, fill: 'backwards' });
+          A(svg, [{ transform: 'scale(1)' }, { transform: 'scale(1.08,.92)' }, { transform: 'scale(1)' }], { duration: 260, delay: 700 });
+          later(1300, idle);
+          return new Promise(function (resolve) { cover.onfinish = resolve; cover.oncancel = resolve; });
+        }
+        // 並ぶ → 右下の 1 枚が転がって来てぶつかる（自分も跳ね返り、ほかのマスが押されて揺れ、点が跳ねる）
+        ts.forEach(function (t, i) { if (i !== 4 && i !== 8) A(t, [{ transform: 'scale(0)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }], { duration: 320, delay: i * 50, easing: OV, fill: 'backwards' }); });
+        A(dot, [{ transform: 'scale(0)' }, { transform: 'scale(1)' }], { duration: 400, delay: 360, easing: 'cubic-bezier(.34,1.9,.64,1)', fill: 'backwards' });
+        last.animate(roll(3, 0), { duration: 720, fill: 'backwards' }).onfinish = function () {
+          if (!st.on) return;
+          A(last, [{ transform: 'translate(0,0)' }, { transform: 'translate(-3px,0) scale(.82,1.1)', offset: .12 }, { transform: 'translate(18px,-7px) rotate(16deg)', offset: .42 }, { transform: 'translate(-5px,0) rotate(-5deg)', offset: .72 }, { transform: 'translate(1px,0) rotate(1deg)', offset: .88 }, { transform: 'translate(0,0)' }], { duration: 700 });
+          ts.forEach(function (t, i) {
+            if (i === 4 || i === 8) return;
+            var dx = P[i][0] + 36 - 350, dy = P[i][1] + 36 - 350, d = Math.sqrt(dx * dx + dy * dy), a = 26 / (1 + d / 60);
+            A(t, [{ transform: 'translate(0,0)' }, { transform: 'translate(' + dx / d * a + 'px,' + dy / d * a + 'px) rotate(' + (-a * .5) + 'deg)' }, { transform: 'translate(' + (-dx / d * a * .25) + 'px,' + (-dy / d * a * .25) + 'px) rotate(' + a * .15 + 'deg)' }, { transform: 'translate(0,0)' }], { duration: 480, delay: d * .45 });
+          });
+          dotHop(30, 110);
+        };
+        later(1900, idle);
+        return Promise.resolve();
+      }
+      function headerBottom() {
+        var hdr = document.querySelector('#appScreen .app-header');
+        // スマホのヘッダーは固定表示（offsetParent が無い）なので、表示されているかは矩形で見る
+        return hdr && hdr.getClientRects().length ? Math.max(0, Math.round(hdr.getBoundingClientRect().bottom)) : 0;
+      }
+
+      // 片付ける。ヘッダーがあれば、そこへ縮んで本体に切り替わる（無ければ薄く消える）
+      function finish(fast) {
+        if (!st.on) return;
+        st.on = false;
+        st.timers.forEach(clearTimeout);
+        st.timers = [];
+        var end = function () { el.innerHTML = ''; root.classList.remove('boot'); };
+        var hb = headerBottom();
+        if (!canAnim || fast || hb <= 0) {
+          if (typeof el.animate === 'function' && !reduce) el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, fill: 'forwards' }).onfinish = end;
+          else end();
+          return;
+        }
+        // ヘッダーの形まで縮んだら、薄く消えてヘッダーの文字を見せる
+        el.animate([{ clipPath: 'inset(0 0 0 0)', opacity: 1, offset: 0 }, { clipPath: 'inset(0 0 calc(100% - ' + hb + 'px) 0)', opacity: 1, offset: .78 }, { clipPath: 'inset(0 0 calc(100% - ' + hb + 'px) 0)', opacity: 0, offset: 1 }], { duration: 620, easing: IO, fill: 'forwards' }).onfinish = end;
+        if (el.firstChild) el.firstChild.animate([{ transform: 'none', opacity: 1 }, { transform: 'translateY(-30vh) scale(.3)', opacity: 0 }], { duration: 400, easing: IO, fill: 'forwards' });
+      }
+
+      window.bootSplash = {
+        active: function () { return st.on; },
+        // ログインした直後・画面の切り替えで出す（{ drop: true } でヘッダーから下りてくる。覆い終わったら解決する Promise を返す）
+        show: function (opts) { return st.on ? Promise.resolve() : start(false, opts); },
+        // 最初の画面の準備ができたら呼ぶ（短すぎると転がり込みが見えないので、最低 1 秒は見せる）
+        done: function (opts) {
+          if (!st.on) return;
+          var fast = !!(opts && opts.fast);
+          var wait = fast ? 0 : Math.max(0, st.t0 + st.min - Date.now());
+          if (wait) later(wait, function () { finish(false); }); else finish(fast);
+        }
+      };
+      if (root.classList.contains('boot')) {
+        var resume = false;
+        try { resume = sessionStorage.getItem('splashResume') === '1'; sessionStorage.removeItem('splashResume'); } catch (e) {}
+        start(resume);
+      }
+    })();
+  </script>
   <!-- ==============================================
        ログイン画面
        ============================================== -->
@@ -4718,7 +4922,8 @@
         <input type="text" id="loginId" class="login-input" autocomplete="username" autocapitalize="characters" spellcheck="false" enterkeyhint="send">
         <label class="login-remember">
           <input type="checkbox" id="loginRemember" checked>
-          <span>この端末でログインしたままにする</span>
+          <span>ログイン状態を保持（90日間）</span>
+          <button type="button" class="info-tip" data-tip="最後の利用から 90 日間有効（使うたびに延長）。オフにすると、ブラウザを閉じた時点でログアウト。ログインは端末・ブラウザごとに必要です" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button>
         </label>
         <button class="login-btn" type="submit" id="loginSendBtn">コードを送る</button>
         <div class="login-hint">大学のメールにコードが届きます<button type="button" class="info-tip" data-tip="宛先は「学籍番号@mail.cc.niigata-u.ac.jp」です。メールのリンクを開いてもログインできます" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></div>
@@ -4936,7 +5141,7 @@
               <button type="button" class="btn btn-outline btn-xs" onclick="runConfirm()"><i class="fa-solid fa-calculator"></i> 反映</button>
             </div>
             <div class="data-row">
-              <div class="data-name">Teams に確定シフトを通知<button type="button" class="info-tip" data-tip="受付の締め切りや、シフト表の画像の添付も選べます" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></div>
+              <div class="data-name">Teams に確定シフトを通知<button type="button" class="info-tip" data-tip="担当回数への反映、受付の締め切り、シフト表の画像の添付も選べます" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></div>
               <button type="button" class="btn btn-outline btn-xs" data-action="notify-teams-schedule-confirmed" onclick="notifyTeamsScheduleConfirmedFromShiftCreate()"><i class="fa-solid fa-paper-plane"></i> 通知</button>
             </div>
             <div class="data-row">
@@ -6382,8 +6587,9 @@
             <p style="font-size: 14px; color: var(--text-light); line-height: 1.5; margin: 0 0 12px 0;">
               設定を変えたときは、先に「設定を保存」してください。
             </p>
-            <label class="set-row compact"><span class="set-name">シフトの受付を締め切る</span><span class="sw"><input type="checkbox" id="teamsSchedCloseForm"><span></span></span></label>
-            <label class="set-row compact" style="margin-bottom: 16px;"><span class="set-name">シフト表の画像を添付</span><span class="sw"><input type="checkbox" id="teamsSchedUploadImage"><span></span></span></label>
+            <label class="set-row compact"><span class="set-name">担当回数に反映</span><span class="sw"><input type="checkbox" id="teamsSchedUpdateCounts" checked><span></span></span></label>
+            <label class="set-row compact"><span class="set-name">シフトの受付を締め切る</span><span class="sw"><input type="checkbox" id="teamsSchedCloseForm" checked><span></span></span></label>
+            <label class="set-row compact" style="margin-bottom: 16px;"><span class="set-name">シフト表の画像を添付</span><span class="sw"><input type="checkbox" id="teamsSchedUploadImage" checked><span></span></span></label>
             <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px;">
               <button type="button" class="btn btn-outline" id="teamsSchedCancel">キャンセル</button>
               <button type="button" class="btn btn-primary" id="teamsSchedOk">送信</button>
@@ -6395,12 +6601,13 @@
           document.body.removeChild(overlay);
           resolve(result);
         };
-        overlay.querySelector('#teamsSchedCancel').onclick = () => cleanup({ confirmed: false, closeForm: false, uploadImage: false });
-        overlay.onclick = (e) => { if (e.target === overlay) cleanup({ confirmed: false, closeForm: false, uploadImage: false }); };
+        overlay.querySelector('#teamsSchedCancel').onclick = () => cleanup({ confirmed: false });
+        overlay.onclick = (e) => { if (e.target === overlay) cleanup({ confirmed: false }); };
         overlay.querySelector('#teamsSchedOk').onclick = () => {
+          const updateCounts = !!document.getElementById('teamsSchedUpdateCounts')?.checked;
           const closeForm = !!document.getElementById('teamsSchedCloseForm')?.checked;
           const uploadImage = !!document.getElementById('teamsSchedUploadImage')?.checked;
-          cleanup({ confirmed: true, closeForm, uploadImage });
+          cleanup({ confirmed: true, updateCounts, closeForm, uploadImage });
         };
       });
     }
@@ -6841,7 +7048,6 @@
         return null;
       }
     }
-    const SESSION_MAX_AGE_ = 30 * 24 * 60 * 60 * 1000; // 鍵のない古いログインを残せる期間（30 日）
     function saveSession(user, remember) {
       const ls = safeStorage_('localStorage');
       const ss = safeStorage_('sessionStorage');
@@ -6868,17 +7074,8 @@
       try {
         const u = JSON.parse(raw);
         if (!u || !u.role || !u.id) return null;
-        // メールでログインした鍵は、サーバーが「最後に使ってから 90 日」で切る。鍵のない古いログインは 30 日
-        if (u.token) {
-          delete u.savedAt;
-          return u;
-        }
-        if (!u.savedAt) {
-          // この仕組みより前に保存されたもの：今から 30 日とする（更新直後に全員がログアウトされないように）
-          u.savedAt = Date.now();
-          const store = (ss && ss.getItem(SESSION_KEY)) ? ss : ls;
-          try { store.setItem(SESSION_KEY, JSON.stringify(u)); } catch (_) {}
-        } else if (Date.now() - u.savedAt > SESSION_MAX_AGE_) {
+        // 鍵はサーバーが「最後に使ってから 90 日」で切る。鍵のない古いログイン（学籍番号だけ）は使えない
+        if (!u.token || u.emergency) {
           clearSession();
           return null;
         }
@@ -7154,8 +7351,8 @@
       try { pendingTab_ = new URLSearchParams(location.search).get('tab') || ''; } catch (_) {}
       // 読み直したときに同じ画面をまた開かないよう、アドレス欄から消しておく（b は新しい版の読み込み用）
       ['poll', 'swap', 'tab', 'b'].forEach(stripQueryParam_);
-      // 開いたページが古い版（キャッシュ）なら、少し後で新しい版に読み込み直す
-      setTimeout(() => { updateIfNewBuild_(); }, 3000);
+      // 開いたページが古い版（キャッシュ）なら、すぐ新しい版に読み込み直す（表示してから読み込み直すと二度待たせるため）
+      updateIfNewBuild_();
       // メールのリンク（?login=鍵）：鍵は 1 回しか使えないので、先にアドレス欄から消す
       let loginLink = '';
       try { loginLink = new URLSearchParams(location.search).get('login') || ''; } catch (_) {}
@@ -7169,6 +7366,7 @@
         currentUser = saved;
         showAppScreen();
       } else {
+        if (window.bootSplash) bootSplash.done({ fast: true });
         setLoginStep_('id');
         // 期限切れなどでログイン画面に戻ったときの案内
         const ss = safeStorage_('sessionStorage');
@@ -7644,7 +7842,7 @@
       loginState_.resendTimer = setInterval(tick, 1000);
     }
 
-    /** 学籍番号を送り、大学のメールにコードを届ける（非常用の管理者 ID はそのままログイン） */
+    /** 学籍番号を送り、大学のメールにコードを届ける */
     async function requestLoginCode(resend) {
       const id = resend ? loginState_.id : document.getElementById('loginId').value.trim();
       if (!id) {
@@ -7658,10 +7856,6 @@
         res = await callAPI('requestLogin', { id, app: isStandalone_(), device: deviceLabel_() }, { button: btn, noOverlay: true });
       } catch (_) {
         return; // エラーは callAPI が表示する
-      }
-      if (res.token || res.legacy) {
-        completeLogin_(res);
-        return;
       }
       loginState_.id = id;
       loginState_.lastCode = '';
@@ -7762,11 +7956,12 @@
       const where = h.app
         ? (h.device ? h.device + 'の' : '') + 'ホーム画面のアプリ'
         : (h.device ? h.device + 'の' : '別の') + 'ブラウザ';
-      const choice = await showChoiceModal('アプリでもログインしますか？',
-        `${where}${h.at ? '（' + h.at + ' に依頼）' : ''}でも、このままログインします。心当たりがない場合は「このブラウザだけ」を選んでください。`,
+      // 他人が自分の学籍番号で依頼した場合に、うっかり許可しないように：依頼元をはっきり出し、目立つボタンは「このブラウザだけ」
+      const choice = await showChoiceModal(h.app ? 'アプリでもログインしますか？' : '依頼元のブラウザでもログインしますか？',
+        `依頼元：${where}${h.at ? '（' + h.at + '）' : ''}\n自分で依頼していない場合は、許可しないでください。許可すると、依頼元の端末もこのアカウントでログインします。`,
         [
-          { label: h.app ? 'アプリでもログイン' : 'そちらでもログイン', value: 'yes', className: 'btn-primary' },
-          { label: 'このブラウザだけ', value: 'no', className: 'btn-outline' }
+          { label: 'このブラウザだけ', value: 'no', className: 'btn-primary' },
+          { label: h.app ? 'アプリでもログイン' : '依頼元でもログイン', value: 'yes', className: 'btn-outline' }
         ]);
       if (choice !== 'yes') return;
       try {
@@ -7820,19 +8015,8 @@
       const rememberEl = document.getElementById('loginRemember');
       saveSession(currentUser, !rememberEl || rememberEl.checked);
 
-      // メンバーの場合、ローディング画面を先に表示（showAppScreen()より前）
-      if (currentUser.role === 'member') {
-        const globalLoading = document.getElementById('globalMemberLoading');
-        if (globalLoading) {
-          globalLoading.style.display = 'flex';
-          globalLoading.style.position = 'fixed';
-          globalLoading.style.top = '0';
-          globalLoading.style.left = '0';
-          globalLoading.style.width = '100%';
-          globalLoading.style.height = '100%';
-          globalLoading.style.zIndex = '10001';
-        }
-      }
+      // 立ち上げ画面を出してから、最初の画面を用意する（準備ができたら showAppScreen の中で片付ける）
+      if (window.bootSplash) bootSplash.show();
       showAppScreen();
     }
 
@@ -7890,8 +8074,9 @@
       pollState.loadedAt = 0;
       swapState.loadedAt = 0;
       document.querySelectorAll('.modal-overlay.show').forEach(o => o.classList.remove('show'));
-      window.scrollTo(0, 0);
-      showAppScreen();
+      // ヘッダーから立ち上げ画面が下りてきて覆ってから、次の画面を用意する（準備ができたら showAppScreen の中でヘッダーに縮む）
+      const go = () => { window.scrollTo(0, 0); showAppScreen(); };
+      if (window.bootSplash) bootSplash.show({ drop: true }).then(go, go); else go();
     }
 
     function updateViewSwitch_() {
@@ -7956,9 +8141,10 @@
         adminTabs.style.display = 'flex';
         applyAdminTabVisibility();
         
-        // switchTab が開いたタブのデータ（loadAdminData など）を読み込む。ここで二重に呼ばない
+        // switchTab が開いたタブのデータ（loadAdminData など）を読み込む。ここで二重に呼ばない。
+        // 読み込みが終わるまでは立ち上げ画面のまま（まだ操作できない画面や、仮の値を見せない）
         const isMobile = window.innerWidth < 768;
-        switchTab(isMobile ? 'admin-members' : 'admin-shift-create');
+        const firstTab = switchTab(isMobile ? 'admin-members' : 'admin-shift-create');
         // よく使うタブは裏で先に読み込んでおく（スマホではカレンダータブが無いので読まない）
         if (!isMobile) {
           loadResultCalendar().catch(() => {});
@@ -7966,6 +8152,7 @@
         loadChickenSchedule(false, 'admin-chicken').catch(() => {});
         // メンバー画面へ待たずに切り替えられるよう、シフト提出のデータを裏で取っておく
         if (currentUser.token) setTimeout(prefetchFormData_, 1500);
+        if (window.bootSplash) Promise.resolve(firstTab).catch(() => {}).finally(() => bootSplash.done());
       } else if (currentUser && currentUser.role === 'member') {
         document.body.setAttribute('data-user-role', 'member');
         memberTabs.style.display = 'flex';
@@ -7978,28 +8165,40 @@
         if (resultTab) resultTab.style.display = 'flex';
         updateMemberChickenTabVisibility();
         
+        // 立ち上げ画面が出ていれば、それで待つ（出ていないとき＝管理者画面から切り替えたときは、読み込み中の画面で覆う）
+        const splashOn = !!(window.bootSplash && bootSplash.active());
         const globalLoading = document.getElementById('globalMemberLoading');
-        const hideGlobalLoading = () => { if (globalLoading) globalLoading.style.display = 'none'; };
+        const coverUntilReady = () => { if (globalLoading && !splashOn) globalLoading.style.display = 'flex'; };
+        const ready_ = () => {
+          if (globalLoading) globalLoading.style.display = 'none';
+          if (window.bootSplash) bootSplash.done();
+        };
         
         if (isActive) {
           // 最初の画面（シフト提出）に必要なのは getFormData だけ。カレンダーは裏で読み込む
-          // 管理者画面から来たときは、先に取っておいたデータ（または前に表示した画面）で待たずに出す
+          // 管理者画面から来たときは、先に取っておいたデータ（または前に表示した画面）で待たずに出す。
+          // 前回の内容がこの端末に残っていれば、それを先に出して裏で最新にする（最新が届くまで提出はできない）
           const ready = formDataReady_();
-          if (globalLoading && !ready) globalLoading.style.display = 'flex';
+          const cached = !ready ? readCache('form', FORM_CACHE_MAX_AGE_) : null;
+          if (!ready && !cached) coverUntilReady();
           switchTab('member-form', { skipLoad: true });
           if (formDataRendered_) {
-            hideGlobalLoading();
+            ready_();
             if (!hasUnsavedNgEdits()) loadFormData(false, { background: true }).catch(() => {});
+          } else if (cached) {
+            loadFormData(false, { cachedResult: cached.data }).catch(() => {}).finally(ready_);
+            loadFormData(false, { background: true }).catch(() => {});
           } else {
-            loadFormData(!ready).finally(hideGlobalLoading);
+            loadFormData(false).catch(() => {}).finally(ready_);
           }
           loadMemberResultCalendar({ background: true }).catch(() => {});
         } else {
           // 前回のカレンダーがこの端末に残っていれば、待たずにすぐ表示する
           const hasCache = !!readCache(memberCalendarCacheName_(), MEMBER_CAL_CACHE_MAX_AGE);
-          if (!hasCache && globalLoading) globalLoading.style.display = 'flex';
+          if (!hasCache) coverUntilReady();
           switchTab('member-result', { skipLoad: true });
-          loadMemberResultCalendar().catch(() => {}).finally(hideGlobalLoading);
+          const cal = loadMemberResultCalendar().catch(() => {});
+          if (hasCache) ready_(); else cal.finally(ready_);
         }
         if (currentUser.team === '鶏班') {
           loadChickenSchedule(false, 'member-chicken').catch(() => {});
@@ -8013,6 +8212,7 @@
       } else {
         // ロールが不明な場合、ログアウト
         console.error('不明なロール:', currentUser);
+        if (window.bootSplash) bootSplash.done({ fast: true });
         clearSession();
         currentUser = null;
         document.getElementById('loginScreen').style.display = 'flex';
@@ -8224,6 +8424,15 @@
       } catch (_) { return false; }
       if (!latest || latest === APP_BUILD_) return false;
       if (typeof hasUnsavedNgEdits === 'function' && hasUnsavedNgEdits()) return false;
+      // 読み込み直しても古い版が出る（公開の反映待ち）ときは、繰り返さない。立ち上げ画面は、読み込み直した後も続きから動かす
+      const ss = safeStorage_('sessionStorage');
+      try {
+        if (ss && ss.getItem('buildReloadTo') === latest) return false;
+        if (ss) {
+          ss.setItem('buildReloadTo', latest);
+          if (window.bootSplash && bootSplash.active()) ss.setItem('splashResume', '1');
+        }
+      } catch (_) {}
       // アドレスを変えて読み込み、古いページのキャッシュを使わないようにする（b は読み込み後に消す）
       location.replace(location.pathname + '?b=' + encodeURIComponent(latest) + location.hash);
       return true;
@@ -8410,17 +8619,20 @@
       
       if (opts.skipLoad) return;
       
-      // タブに応じたデータ読み込み
+      // タブに応じたデータ読み込み（管理者の最初のタブは、読み込みが終わるまで待てるよう Promise を返す：立ち上げ画面・引っぱって更新）
       if (tabId === 'admin-shift-create') {
         // loadAdminData内で作成対象月も初期化される。直近に読み込んでいて変更も無ければ再取得しない
-        loadAdminData({ maxAgeMs: takeStale('admin') ? 0 : 60000 }).then(() => {
+        const loaded = loadAdminData({ maxAgeMs: takeStale('admin') ? 0 : 60000 }).then(() => {
           renderShiftCreateStatus_();
           if (shiftStep === 'adjust' && draftEditLoadedMonths_ !== getDraftEditTargetMonths().join(',')) loadDraftEdit();
         });
         setShiftStep(shiftStep);
+        return loaded.catch(() => {});
       } else if (tabId === 'admin-members') {
-        loadAdminData({ maxAgeMs: takeStale('admin') ? 0 : 60000 });
-        loadSwaps();
+        return Promise.all([
+          loadAdminData({ maxAgeMs: takeStale('admin') ? 0 : 60000 }),
+          Promise.resolve(loadSwaps())
+        ]).catch(() => {});
       } else if (tabId === 'admin-settings') {
         // 入力中の設定を上書きしないよう、直近に読み込んでいれば再取得しない
         loadAdminData({ maxAgeMs: takeStale('admin') ? 0 : 120000 });
@@ -8659,6 +8871,7 @@
         const schedData = (result.schedule && result.schedule.data) ? result.schedule.data : [];
         const hasChicken = (d) => d.chicken && typeof d.chicken === 'object' && Object.keys(d.chicken).some(k => d.chicken[k]);
         schedData.filter(d => hasChicken(d) || d.isCleanDay).forEach(d => { if (d.dateStr) shiftDatesSet.add(d.dateStr); });
+        membersPageCleanDates = new Set(schedData.filter(d => d.isCleanDay && d.dateStr).map(d => d.dateStr));
         membersPageHolidays = (result.schedule && result.schedule.holidays) ? result.schedule.holidays : {};
         membersPageNgData = result.ngData || {};
         membersPageTargetMonth = monthNow || '';
@@ -8812,6 +9025,7 @@
     let membersPageTargetMonth = '';
     let membersPageShiftAccepting = false; // シフト回答受付中のみ参加可能日・各日の状況を有効にする
     let membersPageShiftDates = new Set(); // その月のシフトの日（餌 or 掃除）の dateStr 一覧
+    let membersPageCleanDates = new Set(); // そのうち掃除の日（餌番 NG の人は掃除だけ入れる）
     let membersPageHolidays = {}; // その月の祝日 { dateStr: 祝日名 }
     
     async function loadMemberListForMonth(ym) {
@@ -8835,6 +9049,7 @@
           const schedData = (schedRes && schedRes.data) ? schedRes.data : [];
           const hasChicken = (d) => d.chicken && typeof d.chicken === 'object' && Object.keys(d.chicken).some(k => d.chicken[k]);
           schedData.filter(d => hasChicken(d) || d.isCleanDay).forEach(d => { if (d.dateStr) shiftDatesSet.add(d.dateStr); });
+          membersPageCleanDates = new Set(schedData.filter(d => d.isCleanDay && d.dateStr).map(d => d.dateStr));
           membersPageHolidays = (schedRes && schedRes.holidays) ? schedRes.holidays : {};
         } catch (_) { membersPageHolidays = {}; }
         membersList = (result.members || []).filter(m => !m.isGraduated);
@@ -8877,29 +9092,37 @@
         const dayOfWeek = weekNames[dayOfWeekNum];
         const isHoliday = !!(holidays[dateStr]);
         const isShiftDay = shiftDates.has(dateStr);
-        let ok = 0, ng = 0, unsub = 0;
+        const isClean = membersPageCleanDates.has(dateStr);
+        let ok = 0, feed = 0, ng = 0, unsub = 0;
         if (isShiftDay) {
           active.forEach(mem => {
             if (!mem.hasSubmitted) { unsub++; return; }
             const entries = ngData[mem.name] || [];
             const ent = entries.find(e => e.date === dateStr);
             if (ent && ent.type === 'FULL') ng++;
+            // 餌番 NG は掃除の日だけ選べる（掃除には入れる）
+            else if (ent && ent.type === 'FEED_NG' && isClean) feed++;
             else ok++;
           });
         }
-        rows.push({ dateStr, d, dayOfWeek, dayOfWeekNum, isHoliday, isShiftDay, ok, ng, unsub });
+        rows.push({ dateStr, d, dayOfWeek, dayOfWeekNum, isHoliday, isShiftDay, isClean, ok, feed, ng, unsub });
       }
-      // シフトのある日だけを並べる（押すとその日の内訳）
+      // シフトのある日だけを並べる（押すとその日の内訳）。上に棒グラフ、下に名前付きの人数
       const total = active.length || 1;
-      listEl.innerHTML = rows.filter(r => r.isShiftDay).map(r => {
-        const cls = r.dayOfWeekNum === 0 || r.isHoliday ? ' sun' : r.dayOfWeekNum === 6 ? ' sat' : '';
-        return `
-          <button type="button" class="ds-row member-day-status-shift" data-date-str="${escapeForAttr(r.dateStr)}">
-            <span class="ds-date${cls}"><b>${m}/${r.d}</b>${r.dayOfWeek}</span>
-            <span class="ds-bar" aria-hidden="true"><span class="ok" style="width: ${r.ok / total * 100}%"></span><span class="ng" style="width: ${r.ng / total * 100}%"></span></span>
-            <span class="ds-nums"><span class="ok">参加可能 ${r.ok}</span><span class="ng">NG ${r.ng}</span><span class="un">未提出 ${r.unsub}</span></span>
+      const shiftRows = rows.filter(r => r.isShiftDay);
+      const w = n => (n / total * 100) + '%';
+      const num = (cls, label, n) => `<span class="${cls}${n ? '' : ' zero'}">${label}<b>${n}</b></span>`;
+      listEl.innerHTML = shiftRows.length ? `
+        ${shiftRows.map(r => {
+          const cls = r.dayOfWeekNum === 0 || r.isHoliday ? ' sun' : r.dayOfWeekNum === 6 ? ' sat' : '';
+          const label = `${m}月${r.d}日${r.isClean ? '（掃除日）' : ''}：参加可能 ${r.ok}人${r.isClean ? `、餌番NG ${r.feed}人` : ''}、NG ${r.ng}人、未提出 ${r.unsub}人`;
+          return `
+          <button type="button" class="ds-row member-day-status-shift" data-date-str="${escapeForAttr(r.dateStr)}" aria-label="${escapeForAttr(label)}">
+            <span class="ds-date${cls}"><b>${m}/${r.d}</b>${r.dayOfWeek}${r.isClean ? '<i class="fa-solid fa-broom" title="掃除日"></i>' : ''}</span>
+            <span class="ds-bar" aria-hidden="true"><span class="ok" style="width: ${w(r.ok)}"></span><span class="feed" style="width: ${w(r.feed)}"></span><span class="ng" style="width: ${w(r.ng)}"></span></span>
+            <span class="ds-nums" aria-hidden="true">${num('ok', '参加可能', r.ok)}${r.isClean ? num('feed', '餌番NG', r.feed) : ''}${num('ng', 'NG', r.ng)}${num('un', '未提出', r.unsub)}</span>
           </button>`;
-      }).join('') || '<div class="bulk-empty">シフトのある日はありません</div>';
+        }).join('')}` : '<div class="bulk-empty">シフトのある日はありません</div>';
       section.style.display = 'block';
       listEl.querySelectorAll('.member-day-status-shift').forEach(el => {
         el.addEventListener('click', function() {
@@ -8912,7 +9135,8 @@
     function showDayDetailModal(dateStr) {
       const active = (membersList || []).filter(isShiftMember_);
       const ngData = membersPageNgData || {};
-      const okNames = [], ngNames = [], unsubNames = [];
+      const isClean = membersPageCleanDates.has(dateStr);
+      const okNames = [], feedNames = [], ngNames = [], unsubNames = [];
       active.forEach(mem => {
         if (!mem.hasSubmitted) {
           unsubNames.push(mem.name);
@@ -8921,6 +9145,7 @@
         const entries = ngData[mem.name] || [];
         const ent = entries.find(e => e.date === dateStr);
         if (ent && ent.type === 'FULL') ngNames.push(mem.name);
+        else if (ent && ent.type === 'FEED_NG' && isClean) feedNames.push(mem.name);
         else okNames.push(mem.name);
       });
       const existing = document.getElementById('memberDayDetailModal');
@@ -8935,10 +9160,11 @@
           <div class="modal-box sheet-box sheet-sm" role="dialog" aria-modal="true" aria-labelledby="memberDayDetailTitle">
             <div class="sheet-head">
               <button type="button" class="sheet-close" onclick="document.getElementById('memberDayDetailModal').remove()" aria-label="閉じる"><i class="fa-solid fa-xmark"></i></button>
-              <div class="sheet-head-title" id="memberDayDetailTitle">${escapeHtml(fmtMdW(dateStr))} の内訳</div>
+              <div class="sheet-head-title" id="memberDayDetailTitle">${escapeHtml(fmtMdW(dateStr))} の内訳${isClean ? '（掃除日）' : ''}</div>
             </div>
             <div class="sheet-body">
               ${group('done', '参加可能', okNames)}
+              ${isClean ? group('feed', '餌番NG（掃除は可）', feedNames) : ''}
               ${group('ng', '完全NG', ngNames)}
               ${group('todo', '未提出', unsubNames)}
             </div>
@@ -9698,17 +9924,24 @@
         const opt = {};
         if (choice.uploadImage) {
           showToast('シフト表の画像を準備しています…', 'success');
-          const dataUrl = await getConfirmedSchedulePngDataUrlForTeams();
-          const comma = dataUrl.indexOf(',');
-          opt.scheduleImageBase64 = comma >= 0 ? dataUrl.substring(comma + 1) : dataUrl;
-          opt.scheduleImageMimeType = 'image/png';
+          try {
+            const dataUrl = await getConfirmedSchedulePngDataUrlForTeams();
+            const comma = dataUrl.indexOf(',');
+            opt.scheduleImageBase64 = comma >= 0 ? dataUrl.substring(comma + 1) : dataUrl;
+            opt.scheduleImageMimeType = 'image/png';
+          } catch (_) {
+            // 画像を作れなくても通知は送る（既定でオンのため、画像のせいで通知が止まらないように）
+            showToast('シフト表の画像を作成できなかったため、画像なしで送信します', 'error');
+          }
         }
         const result = await callAPI('notifyTeamsScheduleConfirmed', {
           adminId: currentUser.id,
+          updateCounts: choice.updateCounts,
           closeFormAcceptance: choice.closeForm,
           opt: opt
         });
         showToast(result.message || 'Teams に通知しました', 'success');
+        if (result.countsUpdated) loadAdminData({ maxAgeMs: 0 });
         if (result.formClosed) {
           const sac = document.getElementById('shiftAnswerAccepting');
           if (sac) sac.checked = false;
@@ -10049,9 +10282,9 @@
               ${ongoing ? '<span class="ag-badge next">進行中</span>' : ''}
               ${isMine ? '<span class="ag-badge me">担当</span>' : ''}
             </div>
-            <div class="ag-meta"><i class="fa-regular fa-calendar"></i><span>${total}日間${ongoing ? `・残り${days(today, p.end)}日` : ''}</span></div>
-            <div class="ag-meta"><i class="fa-solid fa-user-group"></i><span>${(e.owners || []).length ? agendaNamesHtml_(e.owners, myName) : '担当者未設定'}</span></div>
-            ${e.feed ? `<div class="ag-meta"><i class="fa-solid fa-wheat-awn"></i><span>${escapeHtml(e.feed)}</span></div>` : ''}
+            <div class="ag-meta ag-fix"><i class="fa-regular fa-calendar"></i><span>${total}日間${ongoing ? `・残り${days(today, p.end)}日` : ''}</span></div>
+            <div class="ag-meta ag-names"><i class="fa-solid fa-user-group"></i><span>${(e.owners || []).length ? agendaNamesHtml_(e.owners, myName) : '担当者未設定'}</span></div>
+            ${e.feed ? `<div class="ag-meta ag-fix"><i class="fa-solid fa-wheat-awn"></i><span>${escapeHtml(e.feed)}</span></div>` : ''}
             ${e.note ? `<div class="ag-note">${escapeHtml(e.note)}</div>` : ''}
             <div class="ag-actions">
               <button type="button" class="ag-btn" onclick="showEditChickenModal(${jsArg(p.dates[0])}, ${jsArg(p.key)})"><i class="fa-solid fa-pen"></i>編集</button>
@@ -13326,9 +13559,9 @@
               ${isMine ? '<span class="ag-badge me">自分の発表</span>' : ''}
               ${s.seriesId ? '<span class="ag-repeat" title="一括追加したゼミ"><i class="fa-solid fa-repeat"></i>繰り返し</span>' : ''}
             </div>
-            ${!isNone && s.location ? `<div class="ag-meta"><i class="fa-solid fa-location-dot"></i><span>${escapeHtml(s.location)}</span></div>` : ''}
-            ${!isNone && s.presenters && s.presenters.length ? `<div class="ag-meta"><i class="fa-solid fa-person-chalkboard"></i><span>${agendaNamesHtml_(s.presenters, myName)}</span></div>` : ''}
-            ${undecided ? `<div class="ag-meta"><i class="fa-solid fa-person-chalkboard"></i><span><span class="ag-undecided">発表者未定</span>${cands.length ? ` 候補: ${agendaNamesHtml_(cands, myName)}` : ''}</span></div>` : ''}
+            ${!isNone && s.location ? `<div class="ag-meta ag-loc"><i class="fa-solid fa-location-dot"></i><span>${escapeHtml(s.location)}</span></div>` : ''}
+            ${!isNone && s.presenters && s.presenters.length ? `<div class="ag-meta ag-names"><i class="fa-solid fa-person-chalkboard"></i><span>${agendaNamesHtml_(s.presenters, myName)}</span></div>` : ''}
+            ${undecided ? `<div class="ag-meta ag-names"><i class="fa-solid fa-person-chalkboard"></i><span><span class="ag-undecided">発表者未定</span>${cands.length ? ` 候補: ${agendaNamesHtml_(cands, myName)}` : ''}</span></div>` : ''}
             ${!isNone && s.freeNotes && s.freeNotes.length ? `<div class="ag-note">${escapeHtml(s.freeNotes.join('\n'))}</div>` : ''}
             ${(() => {
               // 発表者になる・登録・取り消しは、編集などと同じ見た目で同じ並びに（スマホでは上の段）
@@ -14306,9 +14539,9 @@
               ${isEr ? '<span class="ag-badge er">入構規制</span>' : ''}
               ${isMine ? '<span class="ag-badge me">参加予定</span>' : ''}
             </div>
-            ${series ? `<div class="ag-meta"><i class="${series.icon}"></i><span>${escapeHtml(series.label)}</span></div>` : ''}
-            ${loc ? `<div class="ag-meta"><i class="fa-solid fa-location-dot"></i><span>${escapeHtml(loc)}</span></div>` : ''}
-            ${ev.participants && ev.participants.length ? `<div class="ag-meta"><i class="fa-solid fa-user-group"></i><span>${agendaNamesHtml_(ev.participants, myName)}</span></div>` : ''}
+            ${series ? `<div class="ag-meta ag-fix"><i class="${series.icon}"></i><span>${escapeHtml(series.label)}</span></div>` : ''}
+            ${loc ? `<div class="ag-meta ag-loc"><i class="fa-solid fa-location-dot"></i><span>${escapeHtml(loc)}</span></div>` : ''}
+            ${ev.participants && ev.participants.length ? `<div class="ag-meta ag-names"><i class="fa-solid fa-user-group"></i><span>${agendaNamesHtml_(ev.participants, myName)}</span></div>` : ''}
             ${ev.note ? `<div class="ag-note">${escapeHtml(ev.note)}</div>` : ''}
             <div class="ag-actions">
               <button type="button" class="ag-btn" onclick="showEditEventModal(${index})"><i class="fa-solid fa-pen"></i>編集</button>
@@ -14575,6 +14808,30 @@
     let formDataRendered_ = false;
     let formDataPrefetch_ = null; // { at, promise, done }
     const FORM_PREFETCH_MAX_AGE_ = 2 * 60 * 1000;
+    // 前回の内容（この端末に残したもの）を出していて、最新がまだ届いていない間は提出させない
+    const FORM_CACHE_MAX_AGE_ = 7 * 24 * 60 * 60 * 1000;
+    let formDataStale_ = false;
+    let formDataStaleSig_ = '';
+    /** 入力の土台（対象月・入雛と掃除の日・受付中か）。これが変わっていたら、前回の内容の上での入力はそのまま使えない */
+    function formStructureSig_(r) {
+      return JSON.stringify([r.targetMonths || [r.targetMonth], r.chickenDatesByMonth || {}, r.cleaningDatesByMonth || {}, r.config ? r.config['シフト回答受付中'] : null]);
+    }
+    /**
+     * 前回の内容で入力を始めた後に最新が届いたとき。土台が同じなら入力はそのままで、提出済みかどうか・締切だけ最新にする。
+     * 土台が変わっていたら最新に入れ替える（同じ月の入力は残す）
+     */
+    function settleStaleForm_(fresh) {
+      if (formStructureSig_(fresh) === formDataStaleSig_) {
+        formDataStale_ = false;
+        submittedByMonth = fresh.submittedByMonth || {};
+        formDeadline = (fresh.config && fresh.config['回答期限']) ? String(fresh.config['回答期限']) : '';
+        renderShiftStatus_();
+        return;
+      }
+      loadFormData(false, { cachedResult: fresh, fresh: true, keepAllEdits: true }).then(() => {
+        showToast('シフトの対象日が更新されたため、最新の内容に切り替えました', 'info');
+      });
+    }
     function prefetchFormData_() {
       if (!currentUser || currentUser.emergency || !isShiftTarget_(currentUser) || formDataRendered_) return;
       if (formDataPrefetch_ && Date.now() - formDataPrefetch_.at < FORM_PREFETCH_MAX_AGE_) return;
@@ -14589,7 +14846,7 @@
 
     async function loadFormData(showLoading = true, opts = {}) {
       const prevNgByMonth = {};
-      if (opts.keepEditsExcept) {
+      if (opts.keepEditsExcept || opts.keepAllEdits) {
         if (currentTargetMonth) ngMapByMonth[currentTargetMonth] = new Map(ngMap);
         Object.keys(ngMapByMonth).forEach(ym => { prevNgByMonth[ym] = new Map(ngMapByMonth[ym]); });
       }
@@ -14604,12 +14861,26 @@
       }
       
       try {
-        const pre = formDataPrefetch_ && Date.now() - formDataPrefetch_.at < FORM_PREFETCH_MAX_AGE_ ? formDataPrefetch_.promise : null;
-        formDataPrefetch_ = null;
-        const fetchNow = () => callAPI('getFormData', { studentId: currentUser.id }, opts.background ? { silent: true } : undefined);
-        const result = pre ? await pre.catch(fetchNow) : await fetchNow();
-        // 裏での更新中に入力を始めていたら、上書きしない
-        if (opts.background && hasUnsavedNgEdits()) return;
+        let result;
+        if (opts.cachedResult) {
+          result = opts.cachedResult;
+        } else {
+          const pre = formDataPrefetch_ && Date.now() - formDataPrefetch_.at < FORM_PREFETCH_MAX_AGE_ ? formDataPrefetch_.promise : null;
+          formDataPrefetch_ = null;
+          const fetchNow = () => callAPI('getFormData', { studentId: currentUser.id }, opts.background ? { silent: true } : undefined);
+          result = pre ? await pre.catch(fetchNow) : await fetchNow();
+          // 次に開いたとき、待たずに出せるように残しておく（ログアウトで消える）
+          writeCache('form', result);
+        }
+        // 裏での更新中に入力を始めていたら、上書きしない（前回の内容を出していたときは、最新と照らし合わせる）
+        if (opts.background && hasUnsavedNgEdits()) {
+          if (formDataStale_) settleStaleForm_(result);
+          return;
+        }
+        // 前回の内容を出すときは、最新が届くまで提出させない
+        const fromCache = !!(opts.cachedResult && !opts.fresh);
+        formDataStale_ = fromCache;
+        if (fromCache) formDataStaleSig_ = formStructureSig_(result);
         // 稼働状態・班がスプレッドシート側で変わっていたら反映（ログインし直さなくてよいように）
         if (result.me && currentUser) {
           const changed = currentUser.isActive !== (result.me.isActive === true) || (currentUser.team || '') !== (result.me.team || '');
@@ -14652,9 +14923,9 @@
           });
         }
         // 提出していない方の月で入力中だった内容は残す
-        if (opts.keepEditsExcept) {
+        if (opts.keepEditsExcept || opts.keepAllEdits) {
           Object.keys(prevNgByMonth).forEach(ym => {
-            if (ym !== opts.keepEditsExcept && targetMonthsList.indexOf(ym) !== -1) {
+            if ((opts.keepAllEdits || ym !== opts.keepEditsExcept) && targetMonthsList.indexOf(ym) !== -1) {
               ngMapByMonth[ym] = prevNgByMonth[ym];
             }
           });
@@ -14673,7 +14944,7 @@
           return;
         }
         
-        currentTargetMonth = (opts.keepEditsExcept && prevMonth && targetMonthsList.indexOf(prevMonth) !== -1) ? prevMonth : targetMonthsList[0];
+        currentTargetMonth = ((opts.keepEditsExcept || opts.keepAllEdits) && prevMonth && targetMonthsList.indexOf(prevMonth) !== -1) ? prevMonth : targetMonthsList[0];
         formDeadline = (result.config && result.config['回答期限']) ? String(result.config['回答期限']) : '';
         
         if (currentTargetMonth) {
@@ -14810,6 +15081,11 @@
         }
       } catch (error) {
         console.error('フォームデータ読み込みエラー:', error);
+        // 最新を取れなかったときは、前回の内容のまま提出できるようにする（対象月・受付中かはサーバーでも確かめる）
+        if (formDataStale_ && !opts.cachedResult) {
+          formDataStale_ = false;
+          renderShiftStatus_();
+        }
         
         // エラー時でも、稼働中ではない人はシフト提出タブを非表示にする
         const isActive = isShiftTarget_(currentUser);
@@ -15126,10 +15402,12 @@
       updateNgFillLabel_();
       updateUndoButtons_();
       if (btn) {
-        btn.disabled = submitted && !changed;
-        btn.innerHTML = submitted && !changed
-          ? '<i class="fa-solid fa-check"></i> 提出済み'
-          : `<i class="fa-solid fa-paper-plane"></i> ${submitted ? '再提出' : '提出'}`;
+        btn.disabled = formDataStale_ || (submitted && !changed);
+        btn.innerHTML = formDataStale_
+          ? '<i class="fa-solid fa-rotate fa-spin"></i> 最新を確認中'
+          : submitted && !changed
+            ? '<i class="fa-solid fa-check"></i> 提出済み'
+            : `<i class="fa-solid fa-paper-plane"></i> ${submitted ? '再提出' : '提出'}`;
       }
       renderMonthTabs_();
     }
@@ -15185,7 +15463,7 @@
     /** 提出（今表示している月）。確認は 1 回だけ */
     async function handleSubmit() {
       const name = currentUser && currentUser.name;
-      if (!name || !currentTargetMonth) return;
+      if (!name || !currentTargetMonth || formDataStale_) return;
       ngMapByMonth[currentTargetMonth] = new Map(ngMap);
       const ok = await showShiftSubmitConfirm_(currentTargetMonth, ngMap);
       if (!ok) return;
