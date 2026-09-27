@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
-  <meta name="app-build" content="20260928-032654">
+  <meta name="app-build" content="20260928-035534">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -2690,8 +2690,12 @@
     /* PC：時刻・タイトル → 場所・人 → 右端に操作、を 1 行に並べて縦に伸びないようにする */
     @media (min-width: 900px) {
       .ag-item { display: flex; flex-wrap: wrap; align-items: center; align-content: center; gap: 4px 22px; padding: 10px 14px 10px 16px; }
-      /* その日の予定が 1 件なら、カードを日付タイル（＋「3日後」）と同じ高さにそろえる */
-      .ag-items > .ag-item:only-child { flex: 1 1 auto; }
+      /* 日付タイルの高さを決めて、その日の予定が 1 件ならカードをタイルと同じ高さ（以上）にする。
+         「今日」「3日後」はタイルのすぐ下に出し、カードの高さには含めない（時刻・タイトルの行がタイルの真ん中にそろうように） */
+      .ag-day { align-items: flex-start; }
+      .ag-date { height: 72px; }
+      .ag-d { flex: 1 1 auto; display: flex; align-items: center; padding-top: 0; }
+      .ag-items > .ag-item:only-child { min-height: 72px; }
       .ag-top { flex: 0 1 auto; min-width: min(100%, 12em); }
       .ag-meta { order: 1; margin-top: 0; }
       /* 短い項目は 1 行で（iPad などの WebKit は文字の幅を数 px 狭く見積もり、幅が足りていても 2 行に分けるため） */
