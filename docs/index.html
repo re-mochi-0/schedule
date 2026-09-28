@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
-  <meta name="app-build" content="20260928-091028">
+  <meta name="app-build" content="20260928-143442">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -234,7 +234,9 @@
       font-weight: 700;
       color: var(--text);
     }
-    .login-step .login-input { text-align: left; }
+    /* 学籍番号は中央揃え（見出しも合わせて中央に） */
+    .login-step .login-input { text-align: center; letter-spacing: 0.04em; }
+    .login-step[data-step="id"] .login-label { text-align: center; margin-left: 0; }
     .login-sent {
       margin: -2px 0 10px 2px;
       font-size: 12.5px;
@@ -2972,6 +2974,34 @@
     .poll-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; font-size: 13px; color: #66727a; }
     .poll-meta i { margin-right: 5px; color: #9aa4aa; }
     .poll-desc { margin-top: 10px; padding: 10px 12px; background: #f7f6f2; border-radius: 10px; font-size: 13.5px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+    /* 注意事項（回答する人にも見せる） */
+    .poll-caution { margin-top: 10px; padding: 10px 12px; background: #fff7e6; border: 1px solid #f3dcb0; border-radius: 10px; font-size: 13.5px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; color: #5b4a26; }
+    .poll-caution-head { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12.5px; color: #a0661a; margin-bottom: 2px; white-space: normal; }
+    /* 決まった人へのお知らせ（決定・担当の確定の画面、詳細画面） */
+    .pr-box { margin-top: 12px; padding: 12px; border: 1.5px solid var(--border); border-radius: 12px; text-align: left; }
+    .pr-box textarea { text-align: left; }
+    .pr-head { display: flex; align-items: center; gap: 4px; font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+    .pr-box .set-row { margin: 0; }
+    .pr-agenda { display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; border-radius: 10px; background: #f3f7f8; font-size: 12.5px; line-height: 1.6; color: #3c5a63; margin: 4px 0 2px; }
+    .pr-agenda[hidden] { display: none; }
+    .pr-agenda i { margin-top: 3px; }
+    .pr-box .seg-tabs { margin: 6px 0 4px; }
+    .pr-box .form-label { margin-top: 8px; }
+    .pr-status { margin-top: 10px; display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border-radius: 10px; background: #f3f7f8; font-size: 13px; line-height: 1.6; color: #3c5a63; }
+    .pr-status > i { margin-top: 4px; }
+    .pr-status-main { flex: 1 1 auto; min-width: 0; }
+    .pr-status-acts { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+    .pr-status-acts .btn { flex: 0 0 auto; }
+    /* 作成画面：手順のタブ（ヘッダーの下に固定）と対象者の 1 行 */
+    .pe-steps-wrap { padding: 10px 16px 0; background: var(--card, #fff); }
+    .pe-steps-wrap .seg-tabs { margin: 0; }
+    .pe-targets > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; }
+    .pe-targets > summary::-webkit-details-marker { display: none; }
+    .pe-targets > summary #pollTargetsSummary { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pe-targets-edit { flex: 0 0 auto; font-size: 12.5px; font-weight: 700; color: var(--primary-dark); }
+    .pe-targets-edit::after { content: '\f078'; font-family: 'Font Awesome 6 Free'; font-weight: 900; font-size: 10px; margin-left: 6px; display: inline-block; transition: transform .2s; }
+    .pe-targets[open] .pe-targets-edit::after { transform: rotate(180deg); }
+    .pe-targets[open] > #pollTargetsPicker { margin-top: 10px; }
     .poll-decided-banner { display: flex; gap: 10px; align-items: flex-start; margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: #e6f1f5; color: #24505e; font-size: 14px; line-height: 1.6; }
     .poll-decided-banner.me { background: var(--me-bg); color: var(--me); }
     .poll-decided-banner i { font-size: 20px; margin-top: 2px; }
@@ -3401,13 +3431,13 @@
       #eventModal .sheet-body > .form-group:has(#eventNote),
       #eventModal .sheet-body > .form-group:has(#eventColor) { grid-column: 1 / -1; }
       #chickenModal > .modal-box { max-width: 860px !important; width: 90vw; }
-      /* 日程調整の作成：左に内容、右に候補日時 */
-      /* 左に内容、右に候補日時。右の列が長くても左の項目の間が空かないよう、最後の行（1fr）で高さを吸収する */
-      #pollEditorModal .sheet-body { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(7, max-content) 1fr; column-gap: 28px; }
-      #pollEditorModal .sheet-body > * { min-width: 0; }
-      #pollEditorModal .poll-mode { grid-column: 1 / -1; }
-      #pollEditorModal .poll-builder { grid-column: 2; grid-row: 2 / -1; align-self: start; margin-bottom: 0; }
-      #pollEditorModal .poll-option-list { max-height: 360px; }
+      /* 日程調整の作成（3 つに分けた画面）：内容・対象と期限は読みやすい幅の 1 列。候補は左に作る部分、右に候補の一覧 */
+      #pollEditorModal .pe-step[data-step="0"], #pollEditorModal .pe-step[data-step="2"] { max-width: 640px; margin: 0 auto; }
+      #pollEditorModal .pe-steps-wrap .seg-tabs { max-width: 640px; margin: 0 auto; }
+      #pollEditorModal .poll-builder { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 28px; align-items: start; margin-bottom: 0; }
+      #pollEditorModal .poll-builder > * { grid-column: 1; min-width: 0; }
+      #pollEditorModal .poll-builder > .poll-options-head { grid-column: 2; grid-row: 1; margin-top: 0; }
+      #pollEditorModal .poll-builder > #pollOptionList { grid-column: 2; grid-row: 2 / span 12; max-height: 460px; }
       .mp-list { max-height: 320px; }
       .grid-wrap { max-height: 56vh; }
       .bulk-preview-list { max-height: 420px; }
@@ -6425,7 +6455,16 @@
         <button type="button" class="sheet-close" onclick="closePollEditor()" aria-label="閉じる"><i class="fa-solid fa-xmark"></i></button>
         <div class="sheet-head-title" id="pollEditorTitle">日程調整を作成</div>
       </div>
+      <!-- 3 つに分ける：内容 → 候補 → 対象と期限（タブで行き来・「次へ」で進む） -->
+      <div class="pe-steps-wrap">
+        <div class="seg-tabs pe-steps" id="pollEditorSteps" role="tablist" aria-label="作成の手順">
+          <button type="button" class="seg-tab active" data-step="0" onclick="setPollEditorStep(0)">1 内容</button>
+          <button type="button" class="seg-tab" data-step="1" onclick="setPollEditorStep(1)">2 候補</button>
+          <button type="button" class="seg-tab" data-step="2" onclick="setPollEditorStep(2)">3 対象と期限</button>
+        </div>
+      </div>
       <div class="sheet-body">
+        <div class="pe-step" data-step="0">
         <div class="form-group poll-mode">
           <div class="poll-mode-row">
             <div class="seg-tabs" id="pollModeSeg" role="tablist" aria-label="種類">
@@ -6451,7 +6490,13 @@
           <label class="form-label">場所（任意）</label>
           <input type="text" id="pollLocation" class="form-input" maxlength="100" placeholder="例: 駅前のお店">
         </div>
+        <div class="form-group">
+          <label class="form-label" for="pollNote">注意事項（任意）<button type="button" class="info-tip" data-tip="回答する人に表示し、決まった人へのお知らせと、登録するイベントの備考にも入ります" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></label>
+          <textarea id="pollNote" class="form-textarea" rows="3" maxlength="1000" placeholder="例: 香りの強い香水は控えてください"></textarea>
+        </div>
+        </div>
 
+        <div class="pe-step" data-step="1" hidden>
         <div class="poll-builder">
           <div class="poll-builder-title">候補日時</div>
           <div class="form-group">
@@ -6507,7 +6552,9 @@
           </div>
           <div id="pollOptionList" class="poll-option-list"></div>
         </div>
+        </div>
 
+        <div class="pe-step" data-step="2" hidden>
         <div class="form-group">
           <label class="form-label">回答期限<button type="button" class="info-tip" data-tip="空欄の場合は期限なし" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></label>
           <div class="other-input" style="margin-top: 0;">
@@ -6518,7 +6565,11 @@
 
         <div class="form-group">
           <label class="form-label">対象者</label>
-          <div id="pollTargetsPicker"></div>
+          <!-- ふだんは「全員（16人）」の 1 行。押したときだけ名前の一覧を開く -->
+          <details class="pe-targets" id="pollTargetsFold">
+            <summary><span id="pollTargetsSummary">全員</span><span class="pe-targets-edit">変更</span></summary>
+            <div id="pollTargetsPicker"></div>
+          </details>
         </div>
 
         <div class="form-group poll-settings">
@@ -6527,10 +6578,11 @@
           <label class="set-row compact poll-teams-only"><span class="set-name">作成時に Teams で通知</span><span class="sw"><input type="checkbox" id="pollNotify" checked><span></span></span></label>
           <label class="set-row compact poll-teams-only"><span class="set-name">締切前日に未回答者へ自動リマインド</span><span class="sw"><input type="checkbox" id="pollAutoRemind" checked><span></span></span></label>
         </div>
+        </div>
       </div>
       <div class="sheet-foot">
-        <button type="button" class="btn btn-outline" onclick="closePollEditor()">キャンセル</button>
-        <button type="button" class="btn btn-primary" id="pollSaveBtn" onclick="savePoll()"><i class="fa-solid fa-check"></i> 作成</button>
+        <button type="button" class="btn btn-outline" id="pollPrevBtn" onclick="pollEditorPrev()">キャンセル</button>
+        <button type="button" class="btn btn-primary" id="pollSaveBtn" onclick="pollEditorNext()">次へ</button>
       </div>
     </div>
   </div>
@@ -11329,6 +11381,7 @@
         pollState.isAdmin = !!r.isAdmin;
         pollState.canAnswer = r.canAnswer !== undefined ? r.canAnswer === true : !r.isAdmin;
         pollState.teamsEnabled = !!r.teamsEnabled;
+        pollState.agendaTeams = !!r.agendaTeams;
         if (r.messageTemplates) Object.assign(messageTemplateOverrides, r.messageTemplates);
         pollState.loadedAt = Date.now();
         updatePollBadge();
@@ -11505,8 +11558,10 @@
             <span><i class="fa-solid fa-users"></i>${p.answers.length}/${pollTargetCount(p)}人が回答</span>
           </div>
           ${p.description ? `<div class="poll-desc">${escapeHtml(p.description)}</div>` : ''}
+          ${p.settings && p.settings.note ? `<div class="poll-caution"><div class="poll-caution-head"><i class="fa-solid fa-triangle-exclamation"></i>注意事項</div>${escapeHtml(p.settings.note)}</div>` : ''}
           ${decided ? `<div class="poll-decided-banner"><i class="fa-solid fa-circle-check"></i><div><b>${escapeHtml(pollOptionLabel(decided).date)} ${escapeHtml(pollOptionLabel(decided).time)}</b> に決定${p.eventIds && p.eventIds.length ? '<br><span>イベント登録済み</span>' : ''}</div></div>` : ''}
           ${staff && p.status === 'decided' ? `<div class="poll-decided-banner${mySlots.length ? ' me' : ''}"><i class="fa-solid fa-user-check"></i><div>${mySlots.length ? `<b>あなたの担当</b><br>${mySlots.map(o => escapeHtml(pollOptionLabel(o).date + ' ' + pollOptionLabel(o).time)).join('<br>')}` : '<b>担当が決まりました</b>'}</div></div>` : ''}
+          ${p.status === 'decided' && pollCanDecide(p) ? pollRemindStatusHtml_(p) : ''}
         </div>
         <div class="seg-tabs" role="tablist">
           ${views.map(([k, l]) => `<button type="button" class="seg-tab ${pollState.view === k ? 'active' : ''}" onclick="setPollView('${k}')">${l}</button>`).join('')}
@@ -11965,13 +12020,18 @@
             <label class="set-row compact"><span class="set-name">イベントに登録（担当者を参加者に設定）</span><span class="sw"><input type="checkbox" id="pollAssignEvent" checked><span></span></span></label>
             ${pollState.teamsEnabled ? '<label class="set-row compact"><span class="set-name">Teams で担当者に通知</span><span class="sw"><input type="checkbox" id="pollAssignNotify" checked><span></span></span></label>' : ''}
           </div>
+          ${pollRemindSectionHtml_(p)}
           <div class="modal-actions">
             <button type="button" class="btn btn-outline" data-act="cancel">キャンセル</button>
             <button type="button" class="btn btn-primary" data-act="ok"><i class="fa-solid fa-user-check"></i> 確定</button>
           </div>
         </div>`;
       document.body.appendChild(overlay);
+      const assignEv = overlay.querySelector('#pollAssignEvent');
+      syncPollRemindMode_(overlay, assignEv.checked);
+      assignEv.addEventListener('change', () => syncPollRemindMode_(overlay, assignEv.checked));
       overlay.onclick = async (e) => {
+        if (handlePollRemindClick_(e)) return;
         if (e.target === overlay || e.target.closest('[data-act="cancel"]')) { overlay.remove(); return; }
         if (!e.target.closest('[data-act="ok"]')) return;
         const payload = {
@@ -11981,6 +12041,7 @@
           createEvent: overlay.querySelector('#pollAssignEvent').checked,
           notify: !!(overlay.querySelector('#pollAssignNotify') && overlay.querySelector('#pollAssignNotify').checked)
         };
+        Object.assign(payload, readPollRemindSection_(overlay));
         overlay.remove();
         try {
           const r = await callAPI('assignPoll', payload, { overlayMessage: '担当を確定しています…' });
@@ -12068,6 +12129,114 @@
       } catch (_) {}
     }
 
+    // ---------- 決まった人へのお知らせ（決定・担当の確定の画面／詳細画面の「設定」） ----------
+    const POLL_REMIND_AT = [['prev12', '前日 12:00'], ['prev18', '前日 18:00'], ['day8', '当日 8:00']];
+    function pollRemindSectionHtml_(p) {
+      const rm = (p.settings && p.settings.remind) || null;
+      const note = (p.settings && p.settings.note) || '';
+      // 初めて決めるときは、注意事項があればオン
+      const on = rm ? rm.on === true : !!note;
+      const at = rm && rm.at ? rm.at : 'prev18';
+      // イベントに登録するなら、毎日の予定（前日 17:00・当日 7:00）が知らせるので、別のリマインドは出さない（重ねない）
+      return `<div class="pr-box">
+        <div class="pr-head">決まった人へのお知らせ${infoTipHtml(pollIsStaff(p) ? '担当者にメンションして Teams で知らせます。注意事項は登録するイベントの備考にも入ります' : '○の人にメンションして Teams で知らせます。注意事項は登録するイベントの備考にも入ります')}</div>
+        <div class="pr-agenda" hidden><i class="fa-regular fa-bell"></i>イベントに登録するので、毎日の予定（前日 17:00・当日 7:00）で知らせます。注意事項も載ります</div>
+        ${pollState.teamsEnabled ? `<div class="pr-teams"><label class="set-row compact"><span class="set-name">前もって Teams でリマインド</span><span class="sw"><input type="checkbox" class="pr-on" ${on ? 'checked' : ''}><span></span></span></label>
+        <div class="seg-tabs small pr-at">${POLL_REMIND_AT.map(([k, l]) => `<button type="button" class="seg-tab ${k === at ? 'active' : ''}" data-at="${k}">${l}</button>`).join('')}</div></div>` : ''}
+        <label class="form-label">注意事項（任意）</label>
+        <textarea class="form-textarea pr-note" rows="3" maxlength="1000" placeholder="例: 香りの強い香水は控えてください">${escapeHtml(note)}</textarea>
+      </div>`;
+    }
+    function readPollRemindSection_(root) {
+      const on = root.querySelector('.pr-on');
+      const at = root.querySelector('.pr-at .seg-tab.active');
+      const teams = root.querySelector('.pr-teams');
+      const out = { note: (root.querySelector('.pr-note') || {}).value || '' };
+      // 毎日の予定が知らせるときは、別のリマインドはオフ
+      if (on) out.remind = { on: !(teams && teams.hidden) && on.checked, at: at ? at.dataset.at : 'prev18' };
+      return out;
+    }
+    /** イベントに登録する（した）日程調整を、毎日の予定が知らせるか */
+    function pollHasEvents_(p) {
+      return Array.isArray(p.eventIds) ? p.eventIds.length > 0 : !!(p.eventIds && Object.keys(p.eventIds).length);
+    }
+    /** お知らせの欄：イベントに登録するなら「毎日の予定で知らせます」、しないならリマインドのスイッチ */
+    function syncPollRemindMode_(root, eventOn) {
+      const covered = !!(eventOn && pollState.agendaTeams);
+      const hint = root.querySelector('.pr-agenda');
+      const teams = root.querySelector('.pr-teams');
+      if (hint) hint.hidden = !covered;
+      if (teams) teams.hidden = covered;
+    }
+    /** 送る時刻のタブを押したとき（押したら true） */
+    function handlePollRemindClick_(e) {
+      const b = e.target && e.target.closest ? e.target.closest('.pr-at .seg-tab') : null;
+      if (!b) return false;
+      b.parentElement.querySelectorAll('.seg-tab').forEach(x => x.classList.toggle('active', x === b));
+      return true;
+    }
+    /** 詳細画面：お知らせの状態（決めた人・管理者だけ） */
+    function pollRemindStatusHtml_(p) {
+      const rm = (p.settings && p.settings.remind) || {};
+      const at = (POLL_REMIND_AT.find(x => x[0] === rm.at) || [])[1] || '前日 18:00';
+      const sent = Object.keys((p.settings && p.settings.remindSent) || {}).sort().map(d => fmtMdW(d));
+      const text = pollHasEvents_(p) && pollState.agendaTeams ? '毎日の予定（前日 17:00・当日 7:00）で知らせます'
+        : !pollState.teamsEnabled ? '注意事項は登録したイベントの備考に入ります'
+        : rm.on ? `${at} に Teams で知らせます${sent.length ? `（送信済み：${sent.join('、')}）` : ''}` : 'お知らせは送りません';
+      return `<div class="pr-status"><i class="fa-regular fa-bell"></i>
+        <div class="pr-status-main">
+          <div>${escapeHtml(text)}</div>
+          <div class="pr-status-acts">
+            <button type="button" class="btn btn-outline btn-xs" onclick="editPollRemind()">設定</button>
+            ${pollState.teamsEnabled ? '<button type="button" class="btn btn-outline btn-xs" onclick="remindPollPrepareNow()">今すぐ送る</button>' : ''}
+          </div>
+        </div>
+      </div>`;
+    }
+    function editPollRemind() {
+      const p = currentPoll_();
+      if (!p) return;
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay show';
+      overlay.style.zIndex = '10060';
+      overlay.innerHTML = `
+        <div class="modal-box" style="max-width: 460px;" role="dialog" aria-modal="true">
+          <div class="modal-title">決まった人へのお知らせ</div>
+          ${pollRemindSectionHtml_(p)}
+          <div class="modal-actions">
+            <button type="button" class="btn btn-outline" data-act="cancel">キャンセル</button>
+            <button type="button" class="btn btn-primary" data-act="ok"><i class="fa-solid fa-check"></i> 保存</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      syncPollRemindMode_(overlay, pollHasEvents_(p));
+      overlay.onclick = async (e) => {
+        if (handlePollRemindClick_(e)) return;
+        if (e.target === overlay || e.target.closest('[data-act="cancel"]')) { overlay.remove(); return; }
+        if (!e.target.closest('[data-act="ok"]')) return;
+        const payload = Object.assign({ adminId: currentUser.id, pollId: p.id }, readPollRemindSection_(overlay));
+        overlay.remove();
+        try {
+          const r = await callAPI('setPollRemind', payload, { overlayMessage: '保存しています…' });
+          showToast(r.message || '保存しました', 'success');
+          await loadPolls(true);
+          renderPollDetail();
+        } catch (_) {}
+      };
+    }
+    async function remindPollPrepareNow() {
+      const p = currentPoll_();
+      if (!p) return;
+      const ok = await showConfirmModal(`次の日程の${pollIsStaff(p) ? '担当' : '参加'}の方に、Teams でお知らせを送りますか？`, '今すぐ送る');
+      if (!ok) return;
+      try {
+        const r = await callAPI('remindPollPrepare', { adminId: currentUser.id, pollId: p.id }, { overlayMessage: '送信しています…' });
+        showToast(r.message || '送りました', 'success');
+        await loadPolls(true);
+        renderPollDetail();
+      } catch (_) {}
+    }
+
     function decidePollDialog() {
       const p = currentPoll_();
       if (!p) return;
@@ -12095,13 +12264,18 @@
             <label class="set-row compact"><span class="set-name">△の人も参加者に含める</span><span class="sw"><input type="checkbox" id="pollDecideMaybe"><span></span></span></label>
             ${pollState.teamsEnabled ? '<label class="set-row compact"><span class="set-name">Teams で通知</span><span class="sw"><input type="checkbox" id="pollDecideNotify" checked><span></span></span></label>' : ''}
           </div>
+          ${pollRemindSectionHtml_(p)}
           <div class="modal-actions">
             <button type="button" class="btn btn-outline" data-act="cancel">キャンセル</button>
             <button type="button" class="btn btn-primary" data-act="ok"><i class="fa-solid fa-flag-checkered"></i> 決定</button>
           </div>
         </div>`;
       document.body.appendChild(overlay);
+      const decideEv = overlay.querySelector('#pollDecideEvent');
+      syncPollRemindMode_(overlay, decideEv.checked);
+      decideEv.addEventListener('change', () => syncPollRemindMode_(overlay, decideEv.checked));
       overlay.onclick = async (e) => {
+        if (handlePollRemindClick_(e)) return;
         if (e.target === overlay || (e.target.closest('[data-act="cancel"]'))) {
           overlay.remove();
           return;
@@ -12117,6 +12291,7 @@
           includeMaybe: overlay.querySelector('#pollDecideMaybe').checked,
           notify: !!(overlay.querySelector('#pollDecideNotify') && overlay.querySelector('#pollDecideNotify').checked)
         };
+        Object.assign(payload, readPollRemindSection_(overlay));
         overlay.remove();
         try {
           const r = await callAPI('decidePoll', payload, { overlayMessage: '日程を決定しています…' });
@@ -12188,11 +12363,11 @@
       // 時間の分割は毎回「1時間ごと」から
       document.getElementById('pollTimeStep').value = '60';
       document.getElementById('pollEditorTitle').textContent = pollEditor.id ? '日程調整を編集' : copyFrom ? '日程調整を複製' : '日程調整を作成';
-      document.getElementById('pollSaveBtn').innerHTML = `<i class="fa-solid fa-check"></i> ${pollEditor.id ? '保存' : '作成'}`;
       document.getElementById('pollTitle').value = src ? src.title + (copyFrom ? '（コピー）' : '') : '';
       document.getElementById('pollDescription').value = src ? src.description : '';
       document.getElementById('pollLocation').value = src ? src.location : '';
       document.getElementById('pollLabel').value = src && src.settings && src.settings.label ? src.settings.label : '';
+      document.getElementById('pollNote').value = src && src.settings && src.settings.note ? src.settings.note : '';
       const dl = src && src.deadline && !copyFrom ? parseYmdHmLocal_(src.deadline) : (() => { const d = new Date(); d.setDate(d.getDate() + 3); return d; })();
       document.getElementById('pollDeadlineDate').value = src && !src.deadline && !copyFrom ? '' : ymdDash(dl);
       document.getElementById('pollDeadlineTime').value = src && src.deadline && !copyFrom ? src.deadline.slice(11, 16) : '23:59';
@@ -12206,10 +12381,62 @@
       const everyone = membersList.filter(m => !m.isGraduated).map(m => m.name);
       const defaultTargets = src && src.targets && src.targets.length ? src.targets : everyone;
       renderMemberPicker(document.getElementById('pollTargetsPicker'), { selected: defaultTargets });
+      document.getElementById('pollTargetsFold').open = false;
+      updatePollTargetsSummary_();
       setPollTimeMode('time');
       setPollMode(src && src.settings && src.settings.mode === 'staff' ? 'staff' : 'date');
+      setPollEditorStep(0);
       document.getElementById('pollEditorModal').classList.add('show');
     }
+
+    // ---------- 作成画面は 3 つに分ける（内容 → 候補 → 対象と期限）。上のタブで行き来でき、「次へ」で進む ----------
+    function setPollEditorStep(i) {
+      pollEditor.step = Math.max(0, Math.min(2, i));
+      document.querySelectorAll('#pollEditorModal .pe-step').forEach(el => { el.hidden = +el.dataset.step !== pollEditor.step; });
+      document.querySelectorAll('#pollEditorSteps .seg-tab').forEach(b => b.classList.toggle('active', +b.dataset.step === pollEditor.step));
+      document.getElementById('pollPrevBtn').textContent = pollEditor.step === 0 ? 'キャンセル' : '戻る';
+      document.getElementById('pollSaveBtn').innerHTML = pollEditor.step === 2
+        ? `<i class="fa-solid fa-check"></i> ${pollEditor.id ? '保存' : '作成'}`
+        : '次へ<i class="fa-solid fa-chevron-right" style="margin-left: 6px;"></i>';
+      const body = document.querySelector('#pollEditorModal .sheet-body');
+      if (body) body.scrollTop = 0;
+      if (pollEditor.step === 2) updatePollTargetsSummary_();
+    }
+    function pollEditorPrev() {
+      if (pollEditor.step > 0) setPollEditorStep(pollEditor.step - 1);
+      else closePollEditor();
+    }
+    function pollEditorNext() {
+      if (pollEditor.step === 0 && !document.getElementById('pollTitle').value.trim()) {
+        showToast('タイトルを入力してください', 'error');
+        document.getElementById('pollTitle').focus();
+        return;
+      }
+      if (pollEditor.step === 1) {
+        // 日付を選んだまま「候補に追加」を押し忘れていたら、ここで追加する
+        if (!pollEditor.options.length && pollEditor.dates.length) makePollOptions();
+        if (!pollEditor.options.length) {
+          showToast('候補日時を追加してください', 'error');
+          return;
+        }
+      }
+      if (pollEditor.step === 2) { savePoll(); return; }
+      setPollEditorStep(pollEditor.step + 1);
+    }
+    /** 対象者の 1 行（全員なら「全員（16人）」、選んだときは人数と名前の頭） */
+    function updatePollTargetsSummary_() {
+      const el = document.getElementById('pollTargetsSummary');
+      if (!el) return;
+      const sel = getPickerSelection(document.getElementById('pollTargetsPicker'));
+      const everyone = membersList.filter(m => !m.isGraduated).map(m => m.name);
+      const all = everyone.length === sel.length && everyone.every(n => sel.includes(n));
+      el.textContent = all ? `全員（${sel.length}人）`
+        : sel.length ? `${sel.length}人（${sel.slice(0, 3).join('、')}${sel.length > 3 ? ' ほか' : ''}）` : '未選択';
+    }
+    // 名前の一覧で選び直したら、1 行の表示も変える
+    ['click', 'input', 'change'].forEach(ev => document.addEventListener(ev, e => {
+      if (e.target && e.target.closest && e.target.closest('#pollTargetsPicker')) setTimeout(updatePollTargetsSummary_, 0);
+    }));
     function duplicatePoll(id) {
       closePollDetail();
       return openPollEditor('', id);
@@ -12371,11 +12598,13 @@
     async function savePoll() {
       const title = document.getElementById('pollTitle').value.trim();
       if (!title) {
+        setPollEditorStep(0);
         showToast('タイトルを入力してください', 'error');
         document.getElementById('pollTitle').focus();
         return;
       }
       if (pollEditor.options.length === 0) {
+        setPollEditorStep(1);
         showToast('候補日時を追加してください', 'error');
         return;
       }
@@ -12383,11 +12612,14 @@
       const dt = document.getElementById('pollDeadlineTime').value || '23:59';
       const deadline = dd ? dd.replace(/-/g, '/') + ' ' + dt : '';
       if (deadline && parseYmdHmLocal_(deadline) < new Date()) {
+        setPollEditorStep(2);
         showToast('回答期限には現在より後の日時を指定してください', 'error');
         return;
       }
       const targets = getPickerSelection(document.getElementById('pollTargetsPicker'));
       if (targets.length === 0) {
+        setPollEditorStep(2);
+        document.getElementById('pollTargetsFold').open = true;
         showToast('対象者を選択してください', 'error');
         return;
       }
@@ -12404,7 +12636,8 @@
         options: pollEditor.optionPlaces ? pollEditor.options.map(o => Object.assign({}, o, { location: String(o.location || '').trim() })) : pollEditor.options.map(o => Object.assign({}, o, { location: '' })),
         targets: isEveryone ? [] : targets,
         settings: { allowMaybe: document.getElementById('pollAllowMaybe').checked, autoRemind: document.getElementById('pollAutoRemind').checked, allowOthersDecide: document.getElementById('pollAllowOthersDecide').checked, mode: pollEditor.mode,
-          label: pollEditor.mode === 'staff' ? document.getElementById('pollLabel').value.trim() : '' }
+          label: pollEditor.mode === 'staff' ? document.getElementById('pollLabel').value.trim() : '',
+          note: document.getElementById('pollNote').value.trim() }
       };
       try {
         const r = await callAPI('savePoll', { adminId: currentUser.id, poll, notify: !pollEditor.id && pollState.teamsEnabled && document.getElementById('pollNotify').checked }, { overlayMessage: pollEditor.id ? '保存しています…' : '作成しています…' });
