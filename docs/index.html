@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
-  <meta name="app-build" content="20260928-143442">
+  <meta name="app-build" content="20260928-153711">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -4785,14 +4785,21 @@
     html.boot #loginScreen { display: none !important; }
     #bootSplash svg { width: 96px; height: 96px; overflow: visible; }
     #bootSplash rect, #bootSplash circle { transform-box: fill-box; transform-origin: center; }
-    #bootSplash { -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+    #bootSplash { -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; touch-action: none; }
+    #bootSplash .bs-g { transform-box: fill-box; transform-origin: center; }
     #bootSplash rect, #bootSplash circle, #bootSplash .bs-say { cursor: pointer; }
-    /* ひみつの部屋：下に遊び方と「もどる」 */
-    #bootSplash .bs-room { position: absolute; left: 0; right: 0; bottom: calc(28px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 0 20px; font-family: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', 'BIZ UDPGothic', 'Yu Gothic UI', sans-serif; }
-    #bootSplash .bs-tips { margin: 0; padding: 0; list-style: none; color: rgba(255, 255, 255, .85); font-size: 12.5px; font-weight: 500; line-height: 1.9; text-align: center; }
-    #bootSplash .bs-tips b { font-weight: 700; color: #fff; margin-right: 6px; }
-    #bootSplash .bs-back { appearance: none; -webkit-appearance: none; border: 1.5px solid rgba(255, 255, 255, .85); background: transparent; color: #fff; font: inherit; font-size: 14px; font-weight: 700; padding: 9px 30px; border-radius: 999px; cursor: pointer; }
+    /* ひみつの部屋：マーク・ひとこと・遊び方・「もどる」をひとまとまりにして、画面の中央に置く */
+    #bootSplash .bs-room { margin-top: 44px; display: flex; flex-direction: column; align-items: center; gap: 32px; padding: 0 20px; font-family: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', 'BIZ UDPGothic', 'Yu Gothic UI', sans-serif; animation: bsRoomIn .45s ease .35s both; }
+    /* 遊び方：操作（右寄せ）と反応（左寄せ）の 2 列。境目をそろえる */
+    #bootSplash .bs-tips { margin: 0; display: grid; grid-template-columns: max-content max-content; column-gap: 14px; row-gap: 8px; font-size: 12.5px; line-height: 1.5; }
+    #bootSplash .bs-tips dt { font-weight: 700; color: #fff; text-align: right; }
+    #bootSplash .bs-tips dd { margin: 0; font-weight: 500; color: rgba(255, 255, 255, .78); }
+    #bootSplash .bs-back { appearance: none; -webkit-appearance: none; border: 1.5px solid rgba(255, 255, 255, .85); background: transparent; color: #fff; font: inherit; font-size: 14px; font-weight: 700; padding: 9px 34px; border-radius: 999px; cursor: pointer; }
     #bootSplash .bs-back:hover { background: rgba(255, 255, 255, .12); }
+    @keyframes bsRoomIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    /* 高さが足りない画面（スマホの横向きなど）では間を詰める */
+    @media (max-height: 520px) { #bootSplash .bs-room { margin-top: 22px; gap: 18px; } #bootSplash .bs-tips { row-gap: 4px; } }
+    @media (prefers-reduced-motion: reduce) { #bootSplash .bs-room { animation: none; } }
   </style>
   <script>
     (function () {
@@ -4822,11 +4829,11 @@
       var canAnim = typeof el.animate === 'function' && !reduce;
 
       function markup() {
-        var h = '<svg viewBox="120 120 272 272">';
+        var h = '<svg viewBox="120 120 272 272"><g class="bs-g">';
         P.forEach(function (p, i) {
           h += '<rect data-i="' + i + '" x="' + p[0] + '" y="' + p[1] + '" width="72" height="72" rx="20" fill="#fff" fill-opacity="' + (i === 8 ? 0.3 : 0.92) + '"' + (i === 4 ? ' style="opacity:0"' : '') + '/>';
         });
-        return h + '<circle cx="256" cy="256" r="36" fill="#ffc857"/></svg><div class="bs-say" aria-live="polite"><span class="bs-text"></span><span class="bs-caret">▼</span></div>';
+        return h + '<circle cx="256" cy="256" r="36" fill="#ffc857"/></g></svg><div class="bs-say" aria-live="polite"><span class="bs-text"></span><span class="bs-caret">▼</span></div>';
       }
 
       // ---------- ひとこと（どうぶつの森のように 1 文字ずつ流れる） ----------
@@ -4989,11 +4996,12 @@
         st.play = !!opts.play;
         if (st.play) {
           el.insertAdjacentHTML('beforeend', '<div class="bs-room">' +
-            '<ul class="bs-tips">' +
-            '<li><b>文字をタップ</b>次のひとこと</li>' +
-            '<li><b>マスや丸をタップ</b>いろいろ反応します</li>' +
-            '<li><b>四隅を時計回りにタップ</b>…ひみつ</li>' +
-            '</ul>' +
+            '<dl class="bs-tips">' +
+            '<dt>文字をタップ</dt><dd>次のひとこと</dd>' +
+            '<dt>マスや丸をタップ</dt><dd>いろいろ反応します</dd>' +
+            '<dt>スワイプ</dt><dd>ゆれます</dd>' +
+            '<dt>四隅を時計回りにタップ</dt><dd>…ひみつ</dd>' +
+            '</dl>' +
             '<button type="button" class="bs-back">もどる</button>' +
             '</div>');
         }
@@ -5115,6 +5123,7 @@
       var pick = function (a) { return a[Math.floor(Math.random() * a.length)]; };
       el.addEventListener('click', function (e) {
         if (!st.on) return;
+        if (st.swipedAt && Date.now() - st.swipedAt < 400) return; // スワイプの直後は、タップの反応をしない
         var t = e.target;
         var fx = st.fx;
         if (t.closest && t.closest('.bs-back')) { finish(false); return; }
@@ -5145,6 +5154,58 @@
         }
       });
       document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && st.on && st.play) finish(false); });
+
+      // ---------- スワイプで揺れる（指につられて傾き、離すとぷるんと戻る。マスは向きに沿って少しずつ遅れて揺れる） ----------
+      var SWIPE_LINES = ['わわっ、ゆれます〜', 'めがまわります…', 'そんなにゆらさないで…', 'ぷるぷるしています', 'ちょっと酔いました…', 'たのしいです！'];
+      var drag = null;
+      var clamp = function (v, m) { return Math.max(-m, Math.min(m, v)); };
+      el.addEventListener('pointerdown', function (e) {
+        if (!st.on || !canAnim || !st.fx) return;
+        var g = el.querySelector('.bs-g');
+        if (!g) return;
+        var r = el.firstChild.getBoundingClientRect();
+        drag = { x: e.clientX, y: e.clientY, t: Date.now(), g: g, k: 272 / (r.width || 96), dx: 0, dy: 0, moved: false };
+      });
+      el.addEventListener('pointermove', function (e) {
+        if (!drag) return;
+        drag.dx = e.clientX - drag.x;
+        drag.dy = e.clientY - drag.y;
+        if (!drag.moved && Math.abs(drag.dx) + Math.abs(drag.dy) < 10) return;
+        drag.moved = true;
+        var cx = clamp(drag.dx, 90), cy = clamp(drag.dy, 90);
+        drag.g.style.transform = 'translate(' + cx * 0.3 * drag.k + 'px,' + cy * 0.3 * drag.k + 'px) skewX(' + (-cx * 0.1) + 'deg)';
+      });
+      var release = function () {
+        if (!drag) return;
+        var d = drag;
+        drag = null;
+        if (!d.moved) { d.g.style.transform = ''; return; }
+        st.swipedAt = Date.now();
+        var cx = clamp(d.dx, 90), cy = clamp(d.dy, 90);
+        var len = Math.sqrt(d.dx * d.dx + d.dy * d.dy) || 1, ux = d.dx / len, uy = d.dy / len;
+        var fast = len / Math.max(1, Date.now() - d.t) > 1.2;
+        var from = d.g.style.transform;
+        d.g.style.transform = '';
+        // 全体：反対側へ行き過ぎてから、小さく揺れて戻る
+        A(d.g, [
+          { transform: from },
+          { transform: 'translate(' + (-cx * 0.14 * d.k) + 'px,' + (-cy * 0.14 * d.k) + 'px) skewX(' + cx * 0.06 + 'deg)', offset: .35 },
+          { transform: 'translate(' + cx * 0.05 * d.k + 'px,' + cy * 0.05 * d.k + 'px) skewX(' + (-cx * 0.02) + 'deg)', offset: .7 },
+          { transform: 'none' }
+        ], { duration: 760 });
+        // 各マス：スワイプの向きの先にあるマスほど遅れて、ぷるん
+        var amp = fast ? 16 : 9;
+        st.fx.ts.forEach(function (t, i) {
+          if (i === 4) return;
+          var px = (P[i][0] - 220) / 94, py = (P[i][1] - 220) / 94;
+          var order = (px * ux + py * uy + 1.5) * 60;
+          A(t, [{ transform: 'translate(0,0)' }, { transform: 'translate(' + ux * amp + 'px,' + uy * amp + 'px) scale(.92,1.06)' }, { transform: 'translate(' + (-ux * amp * .35) + 'px,' + (-uy * amp * .35) + 'px)' }, { transform: 'translate(0,0)' }], { duration: 560, delay: order });
+        });
+        st.fx.dotHop(fast ? 34 : 20, 120);
+        if (st.talker) st.talker.say(fast ? 'ふきとびそうです…！' : pick(SWIPE_LINES));
+      };
+      el.addEventListener('pointerup', release);
+      el.addEventListener('pointercancel', release);
       // ヘッダーのマークを 3 秒以内に 5 回タップすると、ひみつの部屋が開く
       var markTaps = [];
       document.addEventListener('click', function (e) {
@@ -6341,7 +6402,7 @@
         <div class="sheet-head-title" id="calLinkTitle">カレンダー連携</div>
       </div>
       <div class="sheet-body">
-      <p class="cal-link-lead">自分の餌番・掃除と、ゼミ・イベントが自動で入ります。<button type="button" class="info-tip" data-tip="変更がカレンダーに反映されるまで、数時間かかることがあります" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></p>
+      <p class="cal-link-lead">自分の餌番・掃除、ゼミ・イベント、回答・提出の期限が自動で入ります。<button type="button" class="info-tip" data-tip="期限は、日程調整に未回答・シフトが未提出のときだけ、期限の日に入ります。変更の反映には数時間かかることがあります（Google カレンダーは 1 日ほどかかることも）" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></p>
       <div class="cal-link-btns">
         <a class="btn btn-primary" id="calLinkIos" href="#"><i class="fa-brands fa-apple"></i> iPhone・Mac のカレンダー</a>
         <a class="btn btn-outline" id="calLinkGoogle" href="#" target="_blank" rel="noopener"><i class="fa-brands fa-google"></i> Google カレンダー</a>
