@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
-  <meta name="app-build" content="20260928-035534">
+  <meta name="app-build" content="20260928-091028">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -2689,20 +2689,22 @@
     #admin-events .ag-actions button { width: auto; margin-top: 0; padding: 7px 10px; font-size: 12.5px; }
     /* PC：時刻・タイトル → 場所・人 → 右端に操作、を 1 行に並べて縦に伸びないようにする */
     @media (min-width: 900px) {
-      .ag-item { display: flex; flex-wrap: wrap; align-items: center; align-content: center; gap: 4px 22px; padding: 10px 14px 10px 16px; }
+      /* 3 列（左：時刻と名前｜真ん中：場所と人｜右：ボタン）。どの列も縦の真ん中にそろえ、長いときは真ん中の列の中だけで折り返す */
+      .ag-item { display: grid; grid-template-columns: fit-content(45%) minmax(0, 1fr) auto; align-items: center; column-gap: 22px; row-gap: 4px; padding: 10px 14px 10px 16px; }
+      .ag-metas { grid-column: 2; grid-row: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 22px; min-width: 0; }
       /* 日付タイルの高さを決めて、その日の予定が 1 件ならカードをタイルと同じ高さ（以上）にする。
          「今日」「3日後」はタイルのすぐ下に出し、カードの高さには含めない（時刻・タイトルの行がタイルの真ん中にそろうように） */
       .ag-day { align-items: flex-start; }
       .ag-date { height: 72px; }
       .ag-d { flex: 1 1 auto; display: flex; align-items: center; padding-top: 0; }
       .ag-items > .ag-item:only-child { min-height: 72px; }
-      .ag-top { flex: 0 1 auto; min-width: min(100%, 12em); }
-      .ag-meta { order: 1; margin-top: 0; }
+      .ag-top { grid-column: 1; grid-row: 1; min-width: 0; }
+      .ag-meta { margin-top: 0; }
       /* 短い項目は 1 行で（iPad などの WebKit は文字の幅を数 px 狭く見積もり、幅が足りていても 2 行に分けるため） */
       .ag-meta.ag-loc span, .ag-meta.ag-fix span { white-space: nowrap; }
-      .ag-actions { order: 2; flex: 0 0 auto; margin: -4px -8px -4px auto; }
+      .ag-actions { grid-column: 3; grid-row: 1; margin: -4px -8px -4px 0; }
       .ag-actions .ag-series { margin-right: 10px; }
-      .ag-note { order: 3; flex: 0 0 100%; margin-top: 4px; }
+      .ag-note { grid-column: 1 / -1; grid-row: 2; margin-top: 4px; }
     }
     @media (max-width: 767.98px) {
       /* スマホでは「繰り返し」をボタンの行ではなく、カードの右上の角にアイコンだけで出す（「次のゼミ」などが並んでも落ちないように） */
@@ -3472,6 +3474,19 @@
     .dest-list { display: flex; flex-direction: column; gap: 10px; }
     .dest-row { border: 1.5px solid var(--border); border-radius: 14px; padding: 12px; background: var(--card); }
     .dest-head { display: flex; align-items: flex-start; gap: 10px; }
+    details.dest-row > summary { list-style: none; cursor: pointer; user-select: none; }
+    details.dest-row > summary::-webkit-details-marker { display: none; }
+    details.dest-row > summary::after {
+      content: '\f078';
+      font-family: 'Font Awesome 6 Free';
+      font-weight: 900;
+      font-size: 11px;
+      color: var(--primary-dark);
+      align-self: center;
+      transition: transform 0.2s;
+    }
+    details.dest-row[open] > summary::after { transform: rotate(180deg); }
+    details.dest-row > summary:focus-visible { outline: 2px solid var(--primary-dark); outline-offset: 2px; border-radius: 6px; }
     .dest-name-wrap { flex: 1; min-width: 0; }
     .dest-name { font-weight: 700; font-size: 14px; }
     .dest-hint { font-size: 12px; color: var(--text-light); line-height: 1.5; }
@@ -7642,7 +7657,7 @@
     const READ_ACTIONS = new Set([
       'login', 'getFormData', 'getAdminData', 'getChickenSchedule', 'getCleaningSchedule', 'getScheduleData',
       'getEvents', 'getSeminars', 'getMembers', 'getNGData', 'getScheduleLogs', 'getHolidays', 'getTemplates', 'getPolls',
-      'getSeminarReminders', 'getTeamsSettings', 'getSwaps', 'swapCandidates', 'getAuditLog', 'getCalendarLink', 'whoami', 'pollLogin'
+      'getSeminarReminders', 'getTeamsSettings', 'getSwaps', 'swapCandidates', 'getAuditLog', 'getCalendarLink', 'whoami', 'pollLogin', 'getBundle'
     ]);
     const WRITE_MESSAGES = {
       submitForm: '提出しています…',
@@ -8402,7 +8417,10 @@
         loadChickenSchedule(false, 'admin-chicken').catch(() => {});
         // メンバー画面へ待たずに切り替えられるよう、シフト提出のデータを裏で取っておく
         if (currentUser.token) setTimeout(prefetchFormData_, 1500);
-        if (window.bootSplash) Promise.resolve(firstTab).catch(() => {}).finally(() => bootSplash.done());
+        Promise.resolve(firstTab).catch(() => {}).finally(() => {
+          if (window.bootSplash) bootSplash.done();
+          prefetchTabs_();
+        });
       } else if (currentUser && currentUser.role === 'member') {
         document.body.setAttribute('data-user-role', 'member');
         memberTabs.style.display = 'flex';
@@ -8422,6 +8440,8 @@
         const ready_ = () => {
           if (globalLoading) globalLoading.style.display = 'none';
           if (window.bootSplash) bootSplash.done();
+          // 最初の画面が出たら、まだ開いていないタブ（ゼミ・イベントなど）を裏でまとめて読み込む
+          prefetchTabs_();
         };
         
         if (isActive) {
@@ -10550,9 +10570,11 @@
               ${ongoing ? '<span class="ag-badge next">進行中</span>' : ''}
               ${isMine ? '<span class="ag-badge me">担当</span>' : ''}
             </div>
-            <div class="ag-meta ag-fix"><i class="fa-regular fa-calendar"></i><span>${total}日間${ongoing ? `・残り${days(today, p.end)}日` : ''}</span></div>
-            <div class="ag-meta ag-names"><i class="fa-solid fa-user-group"></i><span>${(e.owners || []).length ? agendaNamesHtml_(e.owners, myName) : '担当者未設定'}</span></div>
-            ${e.feed ? `<div class="ag-meta ag-fix"><i class="fa-solid fa-wheat-awn"></i><span>${escapeHtml(e.feed)}</span></div>` : ''}
+            <div class="ag-metas">
+              <div class="ag-meta ag-fix"><i class="fa-regular fa-calendar"></i><span>${total}日間${ongoing ? `・残り${days(today, p.end)}日` : ''}</span></div>
+              <div class="ag-meta ag-names"><i class="fa-solid fa-user-group"></i><span>${(e.owners || []).length ? agendaNamesHtml_(e.owners, myName) : '担当者未設定'}</span></div>
+              ${e.feed ? `<div class="ag-meta ag-fix"><i class="fa-solid fa-wheat-awn"></i><span>${escapeHtml(e.feed)}</span></div>` : ''}
+            </div>
             ${e.note ? `<div class="ag-note">${escapeHtml(e.note)}</div>` : ''}
             <div class="ag-actions">
               <button type="button" class="ag-btn" onclick="showEditChickenModal(${jsArg(p.dates[0])}, ${jsArg(p.key)})"><i class="fa-solid fa-pen"></i>編集</button>
@@ -11300,7 +11322,7 @@
       const box = document.getElementById('pollList');
       if (box && !pollState.loadedAt && !opts.background) box.innerHTML = '<div class="inline-loading tall"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><div>読み込み中...</div></div>';
       try {
-        const r = await callAPI('getPolls', { adminId: currentUser.id }, { silent: !!opts.background });
+        const r = opts.prefetched || await callAPI('getPolls', { adminId: currentUser.id }, { silent: !!opts.background });
         if (!isLatestLoad('polls', seq)) return;
         pollState.list = r.polls || [];
         pollState.me = r.me || '';
@@ -11315,6 +11337,32 @@
       } catch (e) {
         if (!isLatestLoad('polls', seq)) return;
         if (box && !pollState.loadedAt) box.innerHTML = '<div class="inline-error">読み込みに失敗しました<br><button type="button" class="btn btn-outline btn-xs" onclick="loadPolls(true)">再試行</button></div>';
+      }
+    }
+
+    /**
+     * 起動の直後：まだ読み込んでいないタブ（ゼミ・イベント・日程調整）を、1 回の問い合わせでまとめて裏で読み込む。
+     * 最初の画面が出てから呼ぶ（起動を遅らせない・同時の問い合わせを増やさない）。開いたときに待たずに出せる
+     */
+    let tabPrefetching_ = false;
+    async function prefetchTabs_() {
+      if (!currentUser || tabPrefetching_) return;
+      const want = [];
+      if (!seminarLoadedAt) want.push('seminars');
+      if (!eventLoadedAt) want.push('events');
+      if (!pollState.loadedAt) want.push('polls');
+      if (!want.length) return;
+      tabPrefetching_ = true;
+      try {
+        const r = await callAPI('getBundle', { adminId: currentUser.id, want }, { silent: true });
+        // 待っている間に自分で開いて読み込んだタブは、そのまま
+        if (r.seminars && r.seminars.ok && !seminarLoadedAt) loadSeminars(false, { prefetched: r.seminars }).catch(() => {});
+        if (r.events && r.events.ok && !eventLoadedAt) loadEvents(false, { prefetched: r.events }).catch(() => {});
+        if (r.polls && r.polls.ok && !pollState.loadedAt) loadPolls(false, { prefetched: r.polls, background: true }).catch(() => {});
+      } catch (_) {
+        // 失敗しても、タブを開いたときにいつもどおり読み込む
+      } finally {
+        tabPrefetching_ = false;
       }
     }
 
@@ -12710,19 +12758,20 @@
               </div>`).join('')}
             </div>
           </details>`;
+      // 種類ごとに開け閉めできる（見出しの行に状態を出したまま、URL とテストをしまえる。開閉は前回のまま）
       return `
-        <div class="dest-row">
-          <div class="dest-head">
+        <details class="dest-row" data-remember="teams-dest:${escapeForAttr(d.key)}"${openAttr_('teams-dest:' + d.key, false)}>
+          <summary class="dest-head">
             <div class="dest-name-wrap">
               <div class="dest-name">${escapeHtml(d.label)}${d.hint ? infoTipHtml(d.hint) : ''}</div>
             </div>
             <div class="dest-states">${destStateHtml_(d)}</div>
-          </div>
+          </summary>
           <div class="dest-input">
             <input type="url" class="form-input" id="${id}" value="${escapeForAttr(d.url || '')}" placeholder="空欄は送信なし" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="${escapeForAttr(d.label + 'の送信先')}">
             <button type="button" class="btn btn-outline btn-xs" onclick="testTeamsDest(${jsArg(d.key)})"><i class="fa-regular fa-paper-plane"></i> テスト</button>
           </div>${sub}
-        </div>`;
+        </details>`;
     }
 
     function renderTeamsDest_() {
@@ -12778,7 +12827,7 @@
       if (bad != null || badNotice != null) {
         showToast('送信先には https:// で始まる URL を入力してください', 'error');
         const el = document.getElementById(bad != null ? 'teamsUrl_' + bad : 'teamsNotice_' + badNotice);
-        if (el) el.focus();
+        if (el) { el.closest('details.dest-row') && (el.closest('details.dest-row').open = true); el.closest('details.dest-sub') && (el.closest('details.dest-sub').open = true); el.focus(); }
         return;
       }
       try {
@@ -12814,7 +12863,7 @@
       if (!url) {
         showToast('URL を入力してください', 'error');
         const el = document.getElementById(noticeId ? 'teamsNotice_' + noticeId : 'teamsUrl_' + key);
-        if (el) el.focus();
+        if (el) { el.closest('details.dest-row') && (el.closest('details.dest-row').open = true); el.focus(); }
         return;
       }
       if (!/^https:\/\/\S+$/.test(url)) {
@@ -13747,20 +13796,20 @@
     async function addSeminarEntry() { editingSeminarIndex = null; return submitSeminarModal(); }
     async function updateSeminarEntry(index) { editingSeminarIndex = index; return submitSeminarModal(); }
 
-    async function loadSeminars(forceReload = false) {
+    async function loadSeminars(forceReload = false, opts = {}) {
       const container = document.getElementById('seminarContainer');
       if (!forceReload && seminarLoadedAt && Date.now() - seminarLoadedAt < 60000) {
         renderSeminars();
         return;
       }
       const seq = nextLoadSeq('seminars');
-      if (container && !seminarLoadedAt) {
+      if (container && !seminarLoadedAt && !opts.prefetched) {
         container.innerHTML = '<div class="inline-loading tall"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><div>読み込み中...</div></div>';
       }
       try {
-        // 過去分もまとめて取得しておく（「過去のゼミも表示」は通信せずに切り替える）
+        // 過去分もまとめて取得しておく（「過去のゼミも表示」は通信せずに切り替える）。起動の直後にまとめて取ってあれば、それを使う
         const [result] = await Promise.all([
-          callAPI('getSeminars', { adminId: currentUser.id, includePast: true }),
+          opts.prefetched || callAPI('getSeminars', { adminId: currentUser.id, includePast: true }),
           ensureMembersList().catch(() => [])
         ]);
         if (!isLatestLoad('seminars', seq)) return;
@@ -13838,9 +13887,11 @@
               ${isMine ? '<span class="ag-badge me">自分の発表</span>' : ''}
               ${s.seriesId ? '<span class="ag-repeat" title="繰り返し（一括追加したゼミ）" aria-label="繰り返し"><i class="fa-solid fa-repeat"></i><span class="ag-repeat-text">繰り返し</span></span>' : ''}
             </div>
-            ${!isNone && s.location ? `<div class="ag-meta ag-loc"><i class="fa-solid fa-location-dot"></i><span>${escapeHtml(s.location)}</span></div>` : ''}
-            ${!isNone && s.presenters && s.presenters.length ? `<div class="ag-meta ag-names"><i class="fa-solid fa-person-chalkboard"></i><span>${agendaNamesHtml_(s.presenters, myName)}</span></div>` : ''}
-            ${undecided ? `<div class="ag-meta ag-names"><i class="fa-solid fa-person-chalkboard"></i><span><span class="ag-undecided">発表者未定</span>${cands.length ? ` 候補: ${agendaNamesHtml_(cands, myName)}` : ''}</span></div>` : ''}
+            <div class="ag-metas">
+              ${!isNone && s.location ? `<div class="ag-meta ag-loc"><i class="fa-solid fa-location-dot"></i><span>${escapeHtml(s.location)}</span></div>` : ''}
+              ${!isNone && s.presenters && s.presenters.length ? `<div class="ag-meta ag-names"><i class="fa-solid fa-person-chalkboard"></i><span>${agendaNamesHtml_(s.presenters, myName)}</span></div>` : ''}
+              ${undecided ? `<div class="ag-meta ag-names"><i class="fa-solid fa-person-chalkboard"></i><span><span class="ag-undecided">発表者未定</span>${cands.length ? ` 候補: ${agendaNamesHtml_(cands, myName)}` : ''}</span></div>` : ''}
+            </div>
             ${!isNone && s.freeNotes && s.freeNotes.length ? `<div class="ag-note">${escapeHtml(s.freeNotes.join('\n'))}</div>` : ''}
             ${(() => {
               // 発表者になる・登録・取り消しは、編集などと同じ見た目で同じ並びに（スマホでは上の段）
@@ -14748,18 +14799,18 @@
     }
 
     let eventLoadedAt = 0;
-    async function loadEvents(forceReload = false) {
+    async function loadEvents(forceReload = false, opts = {}) {
       if (!forceReload && eventLoadedAt && Date.now() - eventLoadedAt < 60000) {
         renderEvents();
         return;
       }
       const seq = nextLoadSeq('events');
       const container = document.getElementById('eventsContainer');
-      if (container && !eventLoadedAt) {
+      if (container && !eventLoadedAt && !opts.prefetched) {
         container.innerHTML = '<div class="inline-loading tall"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><div>読み込み中...</div></div>';
       }
       try {
-        const result = await callAPI('getEvents', { adminId: currentUser.id });
+        const result = opts.prefetched || await callAPI('getEvents', { adminId: currentUser.id });
         if (!isLatestLoad('events', seq)) return;
         eventData = (result.events || []).slice().sort((a, b) => a.date.localeCompare(b.date) || String(a.startTime || '').localeCompare(String(b.startTime || '')));
         eventLoadedAt = Date.now();
@@ -14818,9 +14869,11 @@
               ${isEr ? '<span class="ag-badge er">入構規制</span>' : ''}
               ${isMine ? '<span class="ag-badge me">参加予定</span>' : ''}
             </div>
-            ${series ? `<div class="ag-meta ag-fix"><i class="${series.icon}"></i><span>${escapeHtml(series.label)}</span></div>` : ''}
-            ${loc ? `<div class="ag-meta ag-loc"><i class="fa-solid fa-location-dot"></i><span>${escapeHtml(loc)}</span></div>` : ''}
-            ${ev.participants && ev.participants.length ? `<div class="ag-meta ag-names"><i class="fa-solid fa-user-group"></i><span>${agendaNamesHtml_(ev.participants, myName)}</span></div>` : ''}
+            <div class="ag-metas">
+              ${series ? `<div class="ag-meta ag-fix"><i class="${series.icon}"></i><span>${escapeHtml(series.label)}</span></div>` : ''}
+              ${loc ? `<div class="ag-meta ag-loc"><i class="fa-solid fa-location-dot"></i><span>${escapeHtml(loc)}</span></div>` : ''}
+              ${ev.participants && ev.participants.length ? `<div class="ag-meta ag-names"><i class="fa-solid fa-user-group"></i><span>${agendaNamesHtml_(ev.participants, myName)}</span></div>` : ''}
+            </div>
             ${ev.note ? `<div class="ag-note">${escapeHtml(ev.note)}</div>` : ''}
             <div class="ag-actions">
               <button type="button" class="ag-btn" onclick="showEditEventModal(${index})"><i class="fa-solid fa-pen"></i>編集</button>
