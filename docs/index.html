@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
-  <meta name="app-build" content="20260928-193318">
+  <meta name="app-build" content="20261015-092244">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -75,7 +75,15 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
+      min-height: 100dvh;
       line-height: 1.6;
+    }
+    /* いちばん外側の背景はヘッダーの色。iOS 26 以降は、画面の上端（時刻の帯）の色をページの背景から決めるため、
+       クリーム色のままだとヘッダーに白くかぶさる。下に引っぱったときの余白はクリーム色のまま */
+    html {
+      background-color: var(--header);
+      background-image: linear-gradient(to bottom, var(--header) 50%, var(--bg) 50%);
+      background-attachment: fixed;
     }
     
     /* ==============================================
