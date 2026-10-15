@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
-  <meta name="app-build" content="20261015-092244">
+  <meta name="app-build" content="20261015-095116">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -17,7 +17,8 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="栄制管理">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- iOS 26 以降は black-translucent（時刻の帯に画面を重ねる）だと上端にすりガラスのぼかしがかかるため、不透明な帯にする -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="application-name" content="栄制管理">
   <meta name="msapplication-TileColor" content="#5b9bad">
   <meta name="format-detection" content="telephone=no">
@@ -85,6 +86,8 @@
       background-image: linear-gradient(to bottom, var(--header) 50%, var(--bg) 50%);
       background-attachment: fixed;
     }
+    /* 立ち上げ画面の間は全部ヘッダーの色（画面の下端に覆いきれない帯が出てもクリーム色を見せない） */
+    html.boot { background-image: none; }
     
     /* ==============================================
        ログイン画面
