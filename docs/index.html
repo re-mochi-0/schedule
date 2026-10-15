@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
-  <meta name="app-build" content="20261015-095116">
+  <meta name="app-build" content="20261015-192756">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -2021,9 +2021,10 @@
     /* ==============================================
        通信中の表示（進行バー・ボタンのスピナー・保存中の全画面表示）
        ============================================== */
+    /* 通信中の帯：ヘッダーのすぐ下（ログイン画面では上端）。立ち上げ画面の間は出さない */
     #netProgress {
       position: fixed;
-      top: 0;
+      top: var(--net-top, 0px);
       left: 0;
       right: 0;
       height: 3px;
@@ -2038,6 +2039,7 @@
       opacity: 1;
       animation: netProgressSlide 1.1s linear infinite;
     }
+    html.boot #netProgress { display: none; }
     @keyframes netProgressSlide {
       from { background-position: 100% 0; }
       to { background-position: -100% 0; }
@@ -8981,8 +8983,13 @@
     /** ヘッダー（PC はタブの並びも）の高さを測り、固定した部分の下にずらす位置（--app-header-h / --app-top-h）に使う */
     function updateAppTopH_() {
       const header = document.querySelector('#appScreen .app-header');
-      if (!header || !header.getClientRects().length) return;
+      if (!header || !header.getClientRects().length) {
+        document.documentElement.style.setProperty('--net-top', '0px'); // ログイン画面では画面の上端
+        return;
+      }
       const hh = header.getBoundingClientRect().height;
+      // 通信中の帯はヘッダーのすぐ下に出す
+      document.documentElement.style.setProperty('--net-top', Math.round(hh) + 'px');
       let top = hh;
       if (window.innerWidth >= 768) {
         const tabs = [...document.querySelectorAll('#appScreen > .tabs')].find(t => t.getClientRects().length && getComputedStyle(t).position === 'sticky');
