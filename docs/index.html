@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
-  <meta name="app-build" content="20261026-113907">
+  <meta name="app-build" content="20261026-114824">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -4534,7 +4534,17 @@
     .sp-p i.ok { color: #2f855a; } .sp-p i.wr { color: #b7791f; }
     .sp-tbl tr.off .sp-t { color: #aaa; font-weight: 500; }
     .sp-form { display: flex; flex-direction: column; gap: 8px; }
-    .sp-tent-row { margin-top: 8px; }
+    /* 見出しの右端などに置く小さな切り替え（押すと青緑に） */
+    .sp-chip-toggle { display: inline-flex; align-items: center; cursor: pointer; flex: 0 0 auto; }
+    .sp-chip-toggle input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+    .sp-chip-toggle span { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border: 1.5px solid var(--border); border-radius: 999px; font-size: 12px; font-weight: 700; color: var(--text-light); background: #fff; transition: all .15s; }
+    .sp-chip-toggle span::before { content: ''; width: 12px; height: 12px; border: 1.5px solid #c9c9c9; border-radius: 3px; box-sizing: border-box; }
+    .sp-chip-toggle input:checked + span { border-color: #efc98a; background: #fff4e0; color: #b7791f; }
+    .sp-chip-toggle input:checked + span::before { border-color: #b7791f; background: #b7791f url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 6.2 5.2 8.4 9 4' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/10px no-repeat; }
+    .sp-chip-toggle input:focus-visible + span { outline: 2px solid var(--primary-dark); outline-offset: 2px; }
+    .sp-pres-extra { display: flex; align-items: center; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+    .sp-slots-wrap { margin-top: 10px; }
+    .sp-slots-label { display: block; margin-bottom: 4px; font-size: 12.5px; font-weight: 700; color: var(--text-light); }
     .sp-place-opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; margin-bottom: 8px; }
     .sp-place-opt { min-height: 42px; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 10px; background: #fff; color: var(--text); font: inherit; font-size: 13.5px; cursor: pointer; }
     .sp-place-opt.active { border-color: var(--primary-dark); background: #eef6f8; color: var(--primary-dark); font-weight: 700; }
@@ -6267,11 +6277,13 @@
         <button type="button" class="link-btn danger" id="seminarTemplateDelete" onclick="deleteTemplate('seminar')" style="display: none;">削除</button>
       </div>
       <div class="form-group">
-        <label class="form-label">日付</label>
+        <div class="label-row">
+          <label class="form-label" for="seminarDate">日付</label>
+          <label class="sp-chip-toggle" title="内容や発表者が決まっていない回。場所・時刻は空でも保存でき、予定表に「仮」と出ます"><input type="checkbox" id="seminarPlanTentative"><span>仮（日程のみ）</span></label>
+        </div>
         <input type="date" id="seminarDate" class="form-input" onchange="renderSeminarNotices_()">
         <div id="seminarExtraDates" class="sp-extra-dates"></div>
         <button type="button" class="link-btn sp-add-date" id="seminarAddDateBtn" onclick="addSeminarExtraDate()"><i class="fa-solid fa-plus"></i> 日付を追加</button>
-        <label class="set-row compact sp-tent-row"><span class="set-name">仮（日程のみ決定）<button type="button" class="info-tip" data-tip="内容や発表者が決まっていない回。場所・時刻は空でも保存でき、予定表に「仮」と出ます" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></span><span class="sw"><input type="checkbox" id="seminarPlanTentative"><span></span></span></label>
       </div>
       <div class="form-group">
         <label class="form-label">種類</label>
@@ -6308,26 +6320,20 @@
         <label class="form-label">開始時刻</label>
         <input type="time" id="seminarStartTime" class="form-input">
       </div>
-      <div class="form-group" id="seminarPlanGroup">
-        <label class="form-label">予定表<button type="button" class="info-tip" data-tip="ゼミ予定表に出す項目です" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></label>
-        <div class="sp-form">
-          <div class="sp-form-row"><span class="sp-form-label">形式</span>
-            <div class="seg-tabs small inline-seg" id="seminarPlanFormat">
-              <button type="button" class="seg-tab active" data-v="" onclick="setSemPlanSeg('seminarPlanFormat', '')">なし</button>
-              <button type="button" class="seg-tab" data-v="P" onclick="setSemPlanSeg('seminarPlanFormat', 'P')">PowerPoint</button>
-              <button type="button" class="seg-tab" data-v="note" onclick="setSemPlanSeg('seminarPlanFormat', 'note')">研究ノート</button>
-            </div>
-          </div>
-          <div class="sp-form-row"><span class="sp-form-label">場所の予約</span>
-            <div class="seg-tabs small inline-seg" id="seminarPlanRoom">
-              <button type="button" class="seg-tab active" data-v="" onclick="setSemPlanSeg('seminarPlanRoom', '')">—</button>
-              <button type="button" class="seg-tab" data-v="booked" onclick="setSemPlanSeg('seminarPlanRoom', 'booked')">予約済</button>
-              <button type="button" class="seg-tab" data-v="pending" onclick="setSemPlanSeg('seminarPlanRoom', 'pending')">未予約</button>
-            </div>
-          </div>
-          <div class="sp-form-row"><span class="sp-form-label">学年・班の枠</span>
-            <input type="text" id="seminarPlanSlots" class="form-input" maxlength="60" placeholder="例: B4, A班（人が未定のとき）" aria-label="学年・班の枠">
-          </div>
+      <div class="form-group" id="seminarFormFormatGroup">
+        <label class="form-label">形式</label>
+        <div class="seg-tabs small" id="seminarPlanFormat">
+          <button type="button" class="seg-tab active" data-v="" onclick="setSemPlanSeg('seminarPlanFormat', '')">なし</button>
+          <button type="button" class="seg-tab" data-v="P" onclick="setSemPlanSeg('seminarPlanFormat', 'P')">PowerPoint</button>
+          <button type="button" class="seg-tab" data-v="note" onclick="setSemPlanSeg('seminarPlanFormat', 'note')">研究ノート</button>
+        </div>
+      </div>
+      <div class="form-group" id="seminarFormRoomGroup">
+        <label class="form-label">場所の予約</label>
+        <div class="seg-tabs small" id="seminarPlanRoom">
+          <button type="button" class="seg-tab active" data-v="" onclick="setSemPlanSeg('seminarPlanRoom', '')">—</button>
+          <button type="button" class="seg-tab" data-v="booked" onclick="setSemPlanSeg('seminarPlanRoom', 'booked')">予約済</button>
+          <button type="button" class="seg-tab" data-v="pending" onclick="setSemPlanSeg('seminarPlanRoom', 'pending')">未予約</button>
         </div>
       </div>
       <div class="form-group" id="seminarFormPresentersGroup">
@@ -6342,6 +6348,14 @@
         <div id="seminarPresentersCheckbox"></div>
         <div id="seminarOtherPresenterWrap" hidden>
           <input type="text" id="seminarOtherPresenter" class="form-input" maxlength="40" placeholder="例: 〇〇先生（空欄でも可）" aria-label="発表者の名前">
+        </div>
+        <div class="sp-pres-extra">
+          <label class="sp-chip-toggle"><input type="checkbox" id="seminarPresTentative"><span>発表者は仮</span></label>
+          <button type="button" class="link-btn" id="seminarSlotsToggle" onclick="document.getElementById('seminarSlotsWrap').hidden = false; this.hidden = true; document.getElementById('seminarPlanSlots').focus();"><i class="fa-solid fa-plus"></i> 学年・班の枠</button>
+        </div>
+        <div id="seminarSlotsWrap" class="sp-slots-wrap" hidden>
+          <label class="sp-slots-label" for="seminarPlanSlots">学年・班の枠</label>
+          <input type="text" id="seminarPlanSlots" class="form-input" maxlength="60" placeholder="例: B4, A班（人が未定の枠）" aria-label="学年・班の枠">
         </div>
       </div>
       <div class="form-group" id="seminarFormFreeNotesGroup">
@@ -6473,8 +6487,9 @@
               <input type="text" id="bulkSemLocationOther" class="form-input" placeholder="場所を入力" oninput="updateBulkPreview()">
               <button type="button" class="link-btn" onclick="setBulkLocation_('大会議室(5階)'); updateBulkPreview();">一覧から選択</button>
             </div>
-            <div class="sp-form-row" style="margin-top: 8px;"><span class="sp-form-label">場所の予約</span>
-              <div class="seg-tabs small inline-seg" id="bulkSemRoom">
+            <label class="form-label" style="margin-top: 12px;">場所の予約</label>
+            <div>
+              <div class="seg-tabs small" id="bulkSemRoom">
                 <button type="button" class="seg-tab active" data-v="" onclick="setSemPlanSeg('bulkSemRoom', '')">—</button>
                 <button type="button" class="seg-tab" data-v="booked" onclick="setSemPlanSeg('bulkSemRoom', 'booked')">予約済</button>
                 <button type="button" class="seg-tab" data-v="pending" onclick="setSemPlanSeg('bulkSemRoom', 'pending')">未予約</button>
@@ -14432,6 +14447,9 @@
       setSemPlanSeg('seminarPlanFormat', plan.format || '');
       setSemPlanSeg('seminarPlanRoom', plan.room || '');
       document.getElementById('seminarPlanSlots').value = (plan.slots || []).join(', ');
+      document.getElementById('seminarPresTentative').checked = plan.presenterTentative === true;
+      document.getElementById('seminarSlotsWrap').hidden = !(plan.slots || []).length;
+      document.getElementById('seminarSlotsToggle').hidden = !!(plan.slots || []).length;
       seminarNoticeEditKey_ = '';
       applySeminarPresentersToForm_(pres, cands);
       const freeNotesContainer = document.getElementById('seminarFreeNotesContainer');
@@ -14492,7 +14510,8 @@
         tentative: document.getElementById('seminarPlanTentative').checked || type === '未定',
         format: semPlanSegValue_('seminarPlanFormat'),
         room: semPlanSegValue_('seminarPlanRoom'),
-        slots: document.getElementById('seminarPlanSlots').value.split(/[、,，\s]+/).map(x => x.trim()).filter(Boolean)
+        slots: document.getElementById('seminarPlanSlots').value.split(/[、,，\s]+/).map(x => x.trim()).filter(Boolean),
+        presenterTentative: document.getElementById('seminarPresTentative').checked
       };
       if (!date) {
         showToast('日付を入力してください', 'error');
@@ -14653,7 +14672,8 @@
         names: off ? [] : presenters,
         // 予定表では「大会議室(5階)」の括弧書きは省く（場所の列を細く保つ）
         place: off ? '' : String(s.location || '').replace(/\s*[（(][^）)]*[）)]\s*$/, ''),
-        room: off ? '' : (plan.room || '')
+        room: off ? '' : (plan.room || ''),
+        presTent: !off && plan.presenterTentative === true && (presenters.length > 0 || (plan.slots || []).length > 0)
       };
     }
     function semPlanFmtHtml_(f) {
@@ -14682,7 +14702,7 @@
         const people = [...v.slots.map(x => ({ t: x, cls: 'slot' })), ...v.names.map(n => ({ t: n, cls: n === myName ? 'me' : '' }))];
         const shown = people.slice(0, MAX).map(p => `<span class="sp-chip ${p.cls}">${escapeHtml(p.t)}</span>`).join('')
           + (people.length > MAX ? `<span class="sp-chip more" title="${escapeForAttr(people.slice(MAX).map(p => p.t).join('、'))}">＋${people.length - MAX}</span>` : '');
-        const who = v.off ? '' : people.length ? `<div class="sp-who">${shown}</div>` : '<span class="sp-tbd">未定</span>';
+        const who = v.off ? '' : people.length ? `<div class="sp-who">${shown}${v.presTent ? '<span class="sp-tent">仮</span>' : ''}</div>` : '<span class="sp-tbd">未定</span>';
         const place = v.off ? '<span class="sp-tbd">—</span>'
           : v.place ? `${escapeHtml(v.place)}${v.room ? `<i class="${v.room === 'booked' ? 'ok' : 'wr'}">${v.room === 'booked' ? '予約済' : '未予約'}</i>` : ''}`
           : '<span class="sp-tbd">未定</span>';
@@ -14713,8 +14733,9 @@
             <button type="button" class="sp-place-opt${cur && !inList ? ' active' : ''}" data-v="__other">その他</button>
           </div>
           <input type="text" class="form-input sp-place-other" maxlength="40" placeholder="場所を入力" value="${cur && !inList ? escapeForAttr(cur) : ''}"${cur && !inList ? '' : ' hidden'}>
-          <div class="sp-form-row" style="margin-top: 14px;"><span class="sp-form-label">場所の予約</span>
-            <div class="seg-tabs small inline-seg sp-place-room">
+          <label class="form-label" style="margin-top: 14px; text-align: left;">場所の予約</label>
+          <div>
+            <div class="seg-tabs small sp-place-room">
               <button type="button" class="seg-tab${!plan.room ? ' active' : ''}" data-v="">—</button>
               <button type="button" class="seg-tab${plan.room === 'booked' ? ' active' : ''}" data-v="booked">予約済</button>
               <button type="button" class="seg-tab${plan.room === 'pending' ? ' active' : ''}" data-v="pending">未予約</button>
@@ -14765,7 +14786,7 @@
           return `<div class="spi-r${v.off ? ' off' : ''}">
             <div class="spi-d${v.dow === 0 ? ' sun' : v.dow === 6 ? ' sat' : ''}"><b>${v.day}</b><small>${v.wd}</small></div>
             <div class="spi-ty">${escapeHtml(v.title)}${semPlanFmtHtml_(v.format)}${v.tentative ? '<span class="sp-tent">仮</span>' : ''}<small>${escapeHtml(v.off ? v.memo : (v.time ? v.time + '〜' : ''))}</small></div>
-            <div class="spi-pp">${v.off ? '' : people.length ? people.join('<span class="spi-sep">・</span>') : '<span class="spi-tbd">未定</span>'}</div>
+            <div class="spi-pp">${v.off ? '' : people.length ? people.join('<span class="spi-sep">・</span>') + (v.presTent ? '<span class="sp-tent">仮</span>' : '') : '<span class="spi-tbd">未定</span>'}</div>
             <div class="spi-pc">${v.off ? '<span class="spi-tbd">—</span>' : v.place ? escapeHtml(v.place) : '<span class="spi-tbd">未定</span>'}</div>
             ${!v.off && v.memo ? `<div class="spi-memo">${escapeHtml(v.memo)}</div>` : ''}
           </div>`;
@@ -15053,7 +15074,8 @@
       const els = [
         document.getElementById('seminarFormLocationGroup'),
         document.getElementById('seminarFormTimeGroup'),
-        document.getElementById('seminarPlanGroup'),
+        document.getElementById('seminarFormFormatGroup'),
+        document.getElementById('seminarFormRoomGroup'),
         document.getElementById('seminarFormPresentersGroup')
       ];
       els.forEach(el => { if (el) el.style.display = isNone ? 'none' : ''; });
