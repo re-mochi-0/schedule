@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
-  <meta name="app-build" content="20261015-193654">
+  <meta name="app-build" content="20261026-112251">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -4474,6 +4474,83 @@
     .audit-who { min-width: 0; font-size: 12px; color: var(--text-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .audit-text { margin-top: 4px; font-size: 13.5px; line-height: 1.6; color: var(--text); overflow-wrap: anywhere; text-wrap-style: pretty; }
     .audit-cat.err { color: #c53030; background: #fdeeee; }
+    /* ゼミ予定表（アプリの表）：日付の数字と曜日は同じ中心線、休みは薄く、仮・未予約は黄土 */
+    .sp-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 8px; flex-wrap: wrap; }
+    .sp-nav { display: flex; align-items: center; gap: 10px; }
+    .sp-title { font-size: 16px; font-weight: 700; color: var(--text); min-width: 96px; text-align: center; }
+    .sp-acts { display: flex; gap: 6px; }
+    .sp-tbl { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .sp-tbl tr { cursor: pointer; }
+    .sp-tbl tr:hover td { background: #fafcfd; }
+    .sp-tbl td { border-bottom: 1px solid var(--border); padding: 9px 4px; vertical-align: middle; }
+    .sp-d { width: 40px; text-align: center; }
+    .sp-d b, .spi-d b { display: block; font-size: 15px; line-height: 1.15; color: var(--text); font-variant-numeric: tabular-nums; }
+    .sp-d small, .spi-d small { display: block; font-size: 10.5px; line-height: 1.2; color: var(--text-light); }
+    .sp-d.sun small, .spi-d.sun small { color: #d5646f; }
+    .sp-d.sat small, .spi-d.sat small { color: #4a7fc1; }
+    .sp-t { width: 36%; font-size: 13.5px; font-weight: 700; color: var(--sem); }
+    .sp-tt { white-space: nowrap; }
+    .sp-sub { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .sp-t small { font-size: 11px; font-weight: 500; color: var(--text-light); white-space: nowrap; }
+    .sp-who-in { display: none; min-width: 0; overflow: hidden; }
+    /* スマホ：発表者は種類の下（時刻の横）に出し、列は 日付・内容・場所 の 3 つ */
+    @media (max-width: 600px) {
+      .sp-tbl td.sp-w { display: none; }
+      .sp-t { width: auto; }
+      .sp-who-in { display: block; }
+      .sp-who-in .sp-chip { font-size: 11px; padding: 0 6px; }
+    }
+    .sp-fmt { display: inline-grid; place-items: center; min-width: 16px; height: 16px; padding: 0 3px; margin-left: 4px; border: 1.2px solid currentColor; border-radius: 4px; font-size: 9.5px; font-weight: 700; color: var(--sem); vertical-align: 1px; line-height: 1; }
+    .sp-fmt.n { font-size: 9px; padding: 0 4px; }
+    .sp-tent { display: inline-block; margin-left: 4px; padding: 0 4px; border-radius: 4px; background: #fff4e0; color: #b7791f; font-size: 9.5px; font-weight: 700; vertical-align: 1px; line-height: 16px; }
+    .sp-w { width: 34%; }
+    .sp-who { display: flex; gap: 4px; flex-wrap: nowrap; overflow: hidden; }
+    .sp-chip { font-size: 11.5px; border-radius: 6px; padding: 1px 7px; background: #eef1fb; color: var(--sem); white-space: nowrap; }
+    .sp-chip.slot { background: #fff; border: 1px dashed #b9c3e6; color: #7d8bc0; }
+    .sp-chip.me { background: var(--me-bg); color: var(--me); font-weight: 700; }
+    .sp-chip.more { background: #f2f2f2; color: #888; }
+    .sp-tbd { font-size: 12px; color: #bbb; }
+    .sp-p { width: 76px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12.5px; text-align: right; color: var(--text); }
+    .sp-p i { display: block; font-style: normal; font-size: 10px; font-weight: 700; }
+    .sp-p i.ok { color: #2f855a; } .sp-p i.wr { color: #b7791f; }
+    .sp-tbl tr.off .sp-t { color: #aaa; font-weight: 500; }
+    .sp-form { display: flex; flex-direction: column; gap: 8px; }
+    .sp-form-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .sp-form-label { flex: 0 0 92px; font-size: 13px; color: var(--text); }
+    .sp-form-row .form-input { flex: 1; min-width: 160px; }
+    .sp-share-note { display: flex; align-items: center; gap: 4px; margin-top: 10px; font-size: 12px; color: var(--text-light); }
+    /* 共有用の画像（Teams に貼る）：線を減らし、月の見出しと細い区切りだけ */
+    .spi { width: 640px; background: #fff; padding: 32px 34px 24px; font-family: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', sans-serif; color: #2f3a4d; }
+    .spi-h { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 14px; }
+    .spi-h h2 { font-size: 22px; letter-spacing: .02em; }
+    .spi-h span { font-size: 11.5px; color: #9a9a9a; }
+    .spi-mo { display: flex; align-items: center; gap: 10px; margin: 16px 0 2px; }
+    .spi-mo b { font-size: 13px; color: var(--sem); }
+    .spi-mo span { flex: 1; border-top: 1.5px solid #dfe5f6; }
+    .spi-r { display: grid; grid-template-columns: 44px 1fr 170px 100px; align-items: center; column-gap: 12px; padding: 9px 0; border-bottom: 1px solid #f1f1f1; }
+    .spi-d { text-align: center; }
+    .spi-d b { font-size: 16px; }
+    .spi-ty { font-size: 14px; font-weight: 700; white-space: nowrap; }
+    .spi-ty small { display: block; font-size: 11px; font-weight: 500; color: #9a9a9a; }
+    .spi-pp { font-size: 13px; color: #444; overflow-wrap: anywhere; }
+    .spi-sep { color: #c7c7c7; }
+    .spi-slot { display: inline-block; padding: 0 6px; border: 1px dashed #b9c3e6; border-radius: 5px; color: #7d8bc0; font-size: 12px; line-height: 18px; }
+    .spi-pc { font-size: 13px; color: #444; text-align: right; }
+    .spi-memo { grid-column: 2 / -1; font-size: 11.5px; color: #8a8a8a; margin-top: 2px; }
+    .spi-tbd { color: #b5b5b5; }
+    .spi-r.off .spi-ty { color: #aaa; font-weight: 500; }
+    .spi-lg { display: flex; gap: 16px; justify-content: flex-end; flex-wrap: wrap; margin-top: 16px; padding-top: 10px; border-top: 1px solid #f1f1f1; font-size: 10.5px; color: #9a9a9a; }
+    .spi-lg > span { display: inline-flex; align-items: center; gap: 4px; }
+    .spi-lg .sp-fmt, .spi-lg .sp-tent { margin-left: 0; }
+    /* 担当者に連絡 */
+    .pm-text { width: 100%; resize: vertical; min-height: 96px; line-height: 1.6; text-align: left; }
+    .pm-label { margin: 14px 0 6px; font-size: 13px; font-weight: 700; color: var(--text); text-align: left; }
+    .pm-slots { display: flex; flex-direction: column; gap: 6px; text-align: left; }
+    .pm-slot { display: grid; grid-template-columns: auto auto 1fr; align-items: baseline; gap: 10px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; }
+    .pm-slot input { align-self: center; accent-color: var(--primary-dark); width: 16px; height: 16px; }
+    .pm-when { font-size: 13.5px; font-weight: 700; color: var(--text); white-space: nowrap; }
+    .pm-when small { font-weight: 500; color: var(--text-light); }
+    .pm-names { font-size: 13px; color: var(--text); min-width: 0; overflow-wrap: anywhere; }
     /* エラーの記録：今日送れるメールの残り */
     .el-mail { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-light); margin-bottom: 4px; }
     .el-mail:empty { display: none; }
@@ -5884,6 +5961,7 @@
           <button type="button" class="seg-tab member-only" data-f="mine" onclick="setSeminarFilter('mine')">自分の発表<span class="seg-count" id="seminarMineCount"></span></button>
           <button type="button" class="seg-tab admin-only" data-f="undecided" onclick="setSeminarFilter('undecided')">発表者未定<span class="seg-count" id="seminarUndecidedCount"></span></button>
           <button type="button" class="seg-tab" data-f="past" onclick="setSeminarFilter('past')">過去</button>
+          <button type="button" class="seg-tab" data-f="plan" onclick="setSeminarFilter('plan')">予定表</button>
         </div>
         <div id="seminarContainer"></div>
       </div>
@@ -6172,7 +6250,8 @@
           <option value="ベーシックゼミ">ベーシックゼミ</option>
           <option value="レクチャークラス">レクチャークラス</option>
           <option value="その他">その他</option>
-          <option value="ゼミなし">ゼミなし</option>
+          <option value="未定">未定（日程のみ）</option>
+          <option value="ゼミなし">ゼミなし（休み）</option>
         </select>
       </div>
       <div class="form-group" id="seminarFormLocationGroup">
@@ -6195,6 +6274,29 @@
       <div class="form-group" id="seminarFormTimeGroup">
         <label class="form-label">開始時刻</label>
         <input type="time" id="seminarStartTime" class="form-input">
+      </div>
+      <div class="form-group" id="seminarPlanGroup">
+        <label class="form-label">予定表<button type="button" class="info-tip" data-tip="ゼミ予定表に出す項目です。仮：日程だけ押さえた回（場所・時刻は空でも保存できます）" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></label>
+        <div class="sp-form">
+          <label class="set-row compact"><span class="set-name">仮（日程のみ決定）</span><span class="sw"><input type="checkbox" id="seminarPlanTentative"><span></span></span></label>
+          <div class="sp-form-row"><span class="sp-form-label">形式</span>
+            <div class="seg-tabs small inline-seg" id="seminarPlanFormat">
+              <button type="button" class="seg-tab active" data-v="" onclick="setSemPlanSeg('seminarPlanFormat', '')">なし</button>
+              <button type="button" class="seg-tab" data-v="P" onclick="setSemPlanSeg('seminarPlanFormat', 'P')">PowerPoint</button>
+              <button type="button" class="seg-tab" data-v="note" onclick="setSemPlanSeg('seminarPlanFormat', 'note')">研究ノート</button>
+            </div>
+          </div>
+          <div class="sp-form-row"><span class="sp-form-label">場所の予約</span>
+            <div class="seg-tabs small inline-seg" id="seminarPlanRoom">
+              <button type="button" class="seg-tab active" data-v="" onclick="setSemPlanSeg('seminarPlanRoom', '')">—</button>
+              <button type="button" class="seg-tab" data-v="booked" onclick="setSemPlanSeg('seminarPlanRoom', 'booked')">予約済</button>
+              <button type="button" class="seg-tab" data-v="pending" onclick="setSemPlanSeg('seminarPlanRoom', 'pending')">未予約</button>
+            </div>
+          </div>
+          <div class="sp-form-row"><span class="sp-form-label">学年・班の枠</span>
+            <input type="text" id="seminarPlanSlots" class="form-input" maxlength="60" placeholder="例: B4, A班（人が未定のとき）" aria-label="学年・班の枠">
+          </div>
+        </div>
       </div>
       <div class="form-group" id="seminarFormPresentersGroup">
         <div class="label-row">
@@ -7840,7 +7942,8 @@
       try { pendingSwapId_ = new URLSearchParams(location.search).get('swap') || ''; } catch (_) {}
       try { pendingTab_ = new URLSearchParams(location.search).get('tab') || ''; } catch (_) {}
       // 読み直したときに同じ画面をまた開かないよう、アドレス欄から消しておく（b は新しい版の読み込み用）
-      ['poll', 'swap', 'tab', 'b'].forEach(stripQueryParam_);
+      try { if (new URLSearchParams(location.search).get('view') === 'plan') seminarFilter = 'plan'; } catch (_) {}
+      ['poll', 'swap', 'tab', 'b', 'view'].forEach(stripQueryParam_);
       // メールのリンク（?login=鍵）：鍵は 1 回しか使えないので、先にアドレス欄から消す
       let loginLink = '';
       try { loginLink = new URLSearchParams(location.search).get('login') || ''; } catch (_) {}
@@ -7931,7 +8034,9 @@
       setMemberAdmin: '保存しています…',
       issueLoginCode: '発行しています…',
       revokeLogins: '解除しています…',
-      unlockLogin: '解除しています…'
+      unlockLogin: '解除しています…',
+      shareSeminarPlan: 'Teams に共有しています…',
+      messagePollStaff: '送信しています…'
     };
     const netState = { active: 0, writes: 0, inflight: new Map(), busyEls: new Map(), overlayTimer: null, slowTimer: null };
     let lastPressed = null; // { el, t } 直前に押されたボタン（そのボタンにスピナーを出す）
@@ -12322,7 +12427,8 @@
           ${clashes.length ? `<div class="pa-warn"><i class="fa-solid fa-triangle-exclamation"></i> ${clashes.map(escapeHtml).join('、')}さんが同じ時間帯の候補に入っています</div>` : ''}
           <div class="poll-settings" style="margin-top: 12px;">
             <label class="set-row compact"><span class="set-name">イベントに登録（担当者を参加者に設定）</span><span class="sw"><input type="checkbox" id="pollAssignEvent" checked><span></span></span></label>
-            ${pollState.teamsEnabled ? '<label class="set-row compact"><span class="set-name">Teams で担当者に通知</span><span class="sw"><input type="checkbox" id="pollAssignNotify" checked><span></span></span></label>' : ''}
+            ${pollState.teamsEnabled ? `<label class="set-row compact"><span class="set-name">${p.status === 'decided' ? 'Teams で変更を通知' : 'Teams で担当者に通知'}${p.status === 'decided' ? infoTipHtml('追加された人と外れた人にメンションします') : ''}</span><span class="sw"><input type="checkbox" id="pollAssignNotify" checked><span></span></span></label>` : ''}
+            <label class="set-row compact"><span class="set-name">B3 にメールでも送る${infoTipHtml('Teams に未参加の B3 向け。知らせる相手のうち B3 の人に、大学のメールで担当の日時を送ります')}</span><span class="sw"><input type="checkbox" id="pollAssignMailB3"><span></span></span></label>
           </div>
           ${pollRemindSectionHtml_(p)}
           <div class="modal-actions">
@@ -12343,7 +12449,8 @@
           pollId: p.id,
           assignments: map,
           createEvent: overlay.querySelector('#pollAssignEvent').checked,
-          notify: !!(overlay.querySelector('#pollAssignNotify') && overlay.querySelector('#pollAssignNotify').checked)
+          notify: !!(overlay.querySelector('#pollAssignNotify') && overlay.querySelector('#pollAssignNotify').checked),
+          mailB3: overlay.querySelector('#pollAssignMailB3').checked
         };
         Object.assign(payload, readPollRemindSection_(overlay));
         overlay.remove();
@@ -12493,6 +12600,7 @@
           <div class="pr-status-acts">
             <button type="button" class="btn btn-outline btn-xs" onclick="editPollRemind()">設定</button>
             ${pollState.teamsEnabled ? '<button type="button" class="btn btn-outline btn-xs" onclick="remindPollPrepareNow()">今すぐ送る</button>' : ''}
+            ${pollIsStaff(p) ? '<button type="button" class="btn btn-outline btn-xs" onclick="messagePollStaffDialog()"><i class="fa-regular fa-paper-plane"></i> 担当者に連絡</button>' : ''}
           </div>
         </div>
       </div>`;
@@ -12528,6 +12636,52 @@
         } catch (_) {}
       };
     }
+    /** 担当者への追加連絡：文面・宛先（全員／枠を選ぶ）・送り方 */
+    function messagePollStaffDialog() {
+      const p = currentPoll_();
+      if (!p) return;
+      const slots = p.options.filter(o => ((p.assignments || {})[o.id] || []).length);
+      if (!slots.length) { showToast('担当者がいません', 'error'); return; }
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay show';
+      overlay.style.zIndex = '10060';
+      overlay.innerHTML = `
+        <div class="modal-box" style="max-width: 480px;" role="dialog" aria-modal="true" aria-labelledby="pmTitle">
+          <div class="modal-title" id="pmTitle">担当者に連絡</div>
+          <textarea class="form-input pm-text" rows="4" maxlength="1000" placeholder="例: 集合場所が 3 階の会議室に変わりました"></textarea>
+          <div class="pm-label">宛先</div>
+          <div class="pm-slots">
+            ${slots.map(o => { const l = pollOptionLabel(o); return `<label class="pm-slot"><input type="checkbox" value="${escapeForAttr(o.id)}" checked><span class="pm-when">${escapeHtml(l.date)} <small>${escapeHtml(l.time)}</small></span><span class="pm-names">${p.assignments[o.id].map(escapeHtml).join('、')}</span></label>`; }).join('')}
+          </div>
+          <div class="poll-settings" style="margin-top: 12px;">
+            ${pollState.teamsEnabled ? '<label class="set-row compact"><span class="set-name">Teams で送る</span><span class="sw"><input type="checkbox" class="pm-teams" checked><span></span></span></label>' : ''}
+            <label class="set-row compact"><span class="set-name">B3 にメールでも送る${infoTipHtml('Teams に未参加の B3 向け。宛先のうち B3 の人に、大学のメールで同じ内容を送ります')}</span><span class="sw"><input type="checkbox" class="pm-mail"${pollState.teamsEnabled ? '' : ' checked'}><span></span></span></label>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-outline" data-act="cancel">キャンセル</button>
+            <button type="button" class="btn btn-primary" data-act="ok"><i class="fa-regular fa-paper-plane"></i> 送信</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      setTimeout(() => overlay.querySelector('.pm-text').focus(), 50);
+      overlay.onclick = async (e) => {
+        if (e.target === overlay || e.target.closest('[data-act="cancel"]')) { overlay.remove(); return; }
+        if (!e.target.closest('[data-act="ok"]')) return;
+        const message = overlay.querySelector('.pm-text').value.trim();
+        const ids = [...overlay.querySelectorAll('.pm-slot input:checked')].map(i => i.value);
+        const teams = !!(overlay.querySelector('.pm-teams') && overlay.querySelector('.pm-teams').checked);
+        const mailB3 = overlay.querySelector('.pm-mail').checked;
+        if (!message) { showToast('連絡の内容を入力してください', 'error'); return; }
+        if (!ids.length) { showToast('宛先を 1 つ以上選んでください', 'error'); return; }
+        if (!teams && !mailB3) { showToast('送り方を選んでください', 'error'); return; }
+        overlay.remove();
+        try {
+          const r = await callAPI('messagePollStaff', { adminId: currentUser.id, pollId: p.id, message, optionIds: ids.length === slots.length ? [] : ids, teams, mailB3 }, { overlayMessage: '送信しています…' });
+          showToast(r.message || '送りました', 'success');
+        } catch (_) {}
+      };
+    }
+
     async function remindPollPrepareNow() {
       const p = currentPoll_();
       if (!p) return;
@@ -14226,6 +14380,11 @@
       const cands = s.candidates || [];
       seminarModalCandidates_ = cands.slice();
       seminarModalReminders_ = semRemindersOf_(s);
+      const plan = s.plan || {};
+      document.getElementById('seminarPlanTentative').checked = plan.tentative === true;
+      setSemPlanSeg('seminarPlanFormat', plan.format || '');
+      setSemPlanSeg('seminarPlanRoom', plan.room || '');
+      document.getElementById('seminarPlanSlots').value = (plan.slots || []).join(', ');
       seminarNoticeEditKey_ = '';
       applySeminarPresentersToForm_(pres, cands);
       const freeNotesContainer = document.getElementById('seminarFreeNotesContainer');
@@ -14265,11 +14424,18 @@
       const candidates = byCandidates ? picked : seminarModalCandidates_;
       const freeNotes = Array.from(document.querySelectorAll('#seminarFreeNotesContainer input')).map(input => input.value.trim()).filter(v => v);
       const isNone = type === 'ゼミなし';
+      const plan = isNone ? {} : {
+        tentative: document.getElementById('seminarPlanTentative').checked || type === '未定',
+        format: semPlanSegValue_('seminarPlanFormat'),
+        room: semPlanSegValue_('seminarPlanRoom'),
+        slots: document.getElementById('seminarPlanSlots').value.split(/[、,，\s]+/).map(x => x.trim()).filter(Boolean)
+      };
       if (!date) {
         showToast('日付を入力してください', 'error');
         return null;
       }
-      if (!isNone && (!location || !startTime)) {
+      // 仮（日程だけ押さえた回）は、場所・時刻が空でもよい
+      if (!isNone && !plan.tentative && (!location || !startTime)) {
         showToast('場所と開始時刻を入力してください', 'error');
         return null;
       }
@@ -14280,7 +14446,8 @@
         type: type,
         presenters: isNone ? [] : presenters,
         candidates: isNone ? [] : candidates,
-        freeNotes: isNone ? [] : freeNotes,
+        freeNotes: freeNotes, // 休みでも「祝日」「内定式多」などのメモは残す
+        plan: plan,
         // 通知の変更は管理者だけ（メンバーが保存しても元の設定は残る）
         ...(currentUser && currentUser.role === 'admin' ? { reminders: seminarModalReminders_ } : {})
       };
@@ -14375,6 +14542,197 @@
       document.querySelectorAll('#seminarFilter .seg-tab').forEach(b => b.classList.toggle('active', b.dataset.f === f));
       renderSeminars();
     }
+    // ==============================================
+    // ゼミ予定表（月ごとの表・共有用の画像・Teams への共有）
+    // ==============================================
+    let semPlanMonth_ = '';
+    function setSemPlanSeg(id, v) {
+      document.querySelectorAll('#' + id + ' .seg-tab').forEach(b => b.classList.toggle('active', b.dataset.v === v));
+    }
+    function semPlanSegValue_(id) {
+      const b = document.querySelector('#' + id + ' .seg-tab.active');
+      return b ? b.dataset.v : '';
+    }
+    function semPlanCurMonth_() {
+      if (!semPlanMonth_) semPlanMonth_ = todayYmd().slice(0, 7);
+      return semPlanMonth_;
+    }
+    function shiftSemPlanMonth(d) {
+      const [y, m] = semPlanCurMonth_().split('/').map(Number);
+      const t = new Date(y, m - 1 + d, 1);
+      semPlanMonth_ = t.getFullYear() + '/' + String(t.getMonth() + 1).padStart(2, '0');
+      renderSeminars();
+    }
+    /** 1 回分の見せ方（アプリの表と共有用の画像で共通） */
+    function semPlanView_(s) {
+      const plan = s.plan || {};
+      const off = s.type === 'ゼミなし';
+      const d = parseYmd(s.date);
+      const presenters = (s.presenters || []).map(n => String(n).replace(/^その他：?/, '') || 'その他');
+      return {
+        s, off, d,
+        day: d.getDate(), wd: WEEKDAY_JA[d.getDay()], dow: d.getDay(),
+        title: off ? '休み' : (!s.type || s.type === '未定' ? 'ゼミ' : s.type),
+        tentative: !off && (plan.tentative === true || s.type === '未定'),
+        format: off ? '' : (plan.format || ''),
+        time: !off && s.startTime ? formatStartTimeDisplay(s.startTime).replace(/^0(\d)/, '$1') : '',
+        memo: (s.freeNotes || []).join(' '),
+        slots: off ? [] : (plan.slots || []),
+        names: off ? [] : presenters,
+        // 予定表では「大会議室(5階)」の括弧書きは省く（場所の列を細く保つ）
+        place: off ? '' : String(s.location || '').replace(/\s*[（(][^）)]*[）)]\s*$/, ''),
+        room: off ? '' : (plan.room || '')
+      };
+    }
+    function semPlanFmtHtml_(f) {
+      return f === 'P' ? '<span class="sp-fmt" title="PowerPoint">P</span>' : f === 'note' ? '<span class="sp-fmt n" title="研究ノート">ノート</span>' : '';
+    }
+    function semPlanHtml_(myName) {
+      const ym = semPlanCurMonth_();
+      const [y, m] = ym.split('/').map(Number);
+      const rows = seminarData.map((s, index) => ({ s, index })).filter(({ s }) => String(s.date).slice(0, 7) === ym);
+      const head = `
+        <div class="sp-bar">
+          <div class="sp-nav">
+            <button type="button" class="mc-nav-btn" onclick="shiftSemPlanMonth(-1)" aria-label="前の月"><i class="fa-solid fa-chevron-left"></i></button>
+            <div class="sp-title">${y}年${m}月</div>
+            <button type="button" class="mc-nav-btn" onclick="shiftSemPlanMonth(1)" aria-label="次の月"><i class="fa-solid fa-chevron-right"></i></button>
+          </div>
+          <div class="sp-acts">
+            <button type="button" class="btn btn-outline btn-xs" onclick="saveSemPlanImage(this)"><i class="fa-solid fa-download"></i> 画像</button>
+            <button type="button" class="btn btn-outline btn-xs" onclick="shareSemPlanDialog()"><i class="fa-regular fa-paper-plane"></i> 共有</button>
+          </div>
+        </div>`;
+      if (!rows.length) return head + '<p class="bulk-empty">この月のゼミはありません<br><small>「1件追加」「一括追加」から作れます</small></p>';
+      const MAX = 2;
+      return head + `<table class="sp-tbl"><tbody>${rows.map(({ s, index }) => {
+        const v = semPlanView_(s);
+        const people = [...v.slots.map(x => ({ t: x, cls: 'slot' })), ...v.names.map(n => ({ t: n, cls: n === myName ? 'me' : '' }))];
+        const shown = people.slice(0, MAX).map(p => `<span class="sp-chip ${p.cls}">${escapeHtml(p.t)}</span>`).join('')
+          + (people.length > MAX ? `<span class="sp-chip more" title="${escapeForAttr(people.slice(MAX).map(p => p.t).join('、'))}">＋${people.length - MAX}</span>` : '');
+        const who = v.off ? '' : people.length ? `<div class="sp-who">${shown}</div>` : '<span class="sp-tbd">未定</span>';
+        const place = v.off ? '<span class="sp-tbd">—</span>'
+          : v.place ? `${escapeHtml(v.place)}${v.room ? `<i class="${v.room === 'booked' ? 'ok' : 'wr'}">${v.room === 'booked' ? '予約済' : '未予約'}</i>` : ''}`
+          : '<span class="sp-tbd">未定</span>';
+        return `<tr class="${v.off ? 'off' : ''}" onclick="showEditSeminarModal(${index})" tabindex="0" onkeydown="if(event.key==='Enter')showEditSeminarModal(${index})">
+          <td class="sp-d${v.dow === 0 ? ' sun' : v.dow === 6 ? ' sat' : ''}"><b>${v.day}</b><small>${v.wd}</small></td>
+          <td class="sp-t"><div class="sp-tt">${escapeHtml(v.title)}${semPlanFmtHtml_(v.format)}${v.tentative ? '<span class="sp-tent">仮</span>' : ''}</div><div class="sp-sub">${(v.off ? v.memo : v.time) ? `<small>${escapeHtml(v.off ? v.memo : v.time)}</small>` : ''}${v.off ? '' : `<span class="sp-who-in">${who}</span>`}</div></td>
+          <td class="sp-w">${who}</td>
+          <td class="sp-p">${place}</td>
+        </tr>`;
+      }).join('')}</tbody></table>`;
+    }
+
+    /** 共有用の画像の中身（months: ['yyyy/MM', …]） */
+    function semPlanSheetHtml_(months, title) {
+      const now = new Date();
+      const blocks = months.map(ym => {
+        const rows = seminarData.filter(s => String(s.date).slice(0, 7) === ym).map(semPlanView_);
+        if (!rows.length) return '';
+        const m = Number(ym.split('/')[1]);
+        return `<div class="spi-mo"><b>${m}月</b><span></span></div>` + rows.map(v => {
+          const people = [...v.slots.map(x => `<span class="spi-slot">${escapeHtml(x)}</span>`), ...v.names.map(escapeHtml)];
+          return `<div class="spi-r${v.off ? ' off' : ''}">
+            <div class="spi-d${v.dow === 0 ? ' sun' : v.dow === 6 ? ' sat' : ''}"><b>${v.day}</b><small>${v.wd}</small></div>
+            <div class="spi-ty">${escapeHtml(v.title)}${semPlanFmtHtml_(v.format)}${v.tentative ? '<span class="sp-tent">仮</span>' : ''}<small>${escapeHtml(v.off ? v.memo : (v.time ? v.time + '〜' : ''))}</small></div>
+            <div class="spi-pp">${v.off ? '' : people.length ? people.join('<span class="spi-sep">・</span>') : '<span class="spi-tbd">未定</span>'}</div>
+            <div class="spi-pc">${v.off ? '<span class="spi-tbd">—</span>' : v.place ? escapeHtml(v.place) : '<span class="spi-tbd">未定</span>'}</div>
+            ${!v.off && v.memo ? `<div class="spi-memo">${escapeHtml(v.memo)}</div>` : ''}
+          </div>`;
+        }).join('');
+      }).join('');
+      return `<div class="spi">
+        <div class="spi-h"><h2>${escapeHtml(title)}</h2><span>${now.getMonth() + 1}/${now.getDate()} 時点</span></div>
+        ${blocks || '<p class="spi-tbd">ゼミはありません</p>'}
+        <div class="spi-lg"><span><span class="sp-fmt">P</span>PowerPoint</span><span><span class="sp-fmt n">ノート</span>研究ノート</span><span><span class="sp-tent">仮</span>日程のみ決定</span><span><span class="spi-slot">B4</span>学年・班の枠</span></div>
+      </div>`;
+    }
+    async function semPlanCanvas_(months, title) {
+      const host = document.createElement('div');
+      host.setAttribute('aria-hidden', 'true');
+      host.style.cssText = 'position:fixed;left:0;top:0;z-index:-9999;opacity:0;pointer-events:none;';
+      host.innerHTML = semPlanSheetHtml_(months, title);
+      document.body.appendChild(host);
+      try {
+        const h2c = await loadHtml2canvas();
+        await document.fonts.ready;
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        const el = host.firstElementChild;
+        return await h2c(el, { scale: 2, backgroundColor: '#ffffff', logging: false, useCORS: true, width: el.offsetWidth, height: el.offsetHeight, scrollX: 0, scrollY: 0 });
+      } finally {
+        host.remove();
+      }
+    }
+    function semPlanMonthsLabel_(months) {
+      const ms = months.map(ym => Number(ym.split('/')[1]));
+      return (ms.length > 1 ? ms[0] + '〜' + ms[ms.length - 1] : ms[0]) + '月のゼミ予定';
+    }
+    async function saveSemPlanImage(btn) {
+      const months = [semPlanCurMonth_()];
+      const orig = btn ? btn.innerHTML : '';
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 作成中'; }
+      try {
+        const canvas = await semPlanCanvas_(months, semPlanMonthsLabel_(months));
+        await deliverPng_(canvas, `ゼミ予定_${months[0].replace('/', '-')}.png`);
+      } catch (e) {
+        console.error('画像保存エラー:', e);
+        showToast('画像の保存に失敗しました', 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = orig; }
+      }
+    }
+    /** Teams への共有：期間・見出し・文面を決めて、画像付きで投稿する（メンションなし） */
+    function shareSemPlanDialog() {
+      const cur = semPlanCurMonth_();
+      const add = (ym, d) => { const [y, m] = ym.split('/').map(Number); const t = new Date(y, m - 1 + d, 1); return t.getFullYear() + '/' + String(t.getMonth() + 1).padStart(2, '0'); };
+      const ranges = [[cur], [add(cur, -1), cur], [cur, add(cur, 1)]];
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay show';
+      overlay.style.zIndex = '10060';
+      overlay.innerHTML = `
+        <div class="modal-box" style="max-width: 460px;" role="dialog" aria-modal="true" aria-labelledby="spShareTitle">
+          <div class="modal-title" id="spShareTitle">Teams に共有</div>
+          <div class="pm-label">期間</div>
+          <div class="seg-tabs small" id="spShareRange">${ranges.map((r, i) => `<button type="button" class="seg-tab${i === 0 ? ' active' : ''}" data-i="${i}">${escapeHtml(semPlanMonthsLabel_(r).replace('のゼミ予定', ''))}</button>`).join('')}</div>
+          <div class="pm-label">見出し</div>
+          <input type="text" class="form-input sp-share-title" maxlength="40" value="${escapeForAttr(semPlanMonthsLabel_(ranges[0]))}">
+          <div class="pm-label">文面</div>
+          <textarea class="form-input pm-text sp-share-msg" rows="3" maxlength="1000" placeholder="例: 今後のゼミ予定です。論文ゼミの班分けは今後決めていきます。"></textarea>
+          <div class="sp-share-note">${infoTipHtml('メンションなしで投稿します。投稿はあとから直せないので、カードの「最新の予定表を開く」から、いつでも最新を見られます')}<span>メンションなしで投稿</span></div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-outline" data-act="cancel">キャンセル</button>
+            <button type="button" class="btn btn-primary" data-act="ok"><i class="fa-regular fa-paper-plane"></i> 共有</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      let range = 0;
+      const titleEl = overlay.querySelector('.sp-share-title');
+      let titleEdited = false;
+      titleEl.addEventListener('input', () => { titleEdited = true; });
+      overlay.onclick = async (e) => {
+        const seg = e.target.closest('#spShareRange .seg-tab');
+        if (seg) {
+          range = Number(seg.dataset.i);
+          overlay.querySelectorAll('#spShareRange .seg-tab').forEach(b => b.classList.toggle('active', b === seg));
+          if (!titleEdited) titleEl.value = semPlanMonthsLabel_(ranges[range]);
+          return;
+        }
+        if (e.target === overlay || e.target.closest('[data-act="cancel"]')) { overlay.remove(); return; }
+        if (!e.target.closest('[data-act="ok"]')) return;
+        const title = titleEl.value.trim() || semPlanMonthsLabel_(ranges[range]);
+        const message = overlay.querySelector('.sp-share-msg').value.trim();
+        overlay.remove();
+        try {
+          const canvas = await semPlanCanvas_(ranges[range], title);
+          const imageBase64 = canvas.toDataURL('image/png');
+          const r = await callAPI('shareSeminarPlan', { title, message, imageBase64 }, { overlayMessage: 'Teams に共有しています…' });
+          showToast(r.message || '共有しました', 'success');
+        } catch (err) {
+          if (err && err.message && !/API/.test(err.message)) console.error(err);
+        }
+      };
+    }
+
     /** 発表者がまだ決まっていないゼミ */
     function isUndecidedSeminar_(s) {
       return s.type !== 'ゼミなし' && !(s.presenters || []).length;
@@ -14395,6 +14753,7 @@
       let f = seminarFilter;
       if ((f === 'mine' && !myName) || (f === 'undecided' && myName)) f = 'upcoming';
       document.querySelectorAll('#seminarFilter .seg-tab').forEach(b => b.classList.toggle('active', b.dataset.f === f));
+      if (f === 'plan') { container.innerHTML = semPlanHtml_(myName); return; }
       const list = f === 'past' ? all.filter(({ s }) => s.date < today).reverse()
         : f === 'mine' ? upcoming.filter(({ s }) => isMineSem(s))
         : f === 'undecided' ? upcoming.filter(({ s }) => isUndecidedSeminar_(s))
@@ -14563,8 +14922,8 @@
       const els = [
         document.getElementById('seminarFormLocationGroup'),
         document.getElementById('seminarFormTimeGroup'),
-        document.getElementById('seminarFormPresentersGroup'),
-        document.getElementById('seminarFormFreeNotesGroup')
+        document.getElementById('seminarPlanGroup'),
+        document.getElementById('seminarFormPresentersGroup')
       ];
       els.forEach(el => { if (el) el.style.display = isNone ? 'none' : ''; });
       const noticeGroup = document.getElementById('seminarNoticeGroup');
