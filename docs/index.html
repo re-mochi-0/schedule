@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
-  <meta name="app-build" content="20261026-112251">
+  <meta name="app-build" content="20261026-113907">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -769,6 +769,25 @@
       min-width: 0;
       max-width: 100%;
     }
+    /* 選ぶ欄の ▼ と、時刻・日付の欄のアイコンは、どちらも右から 14px にそろえる（PC・スマホ共通） */
+    select.form-select,
+    select.form-input {
+      -webkit-appearance: none;
+      appearance: none;
+      padding-right: 40px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%235a5a5a' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 12px 12px;
+    }
+    input[type="date"].form-input,
+    input[type="time"].form-input,
+    input[type="month"].form-input,
+    input[type="datetime-local"].form-input { padding-right: 14px; }
+    input[type="date"]::-webkit-calendar-picker-indicator,
+    input[type="time"]::-webkit-calendar-picker-indicator,
+    input[type="month"]::-webkit-calendar-picker-indicator,
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator { margin: 0 0 0 8px; padding: 0; width: 14px; height: 14px; cursor: pointer; opacity: .75; }
     /* iPhone（iOS のブラウザ）：日付・時刻の入力欄は独自の最小幅があって縮まず、枠からはみ出して
        画面が横にも動いてしまう。独自の見た目を外して縮むようにする（押すと今までどおり選ぶ画面が出る） */
     @supports (-webkit-touch-callout: none) {
@@ -4515,6 +4534,17 @@
     .sp-p i.ok { color: #2f855a; } .sp-p i.wr { color: #b7791f; }
     .sp-tbl tr.off .sp-t { color: #aaa; font-weight: 500; }
     .sp-form { display: flex; flex-direction: column; gap: 8px; }
+    .sp-tent-row { margin-top: 8px; }
+    .sp-place-opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; margin-bottom: 8px; }
+    .sp-place-opt { min-height: 42px; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 10px; background: #fff; color: var(--text); font: inherit; font-size: 13.5px; cursor: pointer; }
+    .sp-place-opt.active { border-color: var(--primary-dark); background: #eef6f8; color: var(--primary-dark); font-weight: 700; }
+    .sp-tbl td.sp-p[onclick]:hover { color: var(--primary-dark); }
+    .sp-extra-dates { display: flex; flex-direction: column; gap: 6px; }
+    .sp-extra-dates:not(:empty) { margin-top: 6px; }
+    .sp-extra-row { display: flex; align-items: center; gap: 6px; }
+    .sp-extra-row .form-input { flex: 1; min-width: 0; }
+    .sp-extra-del { flex: 0 0 auto; width: 36px; height: 36px; border: 0; border-radius: 50%; background: #f2f2f2; color: #888; cursor: pointer; }
+    .sp-add-date { margin-top: 6px; }
     .sp-form-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .sp-form-label { flex: 0 0 92px; font-size: 13px; color: var(--text); }
     .sp-form-row .form-input { flex: 1; min-width: 160px; }
@@ -6239,6 +6269,9 @@
       <div class="form-group">
         <label class="form-label">日付</label>
         <input type="date" id="seminarDate" class="form-input" onchange="renderSeminarNotices_()">
+        <div id="seminarExtraDates" class="sp-extra-dates"></div>
+        <button type="button" class="link-btn sp-add-date" id="seminarAddDateBtn" onclick="addSeminarExtraDate()"><i class="fa-solid fa-plus"></i> 日付を追加</button>
+        <label class="set-row compact sp-tent-row"><span class="set-name">仮（日程のみ決定）<button type="button" class="info-tip" data-tip="内容や発表者が決まっていない回。場所・時刻は空でも保存でき、予定表に「仮」と出ます" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></span><span class="sw"><input type="checkbox" id="seminarPlanTentative"><span></span></span></label>
       </div>
       <div class="form-group">
         <label class="form-label">種類</label>
@@ -6276,9 +6309,8 @@
         <input type="time" id="seminarStartTime" class="form-input">
       </div>
       <div class="form-group" id="seminarPlanGroup">
-        <label class="form-label">予定表<button type="button" class="info-tip" data-tip="ゼミ予定表に出す項目です。仮：日程だけ押さえた回（場所・時刻は空でも保存できます）" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></label>
+        <label class="form-label">予定表<button type="button" class="info-tip" data-tip="ゼミ予定表に出す項目です" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></label>
         <div class="sp-form">
-          <label class="set-row compact"><span class="set-name">仮（日程のみ決定）</span><span class="sw"><input type="checkbox" id="seminarPlanTentative"><span></span></span></label>
           <div class="sp-form-row"><span class="sp-form-label">形式</span>
             <div class="seg-tabs small inline-seg" id="seminarPlanFormat">
               <button type="button" class="seg-tab active" data-v="" onclick="setSemPlanSeg('seminarPlanFormat', '')">なし</button>
@@ -6399,6 +6431,7 @@
           <div class="form-group">
             <label class="form-label">祝日</label>
             <label class="set-row compact"><span class="set-name">祝日は作らない</span><span class="sw"><input type="checkbox" id="bulkSkipHoliday" checked onchange="updateBulkPreview()"><span></span></span></label>
+            <label class="set-row compact" id="bulkHolidayOffRow"><span class="set-name">休み（祝日）として入れる<button type="button" class="info-tip" data-tip="祝日の日を、予定表に「休み（祝日）」の行として入れます" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></span><span class="sw"><input type="checkbox" id="bulkHolidayAsOff"><span></span></span></label>
           </div>
         </div>
 
@@ -6415,13 +6448,17 @@
                 <option value="ベーシックゼミ">ベーシックゼミ</option>
                 <option value="レクチャークラス">レクチャークラス</option>
                 <option value="その他">その他</option>
-                <option value="ゼミなし">ゼミなし</option>
+                <option value="未定">未定（日程のみ）</option>
+                <option value="ゼミなし">ゼミなし（休み）</option>
               </select>
             </div>
             <div class="form-group">
               <label class="form-label">開始時刻</label>
               <input type="time" id="bulkSemTime" class="form-input" value="13:00" onchange="updateBulkPreview()">
             </div>
+          </div>
+          <div class="form-group">
+            <label class="set-row compact"><span class="set-name">仮（日程のみ決定）<button type="button" class="info-tip" data-tip="内容が決まっていない回として作ります。場所・時刻は空でも作れます" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></span><span class="sw"><input type="checkbox" id="bulkSemTentative"><span></span></span></label>
           </div>
           <div class="form-group">
             <label class="form-label">場所</label>
@@ -6435,6 +6472,13 @@
             <div id="bulkSemLocationOtherWrap" class="other-input" style="display: none;">
               <input type="text" id="bulkSemLocationOther" class="form-input" placeholder="場所を入力" oninput="updateBulkPreview()">
               <button type="button" class="link-btn" onclick="setBulkLocation_('大会議室(5階)'); updateBulkPreview();">一覧から選択</button>
+            </div>
+            <div class="sp-form-row" style="margin-top: 8px;"><span class="sp-form-label">場所の予約</span>
+              <div class="seg-tabs small inline-seg" id="bulkSemRoom">
+                <button type="button" class="seg-tab active" data-v="" onclick="setSemPlanSeg('bulkSemRoom', '')">—</button>
+                <button type="button" class="seg-tab" data-v="booked" onclick="setSemPlanSeg('bulkSemRoom', 'booked')">予約済</button>
+                <button type="button" class="seg-tab" data-v="pending" onclick="setSemPlanSeg('bulkSemRoom', 'pending')">未予約</button>
+              </div>
             </div>
           </div>
           <div class="form-group">
@@ -14360,6 +14404,9 @@
       const submitBtn = document.getElementById('seminarModalSubmitBtn');
       submitBtn.innerHTML = isEdit ? '<i class="fa-solid fa-save"></i> 保存' : '<i class="fa-solid fa-plus"></i> 追加';
       document.getElementById('seminarModalNextBtn').style.display = isEdit ? 'none' : '';
+      // 複数の日付（繰り返しではなく好きな日）は追加のときだけ
+      document.getElementById('seminarExtraDates').innerHTML = '';
+      document.getElementById('seminarAddDateBtn').hidden = !!isEdit;
 
       const def = seminarDefaults_();
       const s = seminar || {};
@@ -14398,6 +14445,23 @@
       renderTemplateSelect('seminar', '').catch(() => {});
       document.getElementById('seminarModal').classList.add('show');
       ensureSemremLoaded_().then(renderSeminarNotices_);
+    }
+
+    /** 追加の画面：同じ内容で作る日付を増やす */
+    function addSeminarExtraDate() {
+      const box = document.getElementById('seminarExtraDates');
+      const all = [document.getElementById('seminarDate'), ...box.querySelectorAll('input')].map(i => i.value).filter(Boolean).sort();
+      let next = '';
+      if (all.length) { const d = parseYmd(all[all.length - 1].replace(/-/g, '/')); d.setDate(d.getDate() + 7); next = ymdDash(d); }
+      const row = document.createElement('div');
+      row.className = 'sp-extra-row';
+      row.innerHTML = `<input type="date" class="form-input" value="${next}" aria-label="追加の日付"><button type="button" class="sp-extra-del" aria-label="この日付を外す"><i class="fa-solid fa-xmark"></i></button>`;
+      row.querySelector('.sp-extra-del').onclick = () => row.remove();
+      box.appendChild(row);
+      row.querySelector('input').focus();
+    }
+    function seminarExtraDates_() {
+      return [...document.querySelectorAll('#seminarExtraDates input')].map(i => i.value).filter(Boolean).map(v => v.split('-').join('/'));
     }
 
     async function showAddSeminarModal() {
@@ -14462,13 +14526,21 @@
         const orig = seminarData[editingSeminarIndex];
         entry.id = orig.id || '';
         entry.seriesId = orig.seriesId || '';
-      } else if (seminarData.some(x => x.date === entry.date && x.type === entry.type && x.type !== 'ゼミなし')) {
-        const ok = await showConfirmModal(`${fmtMdW(entry.date)} には同じ種類のゼミ（${entry.type}）がすでにあります。追加しますか？`, '同じ日のゼミ');
-        if (!ok) return;
       }
+      // 追加のとき：選んだ日付ごとに同じ内容で作る（重なりは 1 つにまとめる）
+      const dates = isEdit ? [entry.date] : [...new Set([entry.date, ...seminarExtraDates_()])].sort();
+      const entries = dates.map(d => Object.assign({}, entry, { date: d }));
+      if (!isEdit) {
+        const dup = dates.filter(d => seminarData.some(x => x.date === d && x.type === entry.type && x.type !== 'ゼミなし'));
+        if (dup.length) {
+          const ok = await showConfirmModal(`${dup.map(fmtMdW).join('、')} には同じ種類のゼミ（${entry.type}）がすでにあります。追加しますか？`, '同じ日のゼミ');
+          if (!ok) return;
+        }
+      }
+      if (dates.length > 1) opts.next = false;
       try {
-        // 追加・編集した 1 件だけ送る（他の人が同時に編集した内容を巻き戻さないように）
-        const payload = { adminId: currentUser.id, seminars: [entry] };
+        // 追加・編集したものだけ送る（他の人が同時に編集した内容を巻き戻さないように）
+        const payload = { adminId: currentUser.id, seminars: entries };
         if (isEdit && !entry.id) {
           // ID の無い古い行は内容で特定して置き換える
           const orig = seminarData[editingSeminarIndex];
@@ -14476,7 +14548,7 @@
         }
         await callAPI('setSeminars', payload, { button: document.getElementById(opts.next ? 'seminarModalNextBtn' : 'seminarModalSubmitBtn') });
         if (entry.type !== 'ゼミなし') saveSeminarDefaults_({ type: entry.type, location: entry.location, startTime: entry.startTime });
-        showToast(isEdit ? 'ゼミを更新しました' : `${fmtMdW(entry.date)} のゼミを追加しました`, 'success');
+        showToast(isEdit ? 'ゼミを更新しました' : dates.length > 1 ? `${dates.length} 日分のゼミを追加しました` : `${fmtMdW(entry.date)} のゼミを追加しました`, 'success');
         if (opts.next && !isEdit) {
           // 続けて入力: 日付を 1 週間進め、発表者・自由記述だけ空にする
           const d = parseYmd(entry.date);
@@ -14618,9 +14690,67 @@
           <td class="sp-d${v.dow === 0 ? ' sun' : v.dow === 6 ? ' sat' : ''}"><b>${v.day}</b><small>${v.wd}</small></td>
           <td class="sp-t"><div class="sp-tt">${escapeHtml(v.title)}${semPlanFmtHtml_(v.format)}${v.tentative ? '<span class="sp-tent">仮</span>' : ''}</div><div class="sp-sub">${(v.off ? v.memo : v.time) ? `<small>${escapeHtml(v.off ? v.memo : v.time)}</small>` : ''}${v.off ? '' : `<span class="sp-who-in">${who}</span>`}</div></td>
           <td class="sp-w">${who}</td>
-          <td class="sp-p">${place}</td>
+          <td class="sp-p"${v.off ? '' : ` onclick="event.stopPropagation(); openSeminarPlacePicker(${index})" title="場所を変更"`}>${place}</td>
         </tr>`;
       }).join('')}</tbody></table>`;
+    }
+
+    /** そのゼミの場所と予約の状態だけを変える（編集画面を開かずに。そのゼミだけ保存する） */
+    function openSeminarPlacePicker(index) {
+      const s = seminarData[index];
+      if (!s) return;
+      const plan = Object.assign({}, s.plan || {});
+      const cur = s.location || '';
+      const inList = SEMINAR_LOCATIONS.includes(cur);
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay show';
+      overlay.style.zIndex = '10060';
+      overlay.innerHTML = `
+        <div class="modal-box" style="max-width: 420px;" role="dialog" aria-modal="true" aria-labelledby="spPlaceTitle">
+          <div class="modal-title" id="spPlaceTitle">${escapeHtml(fmtMdW(s.date))} の場所</div>
+          <div class="sp-place-opts">
+            ${SEMINAR_LOCATIONS.map(l => `<button type="button" class="sp-place-opt${l === cur ? ' active' : ''}" data-v="${escapeForAttr(l)}">${escapeHtml(l)}</button>`).join('')}
+            <button type="button" class="sp-place-opt${cur && !inList ? ' active' : ''}" data-v="__other">その他</button>
+          </div>
+          <input type="text" class="form-input sp-place-other" maxlength="40" placeholder="場所を入力" value="${cur && !inList ? escapeForAttr(cur) : ''}"${cur && !inList ? '' : ' hidden'}>
+          <div class="sp-form-row" style="margin-top: 14px;"><span class="sp-form-label">場所の予約</span>
+            <div class="seg-tabs small inline-seg sp-place-room">
+              <button type="button" class="seg-tab${!plan.room ? ' active' : ''}" data-v="">—</button>
+              <button type="button" class="seg-tab${plan.room === 'booked' ? ' active' : ''}" data-v="booked">予約済</button>
+              <button type="button" class="seg-tab${plan.room === 'pending' ? ' active' : ''}" data-v="pending">未予約</button>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-outline" data-act="cancel">キャンセル</button>
+            <button type="button" class="btn btn-primary" data-act="ok"><i class="fa-solid fa-check"></i> 保存</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      const other = overlay.querySelector('.sp-place-other');
+      overlay.onclick = async (e) => {
+        const opt = e.target.closest('.sp-place-opt');
+        if (opt) {
+          overlay.querySelectorAll('.sp-place-opt').forEach(b => b.classList.toggle('active', b === opt));
+          other.hidden = opt.dataset.v !== '__other';
+          if (!other.hidden) other.focus();
+          return;
+        }
+        const room = e.target.closest('.sp-place-room .seg-tab');
+        if (room) { overlay.querySelectorAll('.sp-place-room .seg-tab').forEach(b => b.classList.toggle('active', b === room)); return; }
+        if (e.target === overlay || e.target.closest('[data-act="cancel"]')) { overlay.remove(); return; }
+        if (!e.target.closest('[data-act="ok"]')) return;
+        const picked = overlay.querySelector('.sp-place-opt.active');
+        const location = !picked ? cur : picked.dataset.v === '__other' ? other.value.trim() : picked.dataset.v;
+        if (picked && picked.dataset.v === '__other' && !location) { showToast('場所を入力してください', 'error'); return; }
+        const roomV = (overlay.querySelector('.sp-place-room .seg-tab.active') || {}).dataset;
+        plan.room = roomV ? roomV.v : '';
+        overlay.remove();
+        try {
+          await callAPI('setSeminars', { adminId: currentUser.id, seminars: [Object.assign({}, s, { location, plan })] }, { overlayMessage: '保存しています…' });
+          showToast(`${fmtMdW(s.date)} の場所を変更しました`, 'success');
+          await loadSeminars(true);
+        } catch (_) {}
+      };
     }
 
     /** 共有用の画像の中身（months: ['yyyy/MM', …]） */
@@ -14803,6 +14933,7 @@
               ${main.length ? `<span class="ag-act-main">${main.join('')}</span>` : ''}
               <span class="ag-act-sub">
                 <button type="button" class="ag-btn" onclick="showEditSeminarModal(${index})"><i class="fa-solid fa-pen"></i>編集</button>
+                ${!isNone && s.date >= today ? `<button type="button" class="ag-btn" onclick="openSeminarPlacePicker(${index})"><i class="fa-solid fa-location-dot"></i>場所</button>` : ''}
                 <button type="button" class="ag-btn" onclick="duplicateSeminar(${index})" title="同じ内容で 1 週間後に追加"><i class="fa-regular fa-copy"></i>複製</button>
                 <button type="button" class="ag-btn danger" onclick="removeSeminarEntry(${index})"><i class="fa-regular fa-trash-can"></i>削除</button>
               </span>
@@ -15230,6 +15361,8 @@
       await ensureBulkHolidays_(rows.map(r => r.date));
       const skipHoliday = document.getElementById('bulkSkipHoliday').checked;
       const isOff = r => skipHoliday && bulk.holidays[r.date];
+      const offRow = document.getElementById('bulkHolidayOffRow');
+      if (offRow) offRow.style.display = bulk.kind === 'seminar' && skipHoliday ? '' : 'none';
       if (built.byCount) {
         const trimmed = [];
         let n = 0;
@@ -15565,13 +15698,21 @@
             return { date: r.date, name: r.name, startTime: r.startTime, location: r.location, participants: r.participants || [], note: r.note || '', color: r.color, seriesId: bulk.seriesId };
           }
           const none = r.type === 'ゼミなし';
-          return { date: r.date, type: r.type, location: none ? '' : r.location, startTime: none ? '' : r.startTime, presenters: none ? [] : (r.presenters || []), candidates: none ? [] : (r.candidates || []), freeNotes: r.freeNotes || [], seriesId: bulk.seriesId };
+          const plan = none || bulk.mode !== 'repeat' ? undefined : { tentative: document.getElementById('bulkSemTentative').checked || r.type === '未定', room: semPlanSegValue_('bulkSemRoom') };
+          return { date: r.date, type: r.type, location: none ? '' : r.location, startTime: none ? '' : r.startTime, presenters: none ? [] : (r.presenters || []), candidates: none ? [] : (r.candidates || []), freeNotes: r.freeNotes || [], seriesId: bulk.seriesId, plan };
         });
+        // 祝日を「休み（祝日）」の行として入れる（ゼミの繰り返し・祝日は作らないとき）
+        if (bulk.kind === 'seminar' && bulk.mode === 'repeat' && document.getElementById('bulkSkipHoliday').checked && document.getElementById('bulkHolidayAsOff').checked) {
+          bulk.rows.filter(r => r.holiday && !bulk.excluded.has(r.date)).forEach(r => {
+            items.push({ date: r.date, type: 'ゼミなし', location: '', startTime: '', presenters: [], candidates: [], freeNotes: [typeof r.holiday === 'string' && r.holiday ? r.holiday : '祝日'], seriesId: bulk.seriesId });
+          });
+          items.sort((a, b) => a.date.localeCompare(b.date));
+        }
         if (bulk.kind === 'event' && items.some(it => !it.name)) {
           showToast('イベント名を入力してください', 'error');
           return;
         }
-        const missing = items.filter(it => bulk.kind === 'seminar' && it.type !== 'ゼミなし' && (!it.location || !it.startTime));
+        const missing = items.filter(it => bulk.kind === 'seminar' && it.type !== 'ゼミなし' && !(it.plan && it.plan.tentative) && (!it.location || !it.startTime));
         if (missing.length) {
           showToast('場所と開始時刻を入力してください', 'error');
           return;
