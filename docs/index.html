@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
-  <meta name="app-build" content="20261026-114824">
+  <meta name="app-build" content="20261026-121328">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -1372,6 +1372,25 @@
       position: relative;
       z-index: 1;
     }
+    /* テンプレート：編集の状態（日付を隠す・名前の欄・都度入力の欄は薄く） */
+    .tpl-name-group { display: none; }
+    .tpl-mode .tpl-name-group { display: block; grid-column: 1 / -1; }
+    .tpl-mode .template-bar, .tpl-mode .tpl-hide, .tpl-mode #seminarExtraDates, .tpl-mode #seminarAddDateBtn { display: none !important; }
+    .tpl-ask-chip { display: none; margin-left: auto; }
+    .tpl-mode .tpl-ask-chip { display: inline-flex; }
+    .tpl-mode .form-group .form-label { display: flex; align-items: center; gap: 8px; }
+    .tpl-mode .label-row .form-label { flex: 1; }
+    .tpl-ask > *:not(.form-label):not(.label-row), .tpl-ask .label-row > :not(.form-label) { opacity: .35; pointer-events: none; }
+    .tpl-need { animation: tplNeed 1.6s ease; border-radius: 12px; }
+    @keyframes tplNeed { 0%, 60% { box-shadow: 0 0 0 3px #f4d9a6; } 100% { box-shadow: 0 0 0 3px transparent; } }
+    .tpl-row { display: flex; align-items: center; gap: 10px; padding: 12px 2px; border-bottom: 1px solid var(--border); }
+    .tpl-main { flex: 1; min-width: 0; }
+    .tpl-name-t { font-size: 14px; font-weight: 700; color: var(--text); }
+    .tpl-sum { font-size: 12px; color: var(--text-light); margin-top: 2px; overflow-wrap: anywhere; }
+    .tpl-ask-tag { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 4px; background: #fff4e0; color: #b7791f; font-size: 11px; font-weight: 700; }
+    .tpl-acts { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+    /* 名前の入力（テンプレートに保存など）は、開いている編集画面より前に出す */
+    #promptModal.modal-overlay { z-index: 10080; }
     
     .modal-box {
       background: var(--card);
@@ -4496,6 +4515,11 @@
     /* ゼミ予定表（アプリの表）：日付の数字と曜日は同じ中心線、休みは薄く、仮・未予約は黄土 */
     .sp-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 8px; flex-wrap: wrap; }
     .sp-nav { display: flex; align-items: center; gap: 10px; }
+    .sp-lead { font-size: 13px; color: var(--text-light); }
+    .sp-mo { margin: 16px 0 0; padding: 0 4px 4px; border-bottom: 1.5px solid #dfe5f6; font-size: 13px; font-weight: 700; color: var(--sem); }
+    .sp-bar + .sp-mo { margin-top: 4px; }
+    .sp-img-preview { margin-top: 14px; border: 1px solid var(--border); border-radius: 12px; background: #f6f7f8; padding: 10px; max-height: 52vh; overflow: auto; text-align: center; }
+    .sp-img { display: block; width: 100%; max-width: 640px; margin: 0 auto; border-radius: 4px; box-shadow: 0 0 0 1px #e3e6e8; }
     .sp-title { font-size: 16px; font-weight: 700; color: var(--text); min-width: 96px; text-align: center; }
     .sp-acts { display: flex; gap: 6px; }
     .sp-tbl { width: 100%; border-collapse: collapse; table-layout: fixed; }
@@ -4523,7 +4547,9 @@
     .sp-fmt.n { font-size: 9px; padding: 0 4px; }
     .sp-tent { display: inline-block; margin-left: 4px; padding: 0 4px; border-radius: 4px; background: #fff4e0; color: #b7791f; font-size: 9.5px; font-weight: 700; vertical-align: 1px; line-height: 16px; }
     .sp-w { width: 34%; }
-    .sp-who { display: flex; gap: 4px; flex-wrap: nowrap; overflow: hidden; }
+    .sp-who { display: flex; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden; }
+    .sp-who .sp-tent { margin-left: 0; vertical-align: 0; line-height: 18px; flex: 0 0 auto; }
+    .sp-chip { line-height: 18px; }
     .sp-chip { font-size: 11.5px; border-radius: 6px; padding: 1px 7px; background: #eef1fb; color: var(--sem); white-space: nowrap; }
     .sp-chip.slot { background: #fff; border: 1px dashed #b9c3e6; color: #7d8bc0; }
     .sp-chip.me { background: var(--me-bg); color: var(--me); font-weight: 700; }
@@ -4549,6 +4575,18 @@
     .sp-place-opt { min-height: 42px; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 10px; background: #fff; color: var(--text); font: inherit; font-size: 13.5px; cursor: pointer; }
     .sp-place-opt.active { border-color: var(--primary-dark); background: #eef6f8; color: var(--primary-dark); font-weight: 700; }
     .sp-tbl td.sp-p[onclick]:hover { color: var(--primary-dark); }
+    /* 一括追加：日付を選ぶカレンダー */
+    .bd-pick { max-width: 420px; margin: 4px auto 16px; }
+    .bd-head { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 8px; }
+    .bd-title { font-size: 15px; font-weight: 700; color: var(--text); min-width: 96px; text-align: center; }
+    .bd-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .bd-wd span { text-align: center; font-size: 11px; color: var(--text-light); padding-bottom: 2px; }
+    .bd-wd .sun, .bd-day.sun { color: #d5646f; } .bd-wd .sat, .bd-day.sat { color: #4a7fc1; }
+    .bd-day { aspect-ratio: 1 / 1; max-height: 46px; border: 1px solid var(--border); border-radius: 10px; background: #fff; font: inherit; font-size: 14px; color: var(--text); cursor: pointer; font-variant-numeric: tabular-nums; }
+    .bd-day.today { border-color: var(--primary); }
+    .bd-day.on { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; font-weight: 700; }
+    .bd-sum { margin-top: 10px; font-size: 12.5px; color: var(--text-light); text-align: center; min-height: 1.6em; }
+    .bd-sum b { color: var(--text); }
     .sp-extra-dates { display: flex; flex-direction: column; gap: 6px; }
     .sp-extra-dates:not(:empty) { margin-top: 6px; }
     .sp-extra-row { display: flex; align-items: center; gap: 6px; }
@@ -5995,6 +6033,9 @@
           <button type="button" class="btn btn-outline" onclick="showBulkModal('seminar')">
             <i class="fa-solid fa-layer-group"></i> 一括追加
           </button>
+          <button type="button" class="btn btn-outline" onclick="openTemplateManager('seminar')">
+            <i class="fa-regular fa-bookmark"></i> テンプレート
+          </button>
         </div>
         <div class="seg-tabs list-seg" id="seminarFilter" role="tablist" aria-label="表示するゼミ">
           <button type="button" class="seg-tab active" data-f="upcoming" onclick="setSeminarFilter('upcoming')">今後</button>
@@ -6024,6 +6065,9 @@
           </button>
           <button type="button" class="btn btn-outline" onclick="showBulkModal('event')">
             <i class="fa-solid fa-layer-group"></i> 一括追加
+          </button>
+          <button type="button" class="btn btn-outline" onclick="openTemplateManager('event')">
+            <i class="fa-regular fa-bookmark"></i> テンプレート
           </button>
         </div>
         <div id="eventsContainer"></div>
@@ -6321,11 +6365,11 @@
         <input type="time" id="seminarStartTime" class="form-input">
       </div>
       <div class="form-group" id="seminarFormFormatGroup">
-        <label class="form-label">形式</label>
+        <label class="form-label">発表形式</label>
         <div class="seg-tabs small" id="seminarPlanFormat">
           <button type="button" class="seg-tab active" data-v="" onclick="setSemPlanSeg('seminarPlanFormat', '')">なし</button>
           <button type="button" class="seg-tab" data-v="P" onclick="setSemPlanSeg('seminarPlanFormat', 'P')">PowerPoint</button>
-          <button type="button" class="seg-tab" data-v="note" onclick="setSemPlanSeg('seminarPlanFormat', 'note')">研究ノート</button>
+          <button type="button" class="seg-tab" data-v="note" onclick="setSemPlanSeg('seminarPlanFormat', 'note')">実験ノート</button>
         </div>
       </div>
       <div class="form-group" id="seminarFormRoomGroup">
@@ -6372,6 +6416,7 @@
       </div>
       </div>
       <div class="sheet-foot">
+        <button type="button" class="link-btn" id="seminarShiftBtn" onclick="shiftSeminarsFromEditing()" hidden><i class="fa-solid fa-angles-down"></i> ここから後ろ倒し</button>
         <button type="button" class="btn btn-outline" onclick="closeSeminarModal()">
           キャンセル
         </button>
@@ -6393,12 +6438,15 @@
         <div class="sheet-head-title" id="bulkTitle">一括追加</div>
       </div>
       <div class="sheet-body">
-      <div class="seg-tabs" role="tablist">
+      <div class="seg-tabs" role="tablist" id="bulkModeTabs">
         <button type="button" class="seg-tab active" data-mode="repeat" onclick="setBulkMode('repeat')"><i class="fa-solid fa-repeat"></i> 繰り返し</button>
+        <button type="button" class="seg-tab" data-mode="dates" onclick="setBulkMode('dates')"><i class="fa-regular fa-calendar-check"></i> 日付を選ぶ</button>
         <button type="button" class="seg-tab" data-mode="table" onclick="setBulkMode('table')"><i class="fa-solid fa-table-cells"></i> 表で入力</button>
       </div>
 
       <div id="bulkRepeat">
+        <div id="bulkDatesPick" class="bd-pick" hidden></div>
+        <div id="bulkRuleFields">
         <div class="form-row-2">
           <div class="form-group">
             <label class="form-label">開始日</label>
@@ -6448,6 +6496,7 @@
             <label class="set-row compact" id="bulkHolidayOffRow"><span class="set-name">休み（祝日）として入れる<button type="button" class="info-tip" data-tip="祝日の日を、予定表に「休み（祝日）」の行として入れます" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></span><span class="sw"><input type="checkbox" id="bulkHolidayAsOff"><span></span></span></label>
           </div>
         </div>
+        </div><!-- /bulkRuleFields -->
 
         <!-- ゼミの項目 -->
         <div id="bulkSeminarFields">
@@ -6494,6 +6543,12 @@
                 <button type="button" class="seg-tab" data-v="booked" onclick="setSemPlanSeg('bulkSemRoom', 'booked')">予約済</button>
                 <button type="button" class="seg-tab" data-v="pending" onclick="setSemPlanSeg('bulkSemRoom', 'pending')">未予約</button>
               </div>
+            </div>
+            <label class="form-label" style="margin-top: 12px;">発表形式</label>
+            <div class="seg-tabs small" id="bulkSemFormat">
+              <button type="button" class="seg-tab active" data-v="" onclick="setSemPlanSeg('bulkSemFormat', '')">なし</button>
+              <button type="button" class="seg-tab" data-v="P" onclick="setSemPlanSeg('bulkSemFormat', 'P')">PowerPoint</button>
+              <button type="button" class="seg-tab" data-v="note" onclick="setSemPlanSeg('bulkSemFormat', 'note')">実験ノート</button>
             </div>
           </div>
           <div class="form-group">
@@ -11650,13 +11705,24 @@
         const f = readEventForm_();
         return { name: f.name, color: f.color, startTime: f.startTime, location: f.location, note: f.note, participants: f.participants, kind: f.kind };
       }
+      // 日付以外のすべて（発表者の決め方・候補・予定表の項目も）
       const locSel = document.getElementById('seminarLocation').value;
+      const picked = getPickerSelection(document.getElementById('seminarPresentersCheckbox'));
+      const otherName = document.getElementById('seminarOtherPresenter').value.trim();
       return {
         type: document.getElementById('seminarType').value,
         location: locSel === 'その他' ? document.getElementById('seminarLocationOther').value.trim() : locSel,
         startTime: document.getElementById('seminarStartTime').value,
-        presenters: getPickerSelection(document.getElementById('seminarPresentersCheckbox')),
-        freeNotes: Array.from(document.querySelectorAll('#seminarFreeNotesContainer input')).map(i => i.value.trim()).filter(Boolean)
+        presenters: seminarPresenterMode === 'other' ? [otherName ? 'その他：' + otherName : 'その他'] : seminarPresenterMode === 'candidates' ? [] : picked,
+        candidates: seminarPresenterMode === 'candidates' ? picked : [],
+        freeNotes: Array.from(document.querySelectorAll('#seminarFreeNotesContainer input')).map(i => i.value.trim()).filter(Boolean),
+        plan: {
+          tentative: document.getElementById('seminarPlanTentative').checked,
+          format: semPlanSegValue_('seminarPlanFormat'),
+          room: semPlanSegValue_('seminarPlanRoom'),
+          slots: document.getElementById('seminarPlanSlots').value.split(/[、,，\s]+/).map(x => x.trim()).filter(Boolean),
+          presenterTentative: document.getElementById('seminarPresTentative').checked
+        }
       };
     }
     
@@ -11666,6 +11732,8 @@
       const t = findTemplate_(kind, sel.value);
       if (!t) return;
       const d = t.data || {};
+      const ask = Array.isArray(d.ask) ? d.ask : [];
+      if (tplApplyData_(kind, d, ask)) return;
       if (kind === 'event') {
         document.getElementById('eventName').value = d.name || '';
         document.getElementById('eventStartTime').value = d.startTime || '';
@@ -11687,7 +11755,16 @@
           document.getElementById('seminarLocationOther').value = loc;
         }
         document.getElementById('seminarStartTime').value = d.startTime || '';
+        seminarModalCandidates_ = (d.candidates || []).slice();
         applySeminarPresentersToForm_(d.presenters || [], d.candidates || []);
+        const plan = d.plan || {};
+        document.getElementById('seminarPlanTentative').checked = plan.tentative === true;
+        setSemPlanSeg('seminarPlanFormat', plan.format || '');
+        setSemPlanSeg('seminarPlanRoom', plan.room || '');
+        document.getElementById('seminarPlanSlots').value = (plan.slots || []).join(', ');
+        document.getElementById('seminarPresTentative').checked = plan.presenterTentative === true;
+        document.getElementById('seminarSlotsWrap').hidden = !(plan.slots || []).length;
+        document.getElementById('seminarSlotsToggle').hidden = !!(plan.slots || []).length;
         const box = document.getElementById('seminarFreeNotesContainer');
         box.innerHTML = '';
         (d.freeNotes || []).forEach(n => {
@@ -11700,6 +11777,256 @@
       showToast(`「${t.name}」を入力しました`, 'info');
     }
     
+    // ==============================================
+    // テンプレートの管理（一覧・名前の変更・内容の編集・削除）と「都度入力」の欄
+    // ==============================================
+    const TPL_FIELDS_ = {
+      seminar: [
+        { k: 'type', el: 'seminarType', label: '種類' },
+        { k: 'location', el: 'seminarFormLocationGroup', label: '場所' },
+        { k: 'startTime', el: 'seminarFormTimeGroup', label: '開始時刻' },
+        { k: 'format', el: 'seminarFormFormatGroup', label: '発表形式' },
+        { k: 'room', el: 'seminarFormRoomGroup', label: '場所の予約' },
+        { k: 'presenters', el: 'seminarFormPresentersGroup', label: '発表者' },
+        { k: 'freeNotes', el: 'seminarFormFreeNotesGroup', label: 'メモ' }
+      ],
+      event: [
+        { k: 'name', el: 'eventName', label: 'イベント名' },
+        { k: 'startTime', el: 'eventStartTime', label: '開始時刻' },
+        { k: 'location', el: 'eventLocation', label: '場所' },
+        { k: 'note', el: 'eventNote', label: '備考' },
+        { k: 'color', el: 'eventKindChips', label: '種類' },
+        { k: 'participants', el: 'eventParticipantsCheckbox', label: '参加者' }
+      ]
+    };
+    let tplEdit_ = null; // { kind, id, name } テンプレートを編集中
+    const tplGroup_ = f => { const el = document.getElementById(f.el); return el ? (el.classList.contains('form-group') ? el : el.closest('.form-group')) : null; };
+    const tplLabelOf_ = (kind, k) => (TPL_FIELDS_[kind].find(f => f.k === k) || {}).label || k;
+
+    /** 都度入力を考えてテンプレートを当てはめる。都度入力が無いときは false（いつもの当てはめに任せる） */
+    function tplApplyData_(kind, d, ask) {
+      if (!ask.length) return false;
+      const has = k => ask.indexOf(k) < 0;
+      if (kind === 'seminar') {
+        if (has('type')) document.getElementById('seminarType').value = d.type || '研究ゼミ';
+        if (has('location')) {
+          const loc = d.location || '';
+          const locSel = document.getElementById('seminarLocation');
+          if (SEMINAR_LOCATIONS.includes(loc)) { locSel.value = loc; document.getElementById('seminarLocationOther').value = ''; }
+          else { locSel.value = 'その他'; document.getElementById('seminarLocationOther').value = loc; }
+          toggleSeminarLocationOther();
+        }
+        if (has('startTime')) document.getElementById('seminarStartTime').value = d.startTime || '';
+        const plan = d.plan || {};
+        document.getElementById('seminarPlanTentative').checked = plan.tentative === true;
+        if (has('format')) setSemPlanSeg('seminarPlanFormat', plan.format || '');
+        if (has('room')) setSemPlanSeg('seminarPlanRoom', plan.room || '');
+        if (has('presenters')) {
+          seminarModalCandidates_ = (d.candidates || []).slice();
+          applySeminarPresentersToForm_(d.presenters || [], d.candidates || []);
+          document.getElementById('seminarPlanSlots').value = (plan.slots || []).join(', ');
+          document.getElementById('seminarPresTentative').checked = plan.presenterTentative === true;
+          document.getElementById('seminarSlotsWrap').hidden = !(plan.slots || []).length;
+          document.getElementById('seminarSlotsToggle').hidden = !!(plan.slots || []).length;
+        }
+        if (has('freeNotes')) {
+          const box = document.getElementById('seminarFreeNotesContainer');
+          box.innerHTML = '';
+          (d.freeNotes || []).forEach(n => { addFreeNoteInput(); const inputs = box.querySelectorAll('input'); inputs[inputs.length - 1].value = n; });
+        }
+        toggleSeminarTypeNone();
+      } else {
+        if (has('name')) document.getElementById('eventName').value = d.name || '';
+        if (has('startTime')) document.getElementById('eventStartTime').value = d.startTime || '';
+        if (has('location')) document.getElementById('eventLocation').value = d.location || '';
+        if (has('note')) document.getElementById('eventNote').value = d.note || '';
+        if (has('color')) setEventColor_(d.color);
+        document.getElementById('eventIsEntryRestriction').checked = d.kind === 'entryRestriction';
+        toggleEventEntryKind();
+        if (has('participants')) renderMemberPicker(document.getElementById('eventParticipantsCheckbox'), { selected: d.participants || [] });
+      }
+      if (tplEdit_) return true; // テンプレートの編集中は、都度入力の印だけ（下で付ける）
+      // 都度入力の欄を知らせ、少しのあいだ目立たせる
+      const fields = TPL_FIELDS_[kind].filter(f => ask.indexOf(f.k) >= 0);
+      fields.forEach(f => { const g = tplGroup_(f); if (g) { g.classList.remove('tpl-need'); void g.offsetWidth; g.classList.add('tpl-need'); } });
+      const first = fields.length && tplGroup_(fields[0]);
+      if (first) first.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      showToast(`${fields.map(f => f.label).join('・')}を入力してください`, 'info');
+      return true;
+    }
+
+    /** テンプレートの編集の状態にする（日付を隠し、名前の欄と「都度入力」の切り替えを出す） */
+    function enterTemplateMode_(kind, t) {
+      const modalId = kind === 'seminar' ? 'seminarModal' : 'eventModal';
+      const modal = document.getElementById(modalId);
+      const body = modal.querySelector('.sheet-body');
+      tplEdit_ = { kind, id: t ? (t.id || '') : '', name: t ? t.name : '' };
+      modal.classList.add('tpl-mode');
+      let nameGroup = body.querySelector('.tpl-name-group');
+      if (!nameGroup) {
+        nameGroup = document.createElement('div');
+        nameGroup.className = 'form-group tpl-name-group';
+        nameGroup.innerHTML = '<label class="form-label">テンプレートの名前</label><input type="text" class="form-input tpl-name" maxlength="40" placeholder="例: 研究ゼミ（月曜）">';
+        body.insertBefore(nameGroup, body.firstChild);
+      }
+      nameGroup.querySelector('.tpl-name').value = tplEdit_.name;
+      document.getElementById(kind === 'seminar' ? 'seminarModalTitle' : 'eventModalTitle').textContent = t ? 'テンプレートを編集' : 'テンプレートを作る';
+      // 日付まわりを隠す
+      const hideIds = kind === 'seminar' ? ['seminarDate'] : ['eventDateMode', 'eventDate', 'eventDateEnd', 'eventMultiDateInput'];
+      hideIds.forEach(id => { const g = document.getElementById(id) && document.getElementById(id).closest('.form-group'); if (g) g.classList.add('tpl-hide'); });
+      // 都度入力の切り替え
+      const ask = t && t.data && Array.isArray(t.data.ask) ? t.data.ask : [];
+      TPL_FIELDS_[kind].forEach(f => {
+        const g = tplGroup_(f);
+        if (!g) return;
+        let chip = g.querySelector('.tpl-ask-chip');
+        if (!chip) {
+          const label = g.querySelector('.form-label');
+          chip = document.createElement('label');
+          chip.className = 'sp-chip-toggle tpl-ask-chip';
+          chip.innerHTML = `<input type="checkbox" data-k="${f.k}"><span>都度入力</span>`;
+          chip.querySelector('input').addEventListener('change', e => g.classList.toggle('tpl-ask', e.target.checked));
+          (label || g).appendChild(chip);
+        }
+        const cb = chip.querySelector('input');
+        cb.checked = ask.indexOf(f.k) >= 0;
+        g.classList.toggle('tpl-ask', cb.checked);
+      });
+      const submit = document.getElementById(kind === 'seminar' ? 'seminarModalSubmitBtn' : 'eventModalSubmitBtn');
+      submit.innerHTML = '<i class="fa-regular fa-bookmark"></i> テンプレートを保存';
+      submit.onclick = () => saveTemplateFromModal_();
+      if (kind === 'seminar') document.getElementById('seminarModalNextBtn').style.display = 'none';
+    }
+    function exitTemplateMode_(kind) {
+      const modal = document.getElementById(kind === 'seminar' ? 'seminarModal' : 'eventModal');
+      if (!modal || !modal.classList.contains('tpl-mode')) return;
+      modal.classList.remove('tpl-mode');
+      modal.querySelectorAll('.tpl-hide').forEach(g => g.classList.remove('tpl-hide'));
+      modal.querySelectorAll('.tpl-ask').forEach(g => g.classList.remove('tpl-ask'));
+      modal.querySelectorAll('.tpl-ask-chip input').forEach(cb => { cb.checked = false; });
+      const submit = document.getElementById(kind === 'seminar' ? 'seminarModalSubmitBtn' : 'eventModalSubmitBtn');
+      submit.onclick = kind === 'seminar' ? () => submitSeminarModal() : addEventEntry;
+      if (tplEdit_ && tplEdit_.kind === kind) tplEdit_ = null;
+    }
+    /** テンプレートの編集の画面から保存（都度入力の欄は入れない） */
+    async function saveTemplateFromModal_() {
+      if (!tplEdit_) return;
+      const kind = tplEdit_.kind;
+      const modal = document.getElementById(kind === 'seminar' ? 'seminarModal' : 'eventModal');
+      const name = modal.querySelector('.tpl-name').value.trim();
+      if (!name) { showToast('テンプレートの名前を入力してください', 'error'); modal.querySelector('.tpl-name').focus(); return; }
+      const data = currentTemplateData_(kind);
+      const ask = [...modal.querySelectorAll('.tpl-ask-chip input:checked')].map(cb => cb.dataset.k);
+      ask.forEach(k => {
+        if (kind === 'seminar' && (k === 'format' || k === 'room')) { if (data.plan) delete data.plan[k]; return; }
+        if (kind === 'seminar' && k === 'presenters') { delete data.presenters; delete data.candidates; if (data.plan) { delete data.plan.slots; delete data.plan.presenterTentative; } return; }
+        delete data[k];
+      });
+      data.ask = ask;
+      try {
+        const list = await loadTemplates(kind);
+        if (list.isLocal) {
+          const rest = list.filter(x => (x.id || x.name) !== tplEdit_.id && x.name !== name);
+          try { localStorage.setItem('templates:' + kind, JSON.stringify(rest.concat([{ id: tplEdit_.id || 'local-' + newId_(), kind, name, data }]))); } catch (_) {}
+        } else {
+          await callAPI('saveTemplate', { adminId: currentUser.id, kind, name, data, id: tplEdit_.id || '' });
+        }
+      } catch (_) { return; }
+      templateCache[kind] = null;
+      showToast(`テンプレート「${name}」を保存しました`, 'success');
+      if (kind === 'seminar') closeSeminarModal(); else closeEventModal();
+      openTemplateManager(kind);
+    }
+    /** 一覧のテンプレートを編集する（または新しく作る） */
+    async function editTemplate_(kind, t) {
+      document.querySelectorAll('.tpl-manager').forEach(el => el.remove());
+      if (kind === 'seminar') await showAddSeminarModal(); else await showAddEventModal();
+      enterTemplateMode_(kind, t);
+      if (t) {
+        const d = t.data || {};
+        // 都度入力の欄も含めて、入っている値はすべて入れる（都度入力の印は enterTemplateMode_ が付けた）
+        tplApplyData_(kind, d, ['__']);
+      }
+    }
+    function tplSummary_(kind, t) {
+      const d = t.data || {};
+      const parts = kind === 'seminar'
+        ? [d.type, d.startTime, d.location, (d.presenters || []).length ? '発表者 ' + d.presenters.length + '人' : '']
+        : [d.name, d.startTime, d.location];
+      return parts.filter(Boolean).join('・');
+    }
+    async function openTemplateManager(kind) {
+      document.querySelectorAll('.tpl-manager').forEach(el => el.remove());
+      const wrap = document.createElement('div');
+      wrap.className = 'modal-overlay sheet show tpl-manager';
+      wrap.innerHTML = `
+        <div class="modal-box sheet-box sheet-list" role="dialog" aria-modal="true" aria-labelledby="tplMgrTitle">
+          <div class="sheet-head">
+            <button type="button" class="sheet-close" data-act="close" aria-label="閉じる"><i class="fa-solid fa-xmark"></i></button>
+            <div class="sheet-head-title" id="tplMgrTitle">${kind === 'seminar' ? 'ゼミ' : 'イベント'}のテンプレート</div>
+          </div>
+          <div class="sheet-body"><div class="tpl-list"><div class="inline-loading"><i class="fa-solid fa-spinner fa-spin"></i> 読み込み中…</div></div></div>
+          <div class="sheet-foot">
+            <button type="button" class="btn btn-primary" data-act="new"><i class="fa-solid fa-plus"></i> 新しく作る</button>
+          </div>
+        </div>`;
+      document.body.appendChild(wrap);
+      const render = async () => {
+        const list = await loadTemplates(kind, true);
+        const box = wrap.querySelector('.tpl-list');
+        box.innerHTML = list.length ? list.map((t, i) => {
+          const ask = Array.isArray((t.data || {}).ask) ? t.data.ask : [];
+          return `<div class="tpl-row">
+            <div class="tpl-main"><div class="tpl-name-t">${escapeHtml(t.name)}</div>
+              <div class="tpl-sum">${escapeHtml(tplSummary_(kind, t) || '—')}${ask.length ? `<span class="tpl-ask-tag">都度：${escapeHtml(ask.map(k => tplLabelOf_(kind, k)).join('・'))}</span>` : ''}</div></div>
+            <div class="tpl-acts">
+              <button type="button" class="btn btn-outline btn-xs" data-act="edit" data-i="${i}">編集</button>
+              <button type="button" class="btn btn-outline btn-xs" data-act="rename" data-i="${i}">名前</button>
+              <button type="button" class="link-btn danger" data-act="del" data-i="${i}">削除</button>
+            </div>
+          </div>`;
+        }).join('') : '<p class="bulk-empty">テンプレートはありません<br><small>「新しく作る」か、追加の画面の「保存」から作れます</small></p>';
+        wrap._list = list;
+      };
+      render();
+      wrap.onclick = async (e) => {
+        if (e.target === wrap || e.target.closest('[data-act="close"]')) { wrap.remove(); return; }
+        if (e.target.closest('[data-act="new"]')) { editTemplate_(kind, null); return; }
+        const b = e.target.closest('[data-act][data-i]');
+        if (!b) return;
+        const t = (wrap._list || [])[Number(b.dataset.i)];
+        if (!t) return;
+        const isLocal = !!(wrap._list && wrap._list.isLocal);
+        if (b.dataset.act === 'edit') { editTemplate_(kind, t); return; }
+        if (b.dataset.act === 'rename') {
+          const name = await showPromptModal('テンプレートの名前', t.name, { okLabel: '変更' });
+          if (!name || name === t.name) return;
+          try {
+            if (isLocal) {
+              const list = wrap._list.map(x => x === t ? Object.assign({}, x, { name }) : x);
+              localStorage.setItem('templates:' + kind, JSON.stringify(list));
+            } else {
+              await callAPI('saveTemplate', { adminId: currentUser.id, kind, id: t.id, name, data: t.data || {} });
+            }
+          } catch (_) { return; }
+          templateCache[kind] = null;
+          showToast('名前を変更しました', 'success');
+          render();
+          return;
+        }
+        if (b.dataset.act === 'del') {
+          if (!(await showConfirmModal(`テンプレート「${t.name}」を削除しますか？`, 'テンプレートの削除'))) return;
+          try {
+            if (isLocal) localStorage.setItem('templates:' + kind, JSON.stringify(wrap._list.filter(x => x !== t)));
+            else await callAPI('deleteTemplate', { adminId: currentUser.id, id: t.id });
+          } catch (_) { return; }
+          templateCache[kind] = null;
+          showToast('テンプレートを削除しました', 'success');
+          render();
+        }
+      };
+    }
+
     async function saveAsTemplate(kind) {
       const data = currentTemplateData_(kind);
       const sel = document.getElementById(kind + 'TemplateSelect');
@@ -14419,6 +14746,7 @@
       const submitBtn = document.getElementById('seminarModalSubmitBtn');
       submitBtn.innerHTML = isEdit ? '<i class="fa-solid fa-save"></i> 保存' : '<i class="fa-solid fa-plus"></i> 追加';
       document.getElementById('seminarModalNextBtn').style.display = isEdit ? 'none' : '';
+      document.getElementById('seminarShiftBtn').hidden = !(isEdit && seminar && seminar.type !== 'ゼミなし');
       // 複数の日付（繰り返しではなく好きな日）は追加のときだけ
       document.getElementById('seminarExtraDates').innerHTML = '';
       document.getElementById('seminarAddDateBtn').hidden = !!isEdit;
@@ -14677,28 +15005,30 @@
       };
     }
     function semPlanFmtHtml_(f) {
-      return f === 'P' ? '<span class="sp-fmt" title="PowerPoint">P</span>' : f === 'note' ? '<span class="sp-fmt n" title="研究ノート">ノート</span>' : '';
+      return f === 'P' ? '<span class="sp-fmt" title="PowerPoint">P</span>' : f === 'note' ? '<span class="sp-fmt n" title="実験ノート">ノート</span>' : '';
     }
     function semPlanHtml_(myName) {
-      const ym = semPlanCurMonth_();
-      const [y, m] = ym.split('/').map(Number);
-      const rows = seminarData.map((s, index) => ({ s, index })).filter(({ s }) => String(s.date).slice(0, 7) === ym);
+      const today = todayYmd();
+      const rows = seminarData.map((s, index) => ({ s, index })).filter(({ s }) => s.date >= today);
       const head = `
         <div class="sp-bar">
-          <div class="sp-nav">
-            <button type="button" class="mc-nav-btn" onclick="shiftSemPlanMonth(-1)" aria-label="前の月"><i class="fa-solid fa-chevron-left"></i></button>
-            <div class="sp-title">${y}年${m}月</div>
-            <button type="button" class="mc-nav-btn" onclick="shiftSemPlanMonth(1)" aria-label="次の月"><i class="fa-solid fa-chevron-right"></i></button>
-          </div>
-          <div class="sp-acts">
-            <button type="button" class="btn btn-outline btn-xs" onclick="saveSemPlanImage(this)"><i class="fa-solid fa-download"></i> 画像</button>
-            <button type="button" class="btn btn-outline btn-xs" onclick="shareSemPlanDialog()"><i class="fa-regular fa-paper-plane"></i> 共有</button>
-          </div>
+          <div class="sp-lead">今日以降のゼミ</div>
+          <button type="button" class="btn btn-outline btn-xs" onclick="openSemPlanImage()"><i class="fa-regular fa-image"></i> 画像・共有</button>
         </div>`;
-      if (!rows.length) return head + '<p class="bulk-empty">この月のゼミはありません<br><small>「1件追加」「一括追加」から作れます</small></p>';
+      if (!rows.length) return head + '<p class="bulk-empty">今後のゼミはありません<br><small>「1件追加」「一括追加」から作れます</small></p>';
       const MAX = 2;
-      return head + `<table class="sp-tbl"><tbody>${rows.map(({ s, index }) => {
+      // 月ごとに表を分ける（見出しを表の外に置き、列の幅がそろうように）
+      const groups = [];
+      rows.forEach(r => {
+        const ym = String(r.s.date).slice(0, 7);
+        if (!groups.length || groups[groups.length - 1].ym !== ym) groups.push({ ym, rows: [] });
+        groups[groups.length - 1].rows.push(r);
+      });
+      return head + groups.map(g => {
+        const [yy, mm] = g.ym.split('/').map(Number);
+        return `<div class="sp-mo">${yy !== new Date().getFullYear() ? yy + '年' : ''}${mm}月</div><table class="sp-tbl"><tbody>${g.rows.map(({ s, index }) => {
         const v = semPlanView_(s);
+        const mo = '';
         const people = [...v.slots.map(x => ({ t: x, cls: 'slot' })), ...v.names.map(n => ({ t: n, cls: n === myName ? 'me' : '' }))];
         const shown = people.slice(0, MAX).map(p => `<span class="sp-chip ${p.cls}">${escapeHtml(p.t)}</span>`).join('')
           + (people.length > MAX ? `<span class="sp-chip more" title="${escapeForAttr(people.slice(MAX).map(p => p.t).join('、'))}">＋${people.length - MAX}</span>` : '');
@@ -14706,13 +15036,67 @@
         const place = v.off ? '<span class="sp-tbd">—</span>'
           : v.place ? `${escapeHtml(v.place)}${v.room ? `<i class="${v.room === 'booked' ? 'ok' : 'wr'}">${v.room === 'booked' ? '予約済' : '未予約'}</i>` : ''}`
           : '<span class="sp-tbd">未定</span>';
-        return `<tr class="${v.off ? 'off' : ''}" onclick="showEditSeminarModal(${index})" tabindex="0" onkeydown="if(event.key==='Enter')showEditSeminarModal(${index})">
+        return `${mo}<tr class="${v.off ? 'off' : ''}" onclick="showEditSeminarModal(${index})" tabindex="0" onkeydown="if(event.key==='Enter')showEditSeminarModal(${index})">
           <td class="sp-d${v.dow === 0 ? ' sun' : v.dow === 6 ? ' sat' : ''}"><b>${v.day}</b><small>${v.wd}</small></td>
           <td class="sp-t"><div class="sp-tt">${escapeHtml(v.title)}${semPlanFmtHtml_(v.format)}${v.tentative ? '<span class="sp-tent">仮</span>' : ''}</div><div class="sp-sub">${(v.off ? v.memo : v.time) ? `<small>${escapeHtml(v.off ? v.memo : v.time)}</small>` : ''}${v.off ? '' : `<span class="sp-who-in">${who}</span>`}</div></td>
           <td class="sp-w">${who}</td>
           <td class="sp-p"${v.off ? '' : ` onclick="event.stopPropagation(); openSeminarPlacePicker(${index})" title="場所を変更"`}>${place}</td>
         </tr>`;
       }).join('')}</tbody></table>`;
+      }).join('');
+    }
+
+    /**
+     * ここから後ろ倒し：日付・時刻・場所・場所の予約はその日に残し、内容（種類・発表者・候補・発表形式・枠・メモ・仮）だけを
+     * 次の回へ 1 つずつずらす（休みは飛ばす）。選んだ回は「未定（仮）」になる。最後の回の内容は、後ろに 1 回足して受け止めるか選ぶ
+     */
+    async function shiftSeminarsFromEditing() {
+      const start = seminarData[editingSeminarIndex];
+      if (!start) return;
+      const chain = seminarData.filter(s => s.type !== 'ゼミなし' && (s.date > start.date || (s.date === start.date && s === start)))
+        .sort((a, b) => a.date.localeCompare(b.date) || String(a.startTime).localeCompare(String(b.startTime)));
+      if (!chain.length) return;
+      const content = s => {
+        const p = s.plan || {};
+        return { type: s.type, presenters: (s.presenters || []).slice(), candidates: (s.candidates || []).slice(), freeNotes: (s.freeNotes || []).slice(),
+          plan: { tentative: p.tentative === true, format: p.format || '', slots: (p.slots || []).slice(), presenterTentative: p.presenterTentative === true } };
+      };
+      const label = c => [c.type === '未定' ? 'ゼミ' : c.type, (c.presenters || []).map(n => String(n).replace(/^その他：?/, '')).join('・') || (c.plan.slots || []).join('・')].filter(Boolean).join('　');
+      const contents = chain.map(content);
+      const last = chain[chain.length - 1];
+      // 最後の回の内容の行き先
+      const lastLabel = label(contents[contents.length - 1]);
+      const choice = await showChoiceModal('ここから後ろ倒し',
+        `${fmtMdW(start.date)} から ${chain.length} 回分の内容を、次の回へ 1 つずつずらします（日付・時刻・場所はそのまま）。\n最後の ${fmtMdW(last.date)}（${lastLabel || '内容なし'}）の内容はどうしますか？`,
+        [
+          { label: '後ろに 1 回足して受け止める', value: 'add', className: 'btn-primary' },
+          { label: '押し出す（消える）', value: 'drop', className: 'btn-outline' }
+        ]);
+      if (!choice) return;
+      const updates = chain.map((s, i) => {
+        const base = i === 0
+          ? { type: '未定', presenters: [], candidates: [], freeNotes: [], plan: { tentative: true, format: '', slots: [], presenterTentative: false } }
+          : contents[i - 1];
+        return Object.assign({}, s, { type: base.type, presenters: base.presenters, candidates: base.candidates, freeNotes: base.freeNotes,
+          plan: Object.assign({}, s.plan || {}, base.plan) });
+      });
+      if (choice === 'add') {
+        const d = parseYmd(last.date);
+        d.setDate(d.getDate() + 7);
+        const c = contents[contents.length - 1];
+        updates.push({ date: ymdSlash(d), startTime: last.startTime, location: last.location, type: c.type, presenters: c.presenters, candidates: c.candidates, freeNotes: c.freeNotes,
+          plan: Object.assign({}, c.plan, { room: '' }), seriesId: last.seriesId || '' });
+      }
+      // 確かめてから保存
+      const lines = updates.map((u, i) => `${fmtMdW(u.date)}　${i === 0 ? '未定（仮）' : label(content(u)) || '内容なし'}${choice === 'add' && i === updates.length - 1 ? '（新しく追加）' : ''}`);
+      const ok = await showConfirmModal(`次のように変わります。\n\n${lines.join('\n')}`, '後ろ倒しの確認');
+      if (!ok) return;
+      try {
+        await callAPI('setSeminars', { adminId: currentUser.id, seminars: updates }, { overlayMessage: '後ろ倒ししています…' });
+        showToast(`${chain.length} 回分を後ろ倒ししました`, 'success');
+        closeSeminarModal();
+        await loadSeminars(true);
+      } catch (_) {}
     }
 
     /** そのゼミの場所と予約の状態だけを変える（編集画面を開かずに。そのゼミだけ保存する） */
@@ -14774,12 +15158,25 @@
       };
     }
 
-    /** 共有用の画像の中身（months: ['yyyy/MM', …]） */
-    function semPlanSheetHtml_(months, title) {
+    /** 共有用の画像の期間：all＝今日以降すべて／m1＝今月／m2＝来月まで */
+    function semPlanRange_(key) {
+      const today = todayYmd();
+      const t = parseYmd(today);
+      const endOf = k => ymdSlash(new Date(t.getFullYear(), t.getMonth() + k, 0));
+      const to = key === 'm1' ? endOf(1) : key === 'm2' ? endOf(2) : '9999/12/31';
+      const ms = [t.getMonth() + 1, ((t.getMonth() + 1) % 12) + 1];
+      const title = key === 'm1' ? `${ms[0]}月のゼミ予定` : key === 'm2' ? `${ms[0]}〜${ms[1]}月のゼミ予定` : '今後のゼミ予定';
+      return { from: today, to, title };
+    }
+    /** 共有用の画像の中身 */
+    function semPlanSheetHtml_(rangeKey, title) {
+      const r = semPlanRange_(rangeKey);
       const now = new Date();
-      const blocks = months.map(ym => {
-        const rows = seminarData.filter(s => String(s.date).slice(0, 7) === ym).map(semPlanView_);
-        if (!rows.length) return '';
+      const list = seminarData.filter(s => s.date >= r.from && s.date <= r.to);
+      const byMonth = {};
+      list.forEach(s => { (byMonth[String(s.date).slice(0, 7)] = byMonth[String(s.date).slice(0, 7)] || []).push(s); });
+      const blocks = Object.keys(byMonth).sort().map(ym => {
+        const rows = byMonth[ym].map(semPlanView_);
         const m = Number(ym.split('/')[1]);
         return `<div class="spi-mo"><b>${m}月</b><span></span></div>` + rows.map(v => {
           const people = [...v.slots.map(x => `<span class="spi-slot">${escapeHtml(x)}</span>`), ...v.names.map(escapeHtml)];
@@ -14795,14 +15192,14 @@
       return `<div class="spi">
         <div class="spi-h"><h2>${escapeHtml(title)}</h2><span>${now.getMonth() + 1}/${now.getDate()} 時点</span></div>
         ${blocks || '<p class="spi-tbd">ゼミはありません</p>'}
-        <div class="spi-lg"><span><span class="sp-fmt">P</span>PowerPoint</span><span><span class="sp-fmt n">ノート</span>研究ノート</span><span><span class="sp-tent">仮</span>日程のみ決定</span><span><span class="spi-slot">B4</span>学年・班の枠</span></div>
+        <div class="spi-lg"><span><span class="sp-fmt">P</span>PowerPoint</span><span><span class="sp-fmt n">ノート</span>実験ノート</span><span><span class="sp-tent">仮</span>日程・発表者が仮</span><span><span class="spi-slot">B4</span>学年・班の枠</span></div>
       </div>`;
     }
-    async function semPlanCanvas_(months, title) {
+    async function semPlanCanvas_(rangeKey, title) {
       const host = document.createElement('div');
       host.setAttribute('aria-hidden', 'true');
       host.style.cssText = 'position:fixed;left:0;top:0;z-index:-9999;opacity:0;pointer-events:none;';
-      host.innerHTML = semPlanSheetHtml_(months, title);
+      host.innerHTML = semPlanSheetHtml_(rangeKey, title);
       document.body.appendChild(host);
       try {
         const h2c = await loadHtml2canvas();
@@ -14814,72 +15211,93 @@
         host.remove();
       }
     }
-    function semPlanMonthsLabel_(months) {
-      const ms = months.map(ym => Number(ym.split('/')[1]));
-      return (ms.length > 1 ? ms[0] + '〜' + ms[ms.length - 1] : ms[0]) + '月のゼミ予定';
-    }
-    async function saveSemPlanImage(btn) {
-      const months = [semPlanCurMonth_()];
-      const orig = btn ? btn.innerHTML : '';
-      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 作成中'; }
-      try {
-        const canvas = await semPlanCanvas_(months, semPlanMonthsLabel_(months));
-        await deliverPng_(canvas, `ゼミ予定_${months[0].replace('/', '-')}.png`);
-      } catch (e) {
-        console.error('画像保存エラー:', e);
-        showToast('画像の保存に失敗しました', 'error');
-      } finally {
-        if (btn) { btn.disabled = false; btn.innerHTML = orig; }
-      }
-    }
-    /** Teams への共有：期間・見出し・文面を決めて、画像付きで投稿する（メンションなし） */
-    function shareSemPlanDialog() {
-      const cur = semPlanCurMonth_();
-      const add = (ym, d) => { const [y, m] = ym.split('/').map(Number); const t = new Date(y, m - 1 + d, 1); return t.getFullYear() + '/' + String(t.getMonth() + 1).padStart(2, '0'); };
-      const ranges = [[cur], [add(cur, -1), cur], [cur, add(cur, 1)]];
-      const overlay = document.createElement('div');
-      overlay.className = 'modal-overlay show';
-      overlay.style.zIndex = '10060';
-      overlay.innerHTML = `
-        <div class="modal-box" style="max-width: 460px;" role="dialog" aria-modal="true" aria-labelledby="spShareTitle">
-          <div class="modal-title" id="spShareTitle">Teams に共有</div>
-          <div class="pm-label">期間</div>
-          <div class="seg-tabs small" id="spShareRange">${ranges.map((r, i) => `<button type="button" class="seg-tab${i === 0 ? ' active' : ''}" data-i="${i}">${escapeHtml(semPlanMonthsLabel_(r).replace('のゼミ予定', ''))}</button>`).join('')}</div>
-          <div class="pm-label">見出し</div>
-          <input type="text" class="form-input sp-share-title" maxlength="40" value="${escapeForAttr(semPlanMonthsLabel_(ranges[0]))}">
-          <div class="pm-label">文面</div>
-          <textarea class="form-input pm-text sp-share-msg" rows="3" maxlength="1000" placeholder="例: 今後のゼミ予定です。論文ゼミの班分けは今後決めていきます。"></textarea>
-          <div class="sp-share-note">${infoTipHtml('メンションなしで投稿します。投稿はあとから直せないので、カードの「最新の予定表を開く」から、いつでも最新を見られます')}<span>メンションなしで投稿</span></div>
-          <div class="modal-actions">
-            <button type="button" class="btn btn-outline" data-act="cancel">キャンセル</button>
-            <button type="button" class="btn btn-primary" data-act="ok"><i class="fa-regular fa-paper-plane"></i> 共有</button>
+    /** 画像・共有：期間を選んでプレビューを見てから、保存か Teams に共有 */
+    function openSemPlanImage() {
+      let range = 'all';
+      let canvas = null;
+      let gen = 0;
+      let titleEdited = false;
+      const wrap = document.createElement('div');
+      wrap.className = 'modal-overlay sheet show';
+      wrap.innerHTML = `
+        <div class="modal-box sheet-box sheet-md" role="dialog" aria-modal="true" aria-labelledby="spImgTitle">
+          <div class="sheet-head">
+            <button type="button" class="sheet-close" data-act="close" aria-label="閉じる"><i class="fa-solid fa-xmark"></i></button>
+            <div class="sheet-head-title" id="spImgTitle">ゼミ予定の画像</div>
+          </div>
+          <div class="sheet-body">
+            <div class="seg-tabs small sp-img-range">
+              <button type="button" class="seg-tab active" data-r="all">今日以降すべて</button>
+              <button type="button" class="seg-tab" data-r="m1">今月</button>
+              <button type="button" class="seg-tab" data-r="m2">来月まで</button>
+            </div>
+            <label class="form-label" style="margin-top: 12px;">見出し</label>
+            <input type="text" class="form-input sp-img-title" maxlength="40">
+            <div class="sp-img-preview"><div class="inline-loading"><i class="fa-solid fa-spinner fa-spin"></i> 作成中…</div></div>
+            <label class="form-label" style="margin-top: 14px;">文面（Teams に共有するとき）</label>
+            <textarea class="form-input pm-text sp-img-msg" rows="3" maxlength="1000" placeholder="例: 今後のゼミ予定です。論文ゼミの班分けは今後決めていきます。"></textarea>
+            <div class="sp-share-note">${infoTipHtml('メンションなしで投稿します。投稿はあとから直せないので、カードの「最新の予定表を開く」から、いつでも最新を見られます')}<span>メンションなしで投稿</span></div>
+          </div>
+          <div class="sheet-foot">
+            <button type="button" class="btn btn-outline" data-act="save"><i class="fa-solid fa-download"></i> 保存</button>
+            <button type="button" class="btn btn-primary" data-act="share"><i class="fa-regular fa-paper-plane"></i> Teams に共有</button>
           </div>
         </div>`;
-      document.body.appendChild(overlay);
-      let range = 0;
-      const titleEl = overlay.querySelector('.sp-share-title');
-      let titleEdited = false;
-      titleEl.addEventListener('input', () => { titleEdited = true; });
-      overlay.onclick = async (e) => {
-        const seg = e.target.closest('#spShareRange .seg-tab');
+      document.body.appendChild(wrap);
+      const $ = q => wrap.querySelector(q);
+      const titleEl = $('.sp-img-title');
+      titleEl.value = semPlanRange_(range).title;
+      const preview = $('.sp-img-preview');
+      let timer = null;
+      const draw = async () => {
+        const my = ++gen;
+        preview.innerHTML = '<div class="inline-loading"><i class="fa-solid fa-spinner fa-spin"></i> 作成中…</div>';
+        try {
+          const c = await semPlanCanvas_(range, titleEl.value.trim() || semPlanRange_(range).title);
+          if (my !== gen) return;
+          canvas = c;
+          preview.innerHTML = `<img src="${c.toDataURL('image/png')}" alt="ゼミ予定の画像" class="sp-img">`;
+        } catch (e) {
+          if (my === gen) preview.innerHTML = '<div class="inline-error">画像を作成できませんでした</div>';
+        }
+      };
+      titleEl.addEventListener('input', () => { titleEdited = true; clearTimeout(timer); timer = setTimeout(draw, 500); });
+      draw();
+      wrap.onclick = async (e) => {
+        const seg = e.target.closest('.sp-img-range .seg-tab');
         if (seg) {
-          range = Number(seg.dataset.i);
-          overlay.querySelectorAll('#spShareRange .seg-tab').forEach(b => b.classList.toggle('active', b === seg));
-          if (!titleEdited) titleEl.value = semPlanMonthsLabel_(ranges[range]);
+          range = seg.dataset.r;
+          wrap.querySelectorAll('.sp-img-range .seg-tab').forEach(b => b.classList.toggle('active', b === seg));
+          if (!titleEdited) titleEl.value = semPlanRange_(range).title;
+          draw();
           return;
         }
-        if (e.target === overlay || e.target.closest('[data-act="cancel"]')) { overlay.remove(); return; }
-        if (!e.target.closest('[data-act="ok"]')) return;
-        const title = titleEl.value.trim() || semPlanMonthsLabel_(ranges[range]);
-        const message = overlay.querySelector('.sp-share-msg').value.trim();
-        overlay.remove();
-        try {
-          const canvas = await semPlanCanvas_(ranges[range], title);
-          const imageBase64 = canvas.toDataURL('image/png');
-          const r = await callAPI('shareSeminarPlan', { title, message, imageBase64 }, { overlayMessage: 'Teams に共有しています…' });
-          showToast(r.message || '共有しました', 'success');
-        } catch (err) {
-          if (err && err.message && !/API/.test(err.message)) console.error(err);
+        if (e.target === wrap || e.target.closest('[data-act="close"]')) { wrap.remove(); return; }
+        const title = titleEl.value.trim() || semPlanRange_(range).title;
+        if (e.target.closest('[data-act="save"]')) {
+          if (!canvas) return;
+          const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+          const name = `ゼミ予定_${todayYmd().replace(/\//g, '')}.png`;
+          let file = null;
+          try { file = new File([blob], name, { type: 'image/png' }); } catch (_) {}
+          const touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+          if (touch && file && navigator.canShare && navigator.canShare({ files: [file] })) {
+            try { await navigator.share({ files: [file], title }); } catch (_) {}
+          } else {
+            downloadBlob_(blob, name);
+            showToast('画像を保存しました', 'success');
+          }
+          return;
+        }
+        if (e.target.closest('[data-act="share"]')) {
+          if (!canvas) return;
+          const ok = await showConfirmModal('この画像を Teams に共有しますか？（メンションなし）', 'Teams に共有');
+          if (!ok) return;
+          try {
+            const r = await callAPI('shareSeminarPlan', { title, message: $('.sp-img-msg').value.trim(), imageBase64: canvas.toDataURL('image/png') }, { overlayMessage: 'Teams に共有しています…' });
+            showToast(r.message || '共有しました', 'success');
+            wrap.remove();
+          } catch (_) {}
         }
       };
     }
@@ -15092,6 +15510,7 @@
     }
 
     function closeSeminarModal() {
+      exitTemplateMode_('seminar');
       document.getElementById('seminarModal').classList.remove('show');
       editingSeminarIndex = null;
       document.getElementById('seminarFreeNotesContainer').innerHTML = '';
@@ -15219,6 +15638,9 @@
       }
       bulk.overrides = {};
       bulk.excluded = new Set();
+      bulk.dates = new Set();
+      bulk.pickMonth = null;
+      bulk.locOverrides = {};
       bulk.seriesId = (bulk.kind === 'event' ? 'series_' : '') + newId_();
       bulk.grid = [];
       renderBulkGrid_();
@@ -15233,12 +15655,52 @@
     }
 
     function setBulkMode(mode) {
-      bulk.mode = mode === 'table' ? 'table' : 'repeat';
-      document.querySelectorAll('#bulkModal .seg-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === bulk.mode));
-      document.getElementById('bulkRepeat').style.display = bulk.mode === 'repeat' ? '' : 'none';
+      bulk.mode = mode === 'table' ? 'table' : mode === 'dates' ? 'dates' : 'repeat';
+      // モードの切り替えだけ（ほかの切り替えボタンの選択には触らない）
+      document.querySelectorAll('#bulkModeTabs .seg-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === bulk.mode));
+      document.getElementById('bulkRepeat').style.display = bulk.mode === 'table' ? 'none' : '';
+      document.getElementById('bulkRuleFields').style.display = bulk.mode === 'repeat' ? '' : 'none';
+      document.getElementById('bulkDatesPick').hidden = bulk.mode !== 'dates';
       document.getElementById('bulkTable').style.display = bulk.mode === 'table' ? '' : 'none';
-      if (bulk.mode === 'repeat') updateBulkPreview();
+      if (bulk.mode === 'dates') renderBulkDatesPick_();
+      if (bulk.mode !== 'table') updateBulkPreview();
       else refreshBulkGridStatus_();
+    }
+
+    /** 日付を選ぶ：カレンダーで日を押して選ぶ（繰り返しではなく、好きな日をいくつでも） */
+    function renderBulkDatesPick_() {
+      const box = document.getElementById('bulkDatesPick');
+      if (!bulk.dates) bulk.dates = new Set();
+      if (!bulk.pickMonth) { const t = new Date(); bulk.pickMonth = new Date(t.getFullYear(), t.getMonth(), 1); }
+      const y = bulk.pickMonth.getFullYear(), m = bulk.pickMonth.getMonth();
+      const first = new Date(y, m, 1), days = new Date(y, m + 1, 0).getDate();
+      const today = todayYmd();
+      const cells = [];
+      for (let i = 0; i < first.getDay(); i++) cells.push('<span></span>');
+      for (let d = 1; d <= days; d++) {
+        const ds = ymdSlash(new Date(y, m, d));
+        const dow = (first.getDay() + d - 1) % 7;
+        cells.push(`<button type="button" class="bd-day${bulk.dates.has(ds) ? ' on' : ''}${ds === today ? ' today' : ''}${dow === 0 ? ' sun' : dow === 6 ? ' sat' : ''}" data-d="${ds}" aria-pressed="${bulk.dates.has(ds)}">${d}</button>`);
+      }
+      const picked = [...bulk.dates].sort();
+      box.innerHTML = `
+        <div class="bd-head">
+          <button type="button" class="mc-nav-btn" data-nav="-1" aria-label="前の月"><i class="fa-solid fa-chevron-left"></i></button>
+          <div class="bd-title">${y}年${m + 1}月</div>
+          <button type="button" class="mc-nav-btn" data-nav="1" aria-label="次の月"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+        <div class="bd-grid bd-wd">${WEEKDAY_JA.map((w, i) => `<span class="${i === 0 ? 'sun' : i === 6 ? 'sat' : ''}">${w}</span>`).join('')}</div>
+        <div class="bd-grid">${cells.join('')}</div>
+        <div class="bd-sum">${picked.length ? `<b>${picked.length}日</b>　${picked.slice(0, 6).map(fmtMdW).join('、')}${picked.length > 6 ? ' ほか' : ''}` : '日を押して選びます（月をまたいでも選べます）'}</div>`;
+      box.onclick = (e) => {
+        const nav = e.target.closest('[data-nav]');
+        if (nav) { bulk.pickMonth = new Date(y, m + Number(nav.dataset.nav), 1); renderBulkDatesPick_(); return; }
+        const day = e.target.closest('.bd-day');
+        if (!day) return;
+        if (bulk.dates.has(day.dataset.d)) bulk.dates.delete(day.dataset.d); else bulk.dates.add(day.dataset.d);
+        renderBulkDatesPick_();
+        updateBulkPreview();
+      };
     }
 
     function renderBulkColorPicker_(selected) {
@@ -15349,6 +15811,13 @@
 
     // ---------- 繰り返しで作る ----------
     function buildBulkRowsRepeat_() {
+      if (bulk.mode === 'dates') {
+        const base = bulk.kind === 'event'
+          ? { name: document.getElementById('bulkEvName').value.trim(), startTime: document.getElementById('bulkEvTime').value, location: document.getElementById('bulkEvLocation').value.trim(), color: bulkEventColor_(), participants: getPickerSelection(document.getElementById('bulkEvParticipants')), note: '' }
+          : { type: document.getElementById('bulkSemType').value, startTime: document.getElementById('bulkSemTime').value, location: getBulkLocation_(), presenters: [], freeNotes: [] };
+        const rows = [...(bulk.dates || [])].sort().map(d => Object.assign({}, base, { date: d, participants: (base.participants || []).slice() }));
+        return { rows, note: rows.length ? '' : 'カレンダーで日を選んでください', byCount: false };
+      }
       const start = parseYmd(document.getElementById('bulkStart').value);
       const byCount = document.getElementById('bulkEndMode').value === 'count';
       const count = Math.min(100, Math.max(0, parseInt(document.getElementById('bulkCount').value, 10) || 0));
@@ -15377,11 +15846,12 @@
     }
 
     async function updateBulkPreview() {
-      if (bulk.mode !== 'repeat') return;
+      if (bulk.mode === 'table') return;
       const built = buildBulkRowsRepeat_();
       let rows = built.rows;
       await ensureBulkHolidays_(rows.map(r => r.date));
-      const skipHoliday = document.getElementById('bulkSkipHoliday').checked;
+      // 日付を選ぶときは、選んだ日をそのまま作る（祝日でも飛ばさない）
+      const skipHoliday = bulk.mode === 'repeat' && document.getElementById('bulkSkipHoliday').checked;
       const isOff = r => skipHoliday && bulk.holidays[r.date];
       const offRow = document.getElementById('bulkHolidayOffRow');
       if (offRow) offRow.style.display = bulk.kind === 'seminar' && skipHoliday ? '' : 'none';
@@ -15414,6 +15884,7 @@
       const existing = bulkExisting_();
       rows.forEach(r => {
         if (bulk.overrides[r.date]) r[bulk.kind === 'event' ? 'participants' : 'presenters'] = bulk.overrides[r.date].slice();
+        if (bulk.locOverrides && bulk.locOverrides[r.date] !== undefined) r.location = bulk.locOverrides[r.date];
         r.holiday = bulk.holidays[r.date] || '';
         r.existing = existing.filter(s => s.date === r.date);
         r.include = !bulk.excluded.has(r.date) && !isOff(r);
@@ -15448,7 +15919,8 @@
             ${r.existing.length ? `<span class="tag warn">同じ日に${escapeHtml(r.existing.map(e => e.type || e.name || '予定').join('・'))}あり</span>` : ''}
           </div>
           <div class="bulk-row-sub">
-            ${r.location ? `<span>${escapeHtml(r.location)}</span>` : ''}
+            <span>${r.location ? escapeHtml(r.location) : '場所なし'}</span>
+            <button type="button" class="link-btn" onclick="pickBulkLocation(${i})">変更</button>
             <span>${namesLabel}: ${r[namesKey] && r[namesKey].length ? escapeHtml(r[namesKey].join('、')) : (r.candidates && r.candidates.length ? '未定（候補: ' + escapeHtml(r.candidates.join('、')) + '）' : 'なし')}</span>
             <button type="button" class="link-btn" onclick="pickBulkNames(${i})">変更</button>
           </div>
@@ -15475,6 +15947,60 @@
       });
       renderBulkPreview_();
     }
+    /** 一括追加：その回だけ場所を変える */
+    async function pickBulkLocation(i) {
+      const r = bulk.rows[i];
+      if (!r) return;
+      const loc = bulk.kind === 'event'
+        ? await showPromptModal(`${fmtMdW(r.date)} の場所`, r.location || '', { okLabel: '変更', placeholder: '場所を入力' })
+        : await openPlaceChoice_(`${fmtMdW(r.date)} の場所`, r.location || '');
+      if (loc === null || loc === undefined) return;
+      bulk.locOverrides = bulk.locOverrides || {};
+      bulk.locOverrides[r.date] = String(loc).trim();
+      r.location = bulk.locOverrides[r.date];
+      renderBulkPreview_();
+    }
+    /** 場所を一覧から選ぶ（その他は入力）。決めたら場所、やめたら null */
+    function openPlaceChoice_(title, cur) {
+      return new Promise(resolve => {
+        const inList = SEMINAR_LOCATIONS.includes(cur);
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay show';
+        overlay.style.zIndex = '10070';
+        overlay.innerHTML = `
+          <div class="modal-box" style="max-width: 420px;" role="dialog" aria-modal="true">
+            <div class="modal-title">${escapeHtml(title)}</div>
+            <div class="sp-place-opts">
+              ${SEMINAR_LOCATIONS.map(l => `<button type="button" class="sp-place-opt${l === cur ? ' active' : ''}" data-v="${escapeForAttr(l)}">${escapeHtml(l)}</button>`).join('')}
+              <button type="button" class="sp-place-opt${cur && !inList ? ' active' : ''}" data-v="__other">その他</button>
+            </div>
+            <input type="text" class="form-input sp-place-other" maxlength="40" placeholder="場所を入力" value="${cur && !inList ? escapeForAttr(cur) : ''}"${cur && !inList ? '' : ' hidden'}>
+            <div class="modal-actions">
+              <button type="button" class="btn btn-outline" data-act="cancel">キャンセル</button>
+              <button type="button" class="btn btn-primary" data-act="ok"><i class="fa-solid fa-check"></i> 変更</button>
+            </div>
+          </div>`;
+        document.body.appendChild(overlay);
+        const other = overlay.querySelector('.sp-place-other');
+        overlay.onclick = (e) => {
+          const opt = e.target.closest('.sp-place-opt');
+          if (opt) {
+            overlay.querySelectorAll('.sp-place-opt').forEach(b => b.classList.toggle('active', b === opt));
+            other.hidden = opt.dataset.v !== '__other';
+            if (!other.hidden) other.focus();
+            return;
+          }
+          if (e.target === overlay || e.target.closest('[data-act="cancel"]')) { overlay.remove(); resolve(null); return; }
+          if (!e.target.closest('[data-act="ok"]')) return;
+          const picked = overlay.querySelector('.sp-place-opt.active');
+          const v = !picked ? cur : picked.dataset.v === '__other' ? other.value.trim() : picked.dataset.v;
+          if (picked && picked.dataset.v === '__other' && !v) { showToast('場所を入力してください', 'error'); return; }
+          overlay.remove();
+          resolve(v);
+        };
+      });
+    }
+
     async function pickBulkNames(i) {
       const r = bulk.rows[i];
       if (!r) return;
@@ -15717,11 +16243,11 @@
       } else {
         items = bulk.rows.filter(r => r.include).map(r => {
           if (bulk.kind === 'event') {
-            return { date: r.date, name: r.name, startTime: r.startTime, location: r.location, participants: r.participants || [], note: r.note || '', color: r.color, seriesId: bulk.seriesId };
+            return { date: r.date, name: r.name, startTime: r.startTime, location: r.location, participants: r.participants || [], note: r.note || '', color: r.color, seriesId: bulk.mode === 'dates' ? '' : bulk.seriesId };
           }
           const none = r.type === 'ゼミなし';
-          const plan = none || bulk.mode !== 'repeat' ? undefined : { tentative: document.getElementById('bulkSemTentative').checked || r.type === '未定', room: semPlanSegValue_('bulkSemRoom') };
-          return { date: r.date, type: r.type, location: none ? '' : r.location, startTime: none ? '' : r.startTime, presenters: none ? [] : (r.presenters || []), candidates: none ? [] : (r.candidates || []), freeNotes: r.freeNotes || [], seriesId: bulk.seriesId, plan };
+          const plan = none || bulk.mode === 'table' ? undefined : { tentative: document.getElementById('bulkSemTentative').checked || r.type === '未定', room: semPlanSegValue_('bulkSemRoom'), format: semPlanSegValue_('bulkSemFormat') };
+          return { date: r.date, type: r.type, location: none ? '' : r.location, startTime: none ? '' : r.startTime, presenters: none ? [] : (r.presenters || []), candidates: none ? [] : (r.candidates || []), freeNotes: r.freeNotes || [], seriesId: bulk.mode === 'dates' ? '' : bulk.seriesId, plan };
         });
         // 祝日を「休み（祝日）」の行として入れる（ゼミの繰り返し・祝日は作らないとき）
         if (bulk.kind === 'seminar' && bulk.mode === 'repeat' && document.getElementById('bulkSkipHoliday').checked && document.getElementById('bulkHolidayAsOff').checked) {
@@ -16094,6 +16620,7 @@
     }
     
     function closeEventModal() {
+      exitTemplateMode_('event');
       document.getElementById('eventModal').classList.remove('show');
       editingEventIndex = null;
       eventMultiDates = [];
