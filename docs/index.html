@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
-  <meta name="app-build" content="20261026-121328">
+  <meta name="app-build" content="20261026-132830">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -2066,7 +2066,7 @@
       left: 0;
       right: 0;
       height: 3px;
-      z-index: 12000;
+      z-index: 900; /* ヘッダー（800）より上、ポップアップ（2000 以上）より下 */
       pointer-events: none;
       opacity: 0;
       transition: opacity 0.2s;
@@ -9865,7 +9865,7 @@
     
     let membersPageNgData = {};
     let membersPageTargetMonth = '';
-    let membersPageShiftAccepting = false; // シフト回答受付中のみ参加可能日・各日の状況を有効にする
+    let membersPageShiftAccepting = false; // シフト回答受付中か（参加可能日・各日の状況は受付を締め切ったあとも見られる）
     let membersPageShiftDates = new Set(); // その月のシフトの日（餌 or 掃除）の dateStr 一覧
     let membersPageCleanDates = new Set(); // そのうち掃除の日（餌番 NG の人は掃除だけ入れる）
     let membersPageHolidays = {}; // その月の祝日 { dateStr: 祝日名 }
@@ -9913,7 +9913,7 @@
       const section = document.getElementById('memberDayStatusSection');
       const listEl = document.getElementById('memberDayStatusList');
       if (!section || !listEl) return;
-      if (!membersPageShiftAccepting || !ym || !ym.match(/^\d{4}-\d{1,2}$/)) {
+      if (!ym || !ym.match(/^\d{4}-\d{1,2}$/)) {
         section.style.display = 'none';
         return;
       }
@@ -10016,7 +10016,6 @@
     }
     
     function showMemberOkDaysModal(memberName) {
-      if (!membersPageShiftAccepting) return;
       const modal = document.getElementById('memberOkDaysModal');
       const titleEl = document.getElementById('memberOkDaysModalTitle');
       const bodyEl = document.getElementById('memberOkDaysModalBody');
@@ -10126,7 +10125,8 @@
           <div class="mem-rows">
           ${groups[g].map(m => {
             const status = !isShiftMember_(m) ? ['off', '対象外'] : m.hasSubmitted ? ['done', '提出済'] : ['todo', '未提出'];
-            const canSeeDays = membersPageShiftAccepting && isShiftMember_(m) && m.hasSubmitted;
+            // 受付を締め切ったあとも、提出した人の参加可能日は見られる
+            const canSeeDays = isShiftMember_(m) && m.hasSubmitted;
             return `
             <div class="mem-row${m.isActive ? '' : ' inactive'}">
               <button type="button" class="mem-main" onclick="showEditMemberModal(${m.row})">
@@ -13863,8 +13863,8 @@
           <summary><i class="fa-regular fa-circle-question"></i> 送信先 URL の作成手順</summary>
           <ol>
             <li>Teams で送信先チャネルの「…」→「ワークフロー」</li>
-            <li>「Webhook 要求を受信したらチャネルに投稿する」を選択</li>
-            <li>作成後に表示される URL をコピー</li>
+            <li>検索欄に「Webhook」と入力し、テンプレートの「Webhook アラートをチャネルに送信する」を選択${infoTipHtml('時期や画面によって「Webhook 要求を受信したらチャネルに投稿する」という名前のこともあります（同じ働き）。チャットに送るときは「Webhook アラートをチャットに送信する」。「特定のユーザーからの…」「組織内のユーザーからの…」はサインインが必要な種類で、このアプリからは送れないので選ばない')}</li>
+            <li>送り先のチームとチャネルを選んで保存し、表示される URL をコピー</li>
             <li>URL を貼り付け、「テスト」で受信を確認して「送信先を保存」</li>
           </ol>
           <p class="field-hint">管理者の交代時は、新しい管理者がこの手順で URL を作成して差し替えます。</p>
