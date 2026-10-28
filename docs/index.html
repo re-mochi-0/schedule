@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
-  <meta name="app-build" content="20261029-071744">
+  <meta name="app-build" content="20261029-075339">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -1421,7 +1421,7 @@
       right: 0;
       bottom: 0;
       background: rgba(0,0,0,0.4);
-      z-index: 3000;
+      z-index: 10090; /* 確認は、開いている編集画面や選ぶ画面より前に出す */
       align-items: center;
       justify-content: center;
       backdrop-filter: blur(2px);
