@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
-  <meta name="app-build" content="20261026-132830">
+  <meta name="app-build" content="20261029-071744">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -15084,11 +15084,12 @@
         const d = parseYmd(last.date);
         d.setDate(d.getDate() + 7);
         const c = contents[contents.length - 1];
-        updates.push({ date: ymdSlash(d), startTime: last.startTime, location: last.location, type: c.type, presenters: c.presenters, candidates: c.candidates, freeNotes: c.freeNotes,
+        // 場所は日によって決まるので、新しく足す日の場所は未定（あとで「場所」から決める）
+        updates.push({ date: ymdSlash(d), startTime: last.startTime, location: '', type: c.type, presenters: c.presenters, candidates: c.candidates, freeNotes: c.freeNotes,
           plan: Object.assign({}, c.plan, { room: '' }), seriesId: last.seriesId || '' });
       }
       // 確かめてから保存
-      const lines = updates.map((u, i) => `${fmtMdW(u.date)}　${i === 0 ? '未定（仮）' : label(content(u)) || '内容なし'}${choice === 'add' && i === updates.length - 1 ? '（新しく追加）' : ''}`);
+      const lines = updates.map((u, i) => `${fmtMdW(u.date)}　${i === 0 ? '未定（仮）' : label(content(u)) || '内容なし'}${choice === 'add' && i === updates.length - 1 ? '（新しく追加・場所は未定）' : ''}`);
       const ok = await showConfirmModal(`次のように変わります。\n\n${lines.join('\n')}`, '後ろ倒しの確認');
       if (!ok) return;
       try {
