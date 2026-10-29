@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
-  <meta name="app-build" content="20261029-100106">
+  <meta name="app-build" content="20261029-111055">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -4520,6 +4520,8 @@
     .sp-bar + .sp-mo { margin-top: 4px; }
     .sp-img-preview { margin-top: 14px; border: 1px solid var(--border); border-radius: 12px; background: #f6f7f8; padding: 10px; max-height: 52vh; overflow: auto; text-align: center; }
     .sp-img { display: block; width: 100%; max-width: 640px; margin: 0 auto; border-radius: 4px; box-shadow: 0 0 0 1px #e3e6e8; }
+    .sp-img { transition: opacity .2s ease; }
+    .sp-img.is-stale { opacity: .6; }
     .sp-title { font-size: 16px; font-weight: 700; color: var(--text); min-width: 96px; text-align: center; }
     .sp-acts { display: flex; gap: 6px; }
     .sp-tbl { width: 100%; border-collapse: collapse; table-layout: fixed; }
@@ -6354,6 +6356,7 @@
           <option value="C107">C107</option>
           <option value="居室">居室</option>
           <option value="Zoom">Zoom</option>
+          <option value="">未定</option>
           <option value="その他">その他(自由記述)</option>
         </select>
       </div>
@@ -6537,6 +6540,7 @@
               <option value="C107">C107</option>
               <option value="居室">居室</option>
               <option value="Zoom">Zoom</option>
+              <option value="">未定</option>
               <option value="その他">その他（自由記述）</option>
             </select>
             <div id="bulkSemLocationOtherWrap" class="other-input" style="display: none;">
@@ -11755,7 +11759,7 @@
         document.getElementById('seminarType').value = d.type || '研究ゼミ';
         const loc = d.location || '';
         const locSel = document.getElementById('seminarLocation');
-        if (SEMINAR_LOCATIONS.includes(loc)) {
+        if (!loc || SEMINAR_LOCATIONS.includes(loc)) {
           locSel.value = loc;
           document.getElementById('seminarLocationOther').value = '';
         } else {
@@ -11820,7 +11824,7 @@
         if (has('location')) {
           const loc = d.location || '';
           const locSel = document.getElementById('seminarLocation');
-          if (SEMINAR_LOCATIONS.includes(loc)) { locSel.value = loc; document.getElementById('seminarLocationOther').value = ''; }
+          if (!loc || SEMINAR_LOCATIONS.includes(loc)) { locSel.value = loc; document.getElementById('seminarLocationOther').value = ''; }
           else { locSel.value = 'その他'; document.getElementById('seminarLocationOther').value = loc; }
           toggleSeminarLocationOther();
         }
@@ -14767,8 +14771,8 @@
       const loc = seminar ? (s.location || '') : (def.location || '大会議室(5階)');
       const locationSelect = document.getElementById('seminarLocation');
       const locationOther = document.getElementById('seminarLocationOther');
-      if (SEMINAR_LOCATIONS.includes(loc) || (!loc && isEdit)) {
-        locationSelect.value = loc || '大会議室(5階)';
+      if (!loc || SEMINAR_LOCATIONS.includes(loc)) {
+        locationSelect.value = loc;
         locationOther.value = '';
       } else {
         locationSelect.value = 'その他';
@@ -14854,9 +14858,14 @@
         showToast('日付を入力してください', 'error');
         return null;
       }
-      // 仮（日程だけ押さえた回）は、場所・時刻が空でもよい
-      if (!isNone && !plan.tentative && (!location || !startTime)) {
-        showToast('場所と開始時刻を入力してください', 'error');
+      // 場所は「未定」を選べる。その他で空欄はだめ
+      if (!isNone && locationSelect === 'その他' && !locationOther) {
+        showToast('場所を入力してください', 'error');
+        return null;
+      }
+      // 仮（日程だけ押さえた回）は、時刻が空でもよい
+      if (!isNone && !plan.tentative && !startTime) {
+        showToast('開始時刻を入力してください', 'error');
         return null;
       }
       return {
@@ -15173,6 +15182,7 @@
           <div class="modal-title" id="spPlaceTitle">${escapeHtml(fmtMdW(s.date))} の場所</div>
           <div class="sp-place-opts">
             ${SEMINAR_LOCATIONS.map(l => `<button type="button" class="sp-place-opt${l === cur ? ' active' : ''}" data-v="${escapeForAttr(l)}">${escapeHtml(l)}</button>`).join('')}
+            <button type="button" class="sp-place-opt${!cur ? ' active' : ''}" data-v="">未定</button>
             <button type="button" class="sp-place-opt${cur && !inList ? ' active' : ''}" data-v="__other">その他</button>
           </div>
           <input type="text" class="form-input sp-place-other" maxlength="40" placeholder="場所を入力" value="${cur && !inList ? escapeForAttr(cur) : ''}"${cur && !inList ? '' : ' hidden'}>
@@ -15308,19 +15318,33 @@
       titleEl.value = semPlanRange_(range).title;
       const preview = $('.sp-img-preview');
       let timer = null;
-      const draw = async () => {
+      let drawing = null;
+      // 描き直しの間も今の画像を残し、できたら差し替える（画面が動かないように）
+      const draw = () => {
+        clearTimeout(timer); timer = null;
         const my = ++gen;
-        preview.innerHTML = '<div class="inline-loading"><i class="fa-solid fa-spinner fa-spin"></i> 作成中…</div>';
-        try {
-          const c = await semPlanCanvas_(range, titleEl.value.trim() || semPlanRange_(range).title);
-          if (my !== gen) return;
-          canvas = c;
-          preview.innerHTML = `<img src="${c.toDataURL('image/png')}" alt="ゼミ予定の画像" class="sp-img">`;
-        } catch (e) {
-          if (my === gen) preview.innerHTML = '<div class="inline-error">画像を作成できませんでした</div>';
-        }
+        const img = preview.querySelector('img.sp-img');
+        if (img) img.classList.add('is-stale');
+        else preview.innerHTML = '<div class="inline-loading"><i class="fa-solid fa-spinner fa-spin"></i> 作成中…</div>';
+        drawing = (async () => {
+          try {
+            const c = await semPlanCanvas_(range, titleEl.value.trim() || semPlanRange_(range).title);
+            if (my !== gen) return;
+            canvas = c;
+            const url = c.toDataURL('image/png');
+            const cur = preview.querySelector('img.sp-img');
+            if (cur) { cur.src = url; cur.classList.remove('is-stale'); }
+            else preview.innerHTML = `<img src="${url}" alt="ゼミ予定の画像" class="sp-img">`;
+          } catch (e) {
+            if (my === gen) preview.innerHTML = '<div class="inline-error">画像を作成できませんでした</div>';
+          }
+        })();
+        return drawing;
       };
-      titleEl.addEventListener('input', () => { titleEdited = true; clearTimeout(timer); timer = setTimeout(draw, 500); });
+      // 見出しは打ち終わってから描き直す（確定・欄を離れたときはすぐ）
+      titleEl.addEventListener('input', () => { titleEdited = true; clearTimeout(timer); timer = setTimeout(draw, 900); });
+      titleEl.addEventListener('change', () => { if (timer) draw(); });
+      const latest = async () => { if (timer) draw(); if (drawing) await drawing; };
       draw();
       wrap.onclick = async (e) => {
         const seg = e.target.closest('.sp-img-range .seg-tab');
@@ -15334,6 +15358,7 @@
         if (e.target === wrap || e.target.closest('[data-act="close"]')) { wrap.remove(); return; }
         const title = titleEl.value.trim() || semPlanRange_(range).title;
         if (e.target.closest('[data-act="save"]')) {
+          await latest();
           if (!canvas) return;
           const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
           const name = `ゼミ予定_${todayYmd().replace(/\//g, '')}.png`;
@@ -15349,6 +15374,7 @@
           return;
         }
         if (e.target.closest('[data-act="share"]')) {
+          await latest();
           if (!canvas) return;
           const ok = await showConfirmModal('この画像を Teams に共有しますか？（メンションなし）', 'Teams に共有');
           if (!ok) return;
@@ -15783,8 +15809,8 @@
     }
     function setBulkLocation_(loc) {
       const sel = document.getElementById('bulkSemLocationSel');
-      const isPreset = SEMINAR_LOCATIONS.includes(loc);
-      sel.value = isPreset ? loc : 'その他';
+      const isPreset = !loc || SEMINAR_LOCATIONS.includes(loc);
+      sel.value = isPreset ? (loc || '') : 'その他';
       document.getElementById('bulkSemLocationOther').value = isPreset ? '' : (loc || '');
       document.getElementById('bulkSemLocationOtherWrap').style.display = isPreset ? 'none' : '';
     }
@@ -15978,7 +16004,7 @@
             ${r.existing.length ? `<span class="tag warn">同じ日に${escapeHtml(r.existing.map(e => e.type || e.name || '予定').join('・'))}あり</span>` : ''}
           </div>
           <div class="bulk-row-sub">
-            <span>${r.location ? escapeHtml(r.location) : '場所なし'}</span>
+            <span>${r.location ? escapeHtml(r.location) : '場所未定'}</span>
             <button type="button" class="link-btn" onclick="pickBulkLocation(${i})">変更</button>
             <span>${namesLabel}: ${r[namesKey] && r[namesKey].length ? escapeHtml(r[namesKey].join('、')) : (r.candidates && r.candidates.length ? '未定（候補: ' + escapeHtml(r.candidates.join('、')) + '）' : 'なし')}</span>
             <button type="button" class="link-btn" onclick="pickBulkNames(${i})">変更</button>
@@ -16031,7 +16057,8 @@
             <div class="modal-title">${escapeHtml(title)}</div>
             <div class="sp-place-opts">
               ${SEMINAR_LOCATIONS.map(l => `<button type="button" class="sp-place-opt${l === cur ? ' active' : ''}" data-v="${escapeForAttr(l)}">${escapeHtml(l)}</button>`).join('')}
-              <button type="button" class="sp-place-opt${cur && !inList ? ' active' : ''}" data-v="__other">その他</button>
+              <button type="button" class="sp-place-opt${!cur ? ' active' : ''}" data-v="">未定</button>
+            <button type="button" class="sp-place-opt${cur && !inList ? ' active' : ''}" data-v="__other">その他</button>
             </div>
             <input type="text" class="form-input sp-place-other" maxlength="40" placeholder="場所を入力" value="${cur && !inList ? escapeForAttr(cur) : ''}"${cur && !inList ? '' : ' hidden'}>
             <div class="modal-actions">
