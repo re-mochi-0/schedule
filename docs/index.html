@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
-  <meta name="app-build" content="20261029-080017">
+  <meta name="app-build" content="20261029-100106">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -4587,6 +4587,15 @@
     .bd-day.on { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; font-weight: 700; }
     .bd-sum { margin-top: 10px; font-size: 12.5px; color: var(--text-light); text-align: center; min-height: 1.6em; }
     .bd-sum b { color: var(--text); }
+    .add-bulk-link { justify-self: end; grid-column: 1 / -1; margin: -4px 0 10px auto; display: flex; }
+    .add-bulk-link[hidden], .tpl-mode .add-bulk-link { display: none !important; }
+    .sem-move-btns { display: inline-flex; gap: 14px; margin-right: auto; align-self: center; flex-wrap: wrap; }
+    .sem-move-btns[hidden] { display: none; }
+    .sem-swap-now { font-size: 13px; color: var(--text-light); text-align: center; margin: -6px 0 12px; }
+    .sem-swap-list { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow: auto; }
+    .sem-swap-opt { display: flex; gap: 12px; align-items: baseline; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; background: #fff; font: inherit; font-size: 13.5px; color: var(--text); text-align: left; cursor: pointer; }
+    .sem-swap-opt:hover { border-color: var(--primary-dark); background: #f4fafb; }
+    .sem-swap-d { flex: 0 0 78px; font-weight: 700; font-variant-numeric: tabular-nums; }
     .sp-extra-dates { display: flex; flex-direction: column; gap: 6px; }
     .sp-extra-dates:not(:empty) { margin-top: 6px; }
     .sp-extra-row { display: flex; align-items: center; gap: 6px; }
@@ -6028,10 +6037,7 @@
         </div>
         <div class="list-toolbar">
           <button type="button" class="btn btn-primary" onclick="showAddSeminarModal()">
-            <i class="fa-solid fa-plus"></i> 1件追加
-          </button>
-          <button type="button" class="btn btn-outline" onclick="showBulkModal('seminar')">
-            <i class="fa-solid fa-layer-group"></i> 一括追加
+            <i class="fa-solid fa-plus"></i> 追加
           </button>
           <button type="button" class="btn btn-outline" onclick="openTemplateManager('seminar')">
             <i class="fa-regular fa-bookmark"></i> テンプレート
@@ -6061,10 +6067,7 @@
         </div>
         <div class="list-toolbar">
           <button type="button" class="btn btn-primary" onclick="showAddEventModal()">
-            <i class="fa-solid fa-plus"></i> 1件追加
-          </button>
-          <button type="button" class="btn btn-outline" onclick="showBulkModal('event')">
-            <i class="fa-solid fa-layer-group"></i> 一括追加
+            <i class="fa-solid fa-plus"></i> 追加
           </button>
           <button type="button" class="btn btn-outline" onclick="openTemplateManager('event')">
             <i class="fa-regular fa-bookmark"></i> テンプレート
@@ -6313,6 +6316,7 @@
         <div class="sheet-head-title" id="seminarModalTitle">ゼミを追加</div>
       </div>
       <div class="sheet-body">
+      <button type="button" class="link-btn add-bulk-link" onclick="closeSeminarModal(); showBulkModal('seminar')"><i class="fa-solid fa-repeat"></i> 繰り返し・表でまとめて追加</button>
       <div class="template-bar">
         <select id="seminarTemplateSelect" class="form-select" onchange="applyTemplate('seminar')" aria-label="テンプレートから入力">
           <option value="">テンプレートから入力…</option>
@@ -6416,7 +6420,10 @@
       </div>
       </div>
       <div class="sheet-foot">
-        <button type="button" class="link-btn" id="seminarShiftBtn" onclick="shiftSeminarsFromEditing()" hidden><i class="fa-solid fa-angles-down"></i> ここから後ろ倒し</button>
+        <span class="sem-move-btns" id="seminarMoveBtns" hidden>
+          <button type="button" class="link-btn" onclick="shiftSeminarsFromEditing()"><i class="fa-solid fa-angles-down"></i> ここから後ろ倒し</button>
+          <button type="button" class="link-btn" onclick="swapSeminarFromEditing()"><i class="fa-solid fa-right-left"></i> 入れ替え</button>
+        </span>
         <button type="button" class="btn btn-outline" onclick="closeSeminarModal()">
           キャンセル
         </button>
@@ -7099,6 +7106,7 @@
         <div class="sheet-head-title" id="eventModalTitle">イベントを追加</div>
       </div>
       <div class="sheet-body">
+      <button type="button" class="link-btn add-bulk-link" onclick="closeEventModal(); showBulkModal('event')"><i class="fa-solid fa-repeat"></i> 繰り返し・表でまとめて追加</button>
       <div class="template-bar">
         <select id="eventTemplateSelect" class="form-select" onchange="applyTemplate('event')" aria-label="テンプレートから入力">
           <option value="">テンプレートから入力…</option>
@@ -14746,7 +14754,8 @@
       const submitBtn = document.getElementById('seminarModalSubmitBtn');
       submitBtn.innerHTML = isEdit ? '<i class="fa-solid fa-save"></i> 保存' : '<i class="fa-solid fa-plus"></i> 追加';
       document.getElementById('seminarModalNextBtn').style.display = isEdit ? 'none' : '';
-      document.getElementById('seminarShiftBtn').hidden = !(isEdit && seminar && seminar.type !== 'ゼミなし');
+      document.querySelector('#seminarModal .add-bulk-link').hidden = !!isEdit;
+      document.getElementById('seminarMoveBtns').hidden = !(isEdit && seminar && seminar.type !== 'ゼミなし');
       // 複数の日付（繰り返しではなく好きな日）は追加のときだけ
       document.getElementById('seminarExtraDates').innerHTML = '';
       document.getElementById('seminarAddDateBtn').hidden = !!isEdit;
@@ -15095,6 +15104,55 @@
       try {
         await callAPI('setSeminars', { adminId: currentUser.id, seminars: updates }, { overlayMessage: '後ろ倒ししています…' });
         showToast(`${chain.length} 回分を後ろ倒ししました`, 'success');
+        closeSeminarModal();
+        await loadSeminars(true);
+      } catch (_) {}
+    }
+
+    /** ゼミの内容（場所・日付・時刻・場所の予約を除く）と、その表し方 */
+    function semContentOf_(s) {
+      const p = s.plan || {};
+      return { type: s.type, presenters: (s.presenters || []).slice(), candidates: (s.candidates || []).slice(), freeNotes: (s.freeNotes || []).slice(),
+        plan: { tentative: p.tentative === true, format: p.format || '', slots: (p.slots || []).slice(), presenterTentative: p.presenterTentative === true } };
+    }
+    function semContentLabel_(c) {
+      return [c.type === '未定' ? 'ゼミ' : c.type, (c.presenters || []).map(n => String(n).replace(/^その他：?/, '')).join('・') || (c.plan.slots || []).join('・')].filter(Boolean).join('　');
+    }
+    function withSemContent_(s, c) {
+      return Object.assign({}, s, { type: c.type, presenters: c.presenters, candidates: c.candidates, freeNotes: c.freeNotes, plan: Object.assign({}, s.plan || {}, c.plan) });
+    }
+    /** 選んだ 2 つのゼミの内容を入れ替える（日付・時刻・場所・場所の予約はそれぞれの日に残す） */
+    async function swapSeminarFromEditing() {
+      const a = seminarData[editingSeminarIndex];
+      if (!a) return;
+      const today = todayYmd();
+      const others = seminarData.filter(s => s !== a && s.type !== 'ゼミなし' && s.date >= today);
+      if (!others.length) { showToast('入れ替えられるゼミがありません', 'info'); return; }
+      const b = await new Promise(resolve => {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay show';
+        overlay.style.zIndex = '10070';
+        overlay.innerHTML = `
+          <div class="modal-box" style="max-width: 440px;" role="dialog" aria-modal="true">
+            <div class="modal-title">入れ替える相手</div>
+            <div class="sem-swap-now">${escapeHtml(fmtMdW(a.date))}　${escapeHtml(semContentLabel_(semContentOf_(a)) || '内容なし')}</div>
+            <div class="sem-swap-list">${others.map((s, i) => `<button type="button" class="sem-swap-opt" data-i="${i}"><span class="sem-swap-d">${escapeHtml(fmtMdW(s.date))}</span><span>${escapeHtml(semContentLabel_(semContentOf_(s)) || '内容なし')}</span></button>`).join('')}</div>
+            <div class="modal-actions"><button type="button" class="btn btn-outline" data-act="cancel">キャンセル</button></div>
+          </div>`;
+        document.body.appendChild(overlay);
+        overlay.onclick = e => {
+          const o = e.target.closest('.sem-swap-opt');
+          if (o) { overlay.remove(); resolve(others[Number(o.dataset.i)]); return; }
+          if (e.target === overlay || e.target.closest('[data-act="cancel"]')) { overlay.remove(); resolve(null); }
+        };
+      });
+      if (!b) return;
+      const ca = semContentOf_(a), cb = semContentOf_(b);
+      const ok = await showConfirmModal(`次のように入れ替えます（場所・時刻はそれぞれの日のまま）。\n\n${fmtMdW(a.date)}　${semContentLabel_(cb) || '内容なし'}\n${fmtMdW(b.date)}　${semContentLabel_(ca) || '内容なし'}`, '入れ替えの確認');
+      if (!ok) return;
+      try {
+        await callAPI('setSeminars', { adminId: currentUser.id, seminars: [withSemContent_(a, cb), withSemContent_(b, ca)] }, { overlayMessage: '入れ替えています…' });
+        showToast(`${fmtMdW(a.date)} と ${fmtMdW(b.date)} を入れ替えました`, 'success');
         closeSeminarModal();
         await loadSeminars(true);
       } catch (_) {}
@@ -16488,6 +16546,7 @@
       }
       editingEventIndex = null;
       document.getElementById('eventModalTitle').textContent = 'イベントを追加';
+      document.querySelector('#eventModal .add-bulk-link').hidden = false;
       document.getElementById('eventModalSubmitBtn').innerHTML = '<i class="fa-solid fa-plus"></i> 追加';
       document.getElementById('eventModalSubmitBtn').onclick = addEventEntry;
       const modeSel = document.getElementById('eventDateMode');
@@ -16541,6 +16600,7 @@
       editingEventIndex = index;
       const ev = eventData[index];
       document.getElementById('eventModalTitle').textContent = 'イベントを編集';
+      document.querySelector('#eventModal .add-bulk-link').hidden = true;
       document.getElementById('eventModalSubmitBtn').innerHTML = '<i class="fa-solid fa-save"></i> 更新';
       document.getElementById('eventModalSubmitBtn').onclick = updateEventEntry;
       const modeSel = document.getElementById('eventDateMode');
