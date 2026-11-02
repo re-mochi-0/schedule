@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
-  <meta name="app-build" content="20261029-111055">
+  <meta name="app-build" content="20261029-111829">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -15341,8 +15341,11 @@
         })();
         return drawing;
       };
-      // 見出しは打ち終わってから描き直す（確定・欄を離れたときはすぐ）
-      titleEl.addEventListener('input', () => { titleEdited = true; clearTimeout(timer); timer = setTimeout(draw, 900); });
+      // 見出しは打ち終わってから描き直す（変換中は待つ・確定・欄を離れたときはすぐ）
+      const later = () => { clearTimeout(timer); timer = setTimeout(draw, 2000); };
+      titleEl.addEventListener('input', (e) => { titleEdited = true; if (e.isComposing) { clearTimeout(timer); timer = -1; return; } later(); });
+      titleEl.addEventListener('compositionend', later);
+      titleEl.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing && timer) { e.preventDefault(); draw(); } });
       titleEl.addEventListener('change', () => { if (timer) draw(); });
       const latest = async () => { if (timer) draw(); if (drawing) await drawing; };
       draw();
