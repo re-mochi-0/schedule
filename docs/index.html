@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
-  <meta name="app-build" content="20261029-111829">
+  <meta name="app-build" content="20261105-104730">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -7063,6 +7063,7 @@
           <select id="editMemberTeam" class="form-select">
             <option value="鶏班">鶏班</option>
             <option value="食品班">食品班</option>
+            <option value="B3（未配属）">B3（未配属）</option>
             <option value="豊田研">豊田研</option>
           </select>
         </div>
@@ -10142,7 +10143,7 @@
             return `
             <div class="mem-row${m.isActive ? '' : ' inactive'}">
               <button type="button" class="mem-main" onclick="showEditMemberModal(${m.row})">
-                <span class="mem-name">${escapeHtml(m.name)}${(m.team || '') === '鶏班' ? '<span class="mem-tag"><i class="ck-dot"></i>鶏班</span>' : ''}</span>
+                <span class="mem-name">${escapeHtml(m.name)}${(m.team || '') === '鶏班' ? '<span class="mem-tag"><i class="ck-dot"></i>鶏班</span>' : m.team === 'B3（未配属）' ? '<span class="mem-tag">B3（未配属）</span>' : ''}</span>
                 <span class="mem-sub">餌 ${m.feedCount || 0}回・掃除 ${m.cleanCount || 0}回</span>
               </button>
               ${canSeeDays
@@ -10450,7 +10451,7 @@
             </div>
             <div class="form-row-2 keep-2">
               <div class="form-group"><label class="form-label" for="amGrade">学年</label><select id="amGrade" class="form-select">${GRADE_ORDER.map(g => `<option value="${g}">${g}</option>`).join('')}</select></div>
-              <div class="form-group"><label class="form-label" for="amTeam">班</label><select id="amTeam" class="form-select"><option value="鶏班">鶏班</option><option value="食品班">食品班</option><option value="豊田研">豊田研</option></select></div>
+              <div class="form-group"><label class="form-label" for="amTeam">班</label><select id="amTeam" class="form-select"><option value="鶏班">鶏班</option><option value="食品班">食品班</option><option value="B3（未配属）">B3（未配属）</option><option value="豊田研">豊田研</option></select></div>
             </div>
             <div class="form-group">
               <label class="form-label" for="amSid">学籍番号<button type="button" class="info-tip" data-tip="ログインのコードは「学籍番号@mail.cc.niigata-u.ac.jp」に届きます" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></label>
@@ -13741,7 +13742,7 @@
     // ==============================================
     const teamsState = {
       loadedAt: 0, loading: null, error: '',
-      dests: [], notices: [], automations: [], dailyEnabled: true,
+      dests: [], notices: [], automations: [], dailyEnabled: true, b3MentionEnabled: false,
       rules: [], seminars: [], lastSent: {}, isDefault: false
     };
 
@@ -13762,6 +13763,7 @@
           teamsState.dests = t.destinations || [];
           teamsState.notices = t.notices || [];
           teamsState.automations = t.automations || [];
+          teamsState.b3MentionEnabled = t.b3MentionEnabled === true;
           applySemremResult_(r);
           teamsState.error = '';
           teamsState.loadedAt = Date.now();
@@ -13870,6 +13872,8 @@
       if (!teamsState.loadedAt) { box.innerHTML = teamsLoadingHtml_; return; }
       const dests = teamsState.dests.filter(d => d.key);
       box.innerHTML = `
+        <label class="set-row compact"><span class="set-name">B3にTeamsでメンション</span><span class="sw"><input type="checkbox" id="teamsB3Mention" aria-describedby="teamsB3MentionHint"${teamsState.b3MentionEnabled ? ' checked' : ''}><span></span></span></label>
+        <p class="field-hint" id="teamsB3MentionHint">OFFの間も予定への名前の表示とメール通知は継続します。Teams参加後にONにしてください。</p>
         <div class="dest-list">${dests.map(d => destRowHtml_(d)).join('')}</div>
         <details class="howto" data-remember="teams-howto"${openAttr_('teams-howto', false)}>
           <summary><i class="fa-regular fa-circle-question"></i> 送信先 URL の作成手順</summary>
@@ -13877,11 +13881,11 @@
             <li>Teams で送信先チャネルの「…」→「ワークフロー」</li>
             <li>検索欄に「Webhook」と入力し、テンプレートの「Webhook アラートをチャネルに送信する」を選択${infoTipHtml('時期や画面によって「Webhook 要求を受信したらチャネルに投稿する」という名前のこともあります（同じ働き）。チャットに送るときは「Webhook アラートをチャットに送信する」。「特定のユーザーからの…」「組織内のユーザーからの…」はサインインが必要な種類で、このアプリからは送れないので選ばない')}</li>
             <li>送り先のチームとチャネルを選んで保存し、表示される URL をコピー</li>
-            <li>URL を貼り付け、「テスト」で受信を確認して「送信先を保存」</li>
+            <li>URL を貼り付け、「テスト」で受信を確認して「Teams設定を保存」</li>
           </ol>
           <p class="field-hint">管理者の交代時は、新しい管理者がこの手順で URL を作成して差し替えます。</p>
         </details>
-        <button type="button" class="btn btn-primary dest-save" onclick="saveTeamsDest()"><i class="fa-solid fa-save"></i> 送信先を保存</button>
+        <button type="button" class="btn btn-primary dest-save" onclick="saveTeamsDest()"><i class="fa-solid fa-save"></i> Teams設定を保存</button>
         <div class="dest-sample">
           <div class="dest-name">カードの見本${infoTipHtml('通知ごとの見本を「エラー・テスト」の送信先に送ります（ゼミ通知はルールごと）。メンションは自分だけです')}</div>
           <button type="button" class="btn btn-outline btn-xs" onclick="sendTeamsSamples()"><i class="fa-regular fa-paper-plane"></i> エラー・テストに送信</button>
@@ -13910,6 +13914,7 @@
     async function saveTeamsDest() {
       const urls = readDestInputs_();
       const noticeUrls = readNoticeInputs_();
+      const b3MentionEnabled = document.getElementById('teamsB3Mention').checked;
       const isBad = u => u && !/^https:\/\/\S+$/.test(u);
       const bad = Object.keys(urls).find(k => isBad(urls[k]));
       const badNotice = Object.keys(noticeUrls).find(k => isBad(noticeUrls[k]));
@@ -13920,12 +13925,13 @@
         return;
       }
       try {
-        const r = await callAPI('saveTeamsSettings', { adminId: currentUser.id, urls, noticeUrls }, { overlayMessage: '保存しています…' });
+        const r = await callAPI('saveTeamsSettings', { adminId: currentUser.id, urls, noticeUrls, b3MentionEnabled }, { overlayMessage: '保存しています…' });
         if (r.destinations) teamsState.dests = r.destinations;
         if (r.notices) teamsState.notices = r.notices;
         if (r.automations) teamsState.automations = r.automations;
+        teamsState.b3MentionEnabled = r.b3MentionEnabled === true;
         renderTeamsDest_();
-        showToast('送信先を保存しました', 'success');
+        showToast('Teams設定を保存しました', 'success');
       } catch (_) {}
     }
 
