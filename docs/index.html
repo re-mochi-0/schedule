@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
-  <meta name="app-build" content="20261105-104730">
+  <meta name="app-build" content="20261112-130057">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -3998,6 +3998,20 @@
     .pp-chip small { font-size: 11px; font-weight: 700; color: var(--me); }
     .pp-chip.on { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; }
     .pp-chip.on small { color: #fff; opacity: 0.85; }
+    .sp-bar-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+    .ct-kinds { display: flex; gap: 8px; flex-wrap: wrap; }
+    .ct-head { display: flex; align-items: center; justify-content: space-between; margin: 16px 0 6px; font-size: 12px; font-weight: 700; color: var(--text-light); }
+    .ct-list { border-top: 1px solid var(--border); }
+    .ct-row { display: grid; grid-template-columns: 20px 76px 1fr; align-items: center; gap: 10px; padding: 10px 2px; border-bottom: 1px solid var(--border); cursor: pointer; }
+    .ct-row input { width: 16px; height: 16px; accent-color: var(--primary-dark); margin: 0; }
+    .ct-d { font-size: 13px; font-weight: 700; color: var(--text); }
+    .ct-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .ct-t b { font-size: 13.5px; color: #4263c6; display: flex; align-items: center; }
+    .ct-t small { font-size: 12px; color: var(--text-light); display: flex; align-items: center; overflow-wrap: anywhere; }
+    .pp-untent { display: flex; align-items: center; gap: 6px; margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border); }
+    /* 「仮を外す」側の切り替え（印が付く＝外す。橙ではなく主色） */
+    .sp-chip-toggle.is-off input:checked + span { border-color: var(--primary); background: #eef6f8; color: var(--primary-dark); }
+    .sp-chip-toggle.is-off input:checked + span::before { border-color: var(--primary); background-color: var(--primary); }
     .pp-more { border-top: 1px dashed var(--border); padding-top: 10px; }
     .pp-more > summary { cursor: pointer; list-style: none; display: flex; align-items: center; min-height: 32px; font-size: 13px; font-weight: 700; color: var(--primary-dark); user-select: none; }
     .pp-more > summary::-webkit-details-marker { display: none; }
@@ -13742,7 +13756,7 @@
     // ==============================================
     const teamsState = {
       loadedAt: 0, loading: null, error: '',
-      dests: [], notices: [], automations: [], dailyEnabled: true, b3MentionEnabled: false,
+      dests: [], notices: [], automations: [], dailyEnabled: true, b3NotificationMode: 'off', b3Url: '',
       rules: [], seminars: [], lastSent: {}, isDefault: false
     };
 
@@ -13763,7 +13777,8 @@
           teamsState.dests = t.destinations || [];
           teamsState.notices = t.notices || [];
           teamsState.automations = t.automations || [];
-          teamsState.b3MentionEnabled = t.b3MentionEnabled === true;
+          teamsState.b3NotificationMode = ['shared', 'separate', 'off'].includes(t.b3NotificationMode) ? t.b3NotificationMode : (t.b3MentionEnabled === true ? 'shared' : 'off');
+          teamsState.b3Url = t.b3Url || '';
           applySemremResult_(r);
           teamsState.error = '';
           teamsState.loadedAt = Date.now();
@@ -13872,8 +13887,20 @@
       if (!teamsState.loadedAt) { box.innerHTML = teamsLoadingHtml_; return; }
       const dests = teamsState.dests.filter(d => d.key);
       box.innerHTML = `
-        <label class="set-row compact"><span class="set-name">B3にTeamsでメンション</span><span class="sw"><input type="checkbox" id="teamsB3Mention" aria-describedby="teamsB3MentionHint"${teamsState.b3MentionEnabled ? ' checked' : ''}><span></span></span></label>
-        <p class="field-hint" id="teamsB3MentionHint">OFFの間も予定への名前の表示とメール通知は継続します。Teams参加後にONにしてください。</p>
+        <div class="form-group">
+          <label class="form-label" for="teamsB3Mode">B3へのTeams通知</label>
+          <select id="teamsB3Mode" class="form-select" aria-describedby="teamsB3ModeHint">
+            <option value="shared"${teamsState.b3NotificationMode === 'shared' ? ' selected' : ''}>全員と同じ送信先でメンション</option>
+            <option value="separate"${teamsState.b3NotificationMode === 'separate' ? ' selected' : ''}>B3専用の送信先でメンション</option>
+            <option value="off"${teamsState.b3NotificationMode === 'off' ? ' selected' : ''}>OFF（B3にメンションしない）</option>
+          </select>
+          <p class="field-hint" id="teamsB3ModeHint">各通知でメンション対象になるB3の送り方を選びます。OFFの間も予定への名前の表示とメール通知は継続します。</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="teamsB3Url">B3専用の送信先URL</label>
+          <input type="url" id="teamsB3Url" class="form-input" value="${escapeForAttr(teamsState.b3Url)}" placeholder="https://…" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="teamsB3UrlHint">
+          <p class="field-hint" id="teamsB3UrlHint">「B3専用の送信先」を選んだときに使用します。別送信を使わない間もURLは保存されます。</p>
+        </div>
         <div class="dest-list">${dests.map(d => destRowHtml_(d)).join('')}</div>
         <details class="howto" data-remember="teams-howto"${openAttr_('teams-howto', false)}>
           <summary><i class="fa-regular fa-circle-question"></i> 送信先 URL の作成手順</summary>
@@ -13914,8 +13941,14 @@
     async function saveTeamsDest() {
       const urls = readDestInputs_();
       const noticeUrls = readNoticeInputs_();
-      const b3MentionEnabled = document.getElementById('teamsB3Mention').checked;
+      const b3NotificationMode = document.getElementById('teamsB3Mode').value;
+      const b3Url = document.getElementById('teamsB3Url').value.trim();
       const isBad = u => u && !/^https:\/\/\S+$/.test(u);
+      if (isBad(b3Url) || (b3NotificationMode === 'separate' && !b3Url)) {
+        showToast('B3専用の送信先に https:// で始まる URL を入力してください', 'error');
+        document.getElementById('teamsB3Url').focus();
+        return;
+      }
       const bad = Object.keys(urls).find(k => isBad(urls[k]));
       const badNotice = Object.keys(noticeUrls).find(k => isBad(noticeUrls[k]));
       if (bad != null || badNotice != null) {
@@ -13925,11 +13958,12 @@
         return;
       }
       try {
-        const r = await callAPI('saveTeamsSettings', { adminId: currentUser.id, urls, noticeUrls, b3MentionEnabled }, { overlayMessage: '保存しています…' });
+        const r = await callAPI('saveTeamsSettings', { adminId: currentUser.id, urls, noticeUrls, b3NotificationMode, b3Url }, { overlayMessage: '保存しています…' });
         if (r.destinations) teamsState.dests = r.destinations;
         if (r.notices) teamsState.notices = r.notices;
         if (r.automations) teamsState.automations = r.automations;
-        teamsState.b3MentionEnabled = r.b3MentionEnabled === true;
+        teamsState.b3NotificationMode = ['shared', 'separate', 'off'].includes(r.b3NotificationMode) ? r.b3NotificationMode : b3NotificationMode;
+        teamsState.b3Url = typeof r.b3Url === 'string' ? r.b3Url : b3Url;
         renderTeamsDest_();
         showToast('Teams設定を保存しました', 'success');
       } catch (_) {}
@@ -15037,7 +15071,10 @@
       const head = `
         <div class="sp-bar">
           <div class="sp-lead">今日以降のゼミ</div>
-          <button type="button" class="btn btn-outline btn-xs" onclick="openSemPlanImage()"><i class="fa-regular fa-image"></i> 画像・共有</button>
+          <div class="sp-bar-btns">
+            ${rows.some(({ s }) => semTentKinds_(s).length) ? '<button type="button" class="btn btn-outline btn-xs" onclick="openClearTentative()"><i class="fa-solid fa-eraser"></i> 仮を外す</button>' : ''}
+            <button type="button" class="btn btn-outline btn-xs" onclick="openSemPlanImage()"><i class="fa-regular fa-image"></i> 画像・共有</button>
+          </div>
         </div>`;
       if (!rows.length) return head + '<p class="bulk-empty">今後のゼミはありません<br><small>「1件追加」「一括追加」から作れます</small></p>';
       const MAX = 2;
@@ -15053,9 +15090,11 @@
         return `<div class="sp-mo">${yy !== new Date().getFullYear() ? yy + '年' : ''}${mm}月</div><table class="sp-tbl"><tbody>${g.rows.map(({ s, index }) => {
         const v = semPlanView_(s);
         const mo = '';
+        // 学年・班の枠はいつも出し、名前だけ MAX 人まで（あとは ＋n）
         const people = [...v.slots.map(x => ({ t: x, cls: 'slot' })), ...v.names.map(n => ({ t: n, cls: n === myName ? 'me' : '' }))];
-        const shown = people.slice(0, MAX).map(p => `<span class="sp-chip ${p.cls}">${escapeHtml(p.t)}</span>`).join('')
-          + (people.length > MAX ? `<span class="sp-chip more" title="${escapeForAttr(people.slice(MAX).map(p => p.t).join('、'))}">＋${people.length - MAX}</span>` : '');
+        const cut = v.slots.length + MAX;
+        const shown = people.slice(0, cut).map(p => `<span class="sp-chip ${p.cls}">${escapeHtml(p.t)}</span>`).join('')
+          + (people.length > cut ? `<span class="sp-chip more" title="${escapeForAttr(people.slice(cut).map(p => p.t).join('、'))}">＋${people.length - cut}</span>` : '');
         const who = v.off ? '' : people.length ? `<div class="sp-who">${shown}${v.presTent ? '<span class="sp-tent">仮</span>' : ''}</div>` : '<span class="sp-tbd">未定</span>';
         const place = v.off ? '<span class="sp-tbd">—</span>'
           : v.place ? `${escapeHtml(v.place)}${v.room ? `<i class="${v.room === 'booked' ? 'ok' : 'wr'}">${v.room === 'booked' ? '予約済' : '未予約'}</i>` : ''}`
@@ -15228,6 +15267,82 @@
         try {
           await callAPI('setSeminars', { adminId: currentUser.id, seminars: [Object.assign({}, s, { location, plan })] }, { overlayMessage: '保存しています…' });
           showToast(`${fmtMdW(s.date)} の場所を変更しました`, 'success');
+          await loadSeminars(true);
+        } catch (_) {}
+      };
+    }
+
+    /** その回に付いている仮：'date'＝ゼミ（日程）の仮／'pres'＝発表者の仮 */
+    function semTentKinds_(s) {
+      const p = s.plan || {};
+      if (s.type === 'ゼミなし') return [];
+      return [p.tentative === true ? 'date' : '', p.presenterTentative === true ? 'pres' : ''].filter(Boolean);
+    }
+    /** 今日以降の仮をまとめて外す。回と、外す仮（ゼミ・発表者）を選ぶ */
+    function openClearTentative() {
+      const today = todayYmd();
+      const list = seminarData.filter(s => s.date >= today && semTentKinds_(s).length);
+      if (!list.length) { showToast('仮の回はありません', 'info'); return; }
+      const wrap = document.createElement('div');
+      wrap.className = 'modal-overlay sheet show';
+      wrap.innerHTML = `
+        <div class="modal-box sheet-box sheet-md" role="dialog" aria-modal="true" aria-labelledby="ctTitle">
+          <div class="sheet-head">
+            <button type="button" class="sheet-close" data-act="close" aria-label="閉じる"><i class="fa-solid fa-xmark"></i></button>
+            <div class="sheet-head-title" id="ctTitle">仮を外す</div>
+          </div>
+          <div class="sheet-body">
+            <div class="ct-kinds">
+              <label class="sp-chip-toggle is-off"><input type="checkbox" class="ct-kind" value="date" checked><span>ゼミの仮</span></label>
+              <label class="sp-chip-toggle is-off"><input type="checkbox" class="ct-kind" value="pres" checked><span>発表者の仮</span></label>
+            </div>
+            <div class="ct-head"><span>${list.length} 回</span><button type="button" class="link-btn" data-act="all">選択を解除</button></div>
+            <div class="ct-list">
+              ${list.map((s, i) => {
+                const v = semPlanView_(s);
+                const k = semTentKinds_(s);
+                const who = [...v.slots, ...v.names].join('・');
+                return `<label class="ct-row"><input type="checkbox" class="ct-pick" value="${i}" checked>
+                  <span class="ct-d">${escapeHtml(fmtMdW(s.date))}</span>
+                  <span class="ct-t"><b>${escapeHtml(v.title)}${k.includes('date') ? '<span class="sp-tent">仮</span>' : ''}</b><small>${who ? escapeHtml(who) : '発表者未定'}${k.includes('pres') ? '<span class="sp-tent">仮</span>' : ''}</small></span>
+                </label>`;
+              }).join('')}
+            </div>
+          </div>
+          <div class="sheet-foot">
+            <button type="button" class="btn btn-outline" data-act="close">キャンセル</button>
+            <button type="button" class="btn btn-primary" data-act="ok"><i class="fa-solid fa-check"></i> 外す</button>
+          </div>
+        </div>`;
+      document.body.appendChild(wrap);
+      const picks = [...wrap.querySelectorAll('.ct-pick')];
+      const allBtn = wrap.querySelector('[data-act="all"]');
+      const syncAll = () => { allBtn.textContent = picks.every(x => x.checked) ? '選択を解除' : 'すべて選択'; };
+      wrap.addEventListener('change', syncAll);
+      wrap.onclick = async (e) => {
+        if (e.target === wrap || e.target.closest('[data-act="close"]')) { wrap.remove(); return; }
+        if (e.target.closest('[data-act="all"]')) {
+          const on = !picks.every(x => x.checked);
+          picks.forEach(x => { x.checked = on; });
+          syncAll();
+          return;
+        }
+        if (!e.target.closest('[data-act="ok"]')) return;
+        const kinds = [...wrap.querySelectorAll('.ct-kind:checked')].map(x => x.value);
+        if (!kinds.length) { showToast('外す仮を選んでください', 'error'); return; }
+        const targets = [...wrap.querySelectorAll('.ct-pick:checked')].map(x => list[Number(x.value)])
+          .filter(s => semTentKinds_(s).some(k => kinds.includes(k)));
+        if (!targets.length) { showToast('外す回を選んでください', 'error'); return; }
+        const seminars = targets.map(s => {
+          const plan = Object.assign({}, s.plan || {});
+          if (kinds.includes('date')) delete plan.tentative;
+          if (kinds.includes('pres')) delete plan.presenterTentative;
+          return Object.assign({}, s, { plan });
+        });
+        wrap.remove();
+        try {
+          await callAPI('setSeminars', { adminId: currentUser.id, seminars }, { overlayMessage: '保存しています…' });
+          showToast(`${seminars.length} 回の仮を外しました`, 'success');
           await loadSeminars(true);
         } catch (_) {}
       };
@@ -15506,6 +15621,7 @@
               <summary>ほかの人から選ぶ</summary>
               <div id="ppOthers"></div>
             </details>
+            ${(s.plan || {}).tentative === true ? `<div class="pp-untent"><label class="sp-chip-toggle is-off"><input type="checkbox" id="ppClearTent" checked><span>ゼミの仮も外す</span></label>${infoTipHtml('日程だけ押さえていた回なら、外すと予定表の「仮」が消えます。発表者の「仮」は登録すると外れます')}</div>` : ''}
           </div>
           <div class="sheet-foot">
             <button type="button" class="btn btn-outline" data-act="close">キャンセル</button>
@@ -15533,7 +15649,8 @@
         const presenters = Array.from(new Set(names));
         if (!presenters.length) { showToast('発表する人を選んでください', 'error'); return; }
         try {
-          const r = await callAPI('claimSeminar', { adminId: currentUser.id, id: s.id, presenters }, { overlayMessage: '登録しています…' });
+          const clearTentative = !!wrap.querySelector('#ppClearTent:checked');
+          const r = await callAPI('claimSeminar', { adminId: currentUser.id, id: s.id, presenters, clearTentative }, { overlayMessage: '登録しています…' });
           if (r.seminar) Object.assign(s, r.seminar);
           close();
           renderSeminars();
