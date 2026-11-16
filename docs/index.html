@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
-  <meta name="app-build" content="20261112-130057">
+  <meta name="app-build" content="20261116-105956">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -4316,6 +4316,8 @@
     .sc-caption { font-size: 13px; color: var(--text-light); margin: 0 0 8px; }
     /* イベントの種類 */
     .ev-kinds { display: flex; flex-wrap: wrap; gap: 6px; }
+    .ev-dl { grid-column: 1 / -1; padding: 14px; border: 1px solid #f0dcb4; border-radius: 12px; background: #fffaf0; }
+    .ev-dl-days { display: flex; flex-wrap: wrap; gap: 6px; }
     .ev-kind { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 999px; border: 1.5px solid var(--border); background: #fff; font: inherit; font-size: 13px; font-weight: 700; color: #34424a; cursor: pointer; }
     .ev-kind i { width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
     .ev-kind.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 10%, #fff); color: #1f2c31; }
@@ -7158,8 +7160,45 @@
         <div id="eventMultiDatesChips" class="mp-items" style="margin-top: 8px;"></div>
       </div>
       <div class="form-group">
-        <label class="form-label">開始時刻（任意）</label>
-        <input type="time" id="eventStartTime" class="form-input">
+        <label class="form-label">種類<button type="button" class="info-tip" data-tip="種類ごとに色が決まっていて、カレンダーや一覧で同じ色で表示されます" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></label>
+        <select id="eventColor" class="form-select" hidden aria-hidden="true" tabindex="-1">
+          <option value="#5f7d95">通常</option>
+          <option value="#c95a86">行事</option>
+          <option value="#9a6b3f">学会・出張</option>
+          <option value="#b7791f">締切</option>
+          <option value="#e53e3e">入構規制</option>
+        </select>
+        <div class="ev-kinds" id="eventKindChips" role="radiogroup" aria-label="種類"></div>
+      </div>
+      <div class="form-group ev-dl" id="eventDeadlineGroup" hidden>
+        <div class="form-row-2 keep-2">
+          <div>
+            <label class="form-label">提出するもの</label>
+            <input type="text" id="eventDlItem" class="form-input" maxlength="80" placeholder="例: 中間報告書">
+          </div>
+          <div>
+            <label class="form-label">提出先（任意）</label>
+            <input type="text" id="eventDlWhere" class="form-input" maxlength="200" placeholder="例: Teams の課題・URL">
+          </div>
+        </div>
+        <label class="form-label" style="margin-top: 12px;">お知らせ<button type="button" class="info-tip" data-tip="選んだ日の 9 時ごろ Teams に送ります。対象者を選んでいれば、その人にメンションします" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></label>
+        <div class="ev-dl-days" id="eventDlNotify">
+          <label class="sp-chip-toggle is-off"><input type="checkbox" value="3"><span>3日前</span></label>
+          <label class="sp-chip-toggle is-off"><input type="checkbox" value="1"><span>前日</span></label>
+          <label class="sp-chip-toggle is-off"><input type="checkbox" value="0"><span>当日</span></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="form-row-2 keep-2">
+          <div>
+            <label class="form-label" id="eventStartTimeLabel">開始時刻（任意）</label>
+            <input type="time" id="eventStartTime" class="form-input">
+          </div>
+          <div id="eventEndTimeWrap">
+            <label class="form-label">終了時刻（任意）</label>
+            <input type="time" id="eventEndTime" class="form-input">
+          </div>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">場所（任意）</label>
@@ -7177,18 +7216,7 @@
         <textarea id="eventNote" class="form-textarea" rows="4" placeholder="任意"></textarea>
       </div>
       <div class="form-group">
-        <label class="form-label">種類<button type="button" class="info-tip" data-tip="種類ごとに色が決まっていて、カレンダーや一覧で同じ色で表示されます" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></label>
-        <select id="eventColor" class="form-select" hidden aria-hidden="true" tabindex="-1">
-          <option value="#5f7d95">通常</option>
-          <option value="#c95a86">行事</option>
-          <option value="#9a6b3f">学会・出張</option>
-          <option value="#b7791f">締切</option>
-          <option value="#e53e3e">入構規制</option>
-        </select>
-        <div class="ev-kinds" id="eventKindChips" role="radiogroup" aria-label="種類"></div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">参加者（任意）</label>
+        <label class="form-label" id="eventParticipantsLabel">参加者（任意）</label>
         <div id="eventParticipantsCheckbox"></div>
       </div>
       </div>
@@ -11730,7 +11758,7 @@
     function currentTemplateData_(kind) {
       if (kind === 'event') {
         const f = readEventForm_();
-        return { name: f.name, color: f.color, startTime: f.startTime, location: f.location, note: f.note, participants: f.participants, kind: f.kind };
+        return { name: f.name, color: f.color, startTime: f.startTime, endTime: f.endTime, location: f.location, note: f.note, participants: f.participants, kind: f.kind, deadline: f.deadline };
       }
       // 日付以外のすべて（発表者の決め方・候補・予定表の項目も）
       const locSel = document.getElementById('seminarLocation').value;
@@ -11764,6 +11792,8 @@
       if (kind === 'event') {
         document.getElementById('eventName').value = d.name || '';
         document.getElementById('eventStartTime').value = d.startTime || '';
+        document.getElementById('eventEndTime').value = d.endTime || '';
+        setEventDeadlineForm_(d.deadline);
         document.getElementById('eventLocation').value = d.location || '';
         document.getElementById('eventNote').value = d.note || '';
         setEventColor_(d.color);
@@ -11819,7 +11849,7 @@
       ],
       event: [
         { k: 'name', el: 'eventName', label: 'イベント名' },
-        { k: 'startTime', el: 'eventStartTime', label: '開始時刻' },
+        { k: 'startTime', el: 'eventStartTime', label: '時刻' },
         { k: 'location', el: 'eventLocation', label: '場所' },
         { k: 'note', el: 'eventNote', label: '備考' },
         { k: 'color', el: 'eventKindChips', label: '種類' },
@@ -11864,10 +11894,10 @@
         toggleSeminarTypeNone();
       } else {
         if (has('name')) document.getElementById('eventName').value = d.name || '';
-        if (has('startTime')) document.getElementById('eventStartTime').value = d.startTime || '';
+        if (has('startTime')) { document.getElementById('eventStartTime').value = d.startTime || ''; document.getElementById('eventEndTime').value = d.endTime || ''; }
         if (has('location')) document.getElementById('eventLocation').value = d.location || '';
         if (has('note')) document.getElementById('eventNote').value = d.note || '';
-        if (has('color')) setEventColor_(d.color);
+        if (has('color')) { setEventDeadlineForm_(d.deadline); setEventColor_(d.color); }
         document.getElementById('eventIsEntryRestriction').checked = d.kind === 'entryRestriction';
         toggleEventEntryKind();
         if (has('participants')) renderMemberPicker(document.getElementById('eventParticipantsCheckbox'), { selected: d.participants || [] });
@@ -16531,6 +16561,33 @@
       box.innerHTML = er
         ? '<span class="ev-kind on" style="--c:#d64545"><i></i>入構規制</span>'
         : EVENT_KINDS_.map(k => `<button type="button" class="ev-kind${sel.value === k.value ? ' on' : ''}" role="radio" aria-checked="${sel.value === k.value}" style="--c:${k.value}" onclick="setEventColor_('${k.value}')"><i></i>${escapeHtml(k.label)}</button>`).join('');
+      updateEventKindUi_();
+    }
+    const EVENT_DEADLINE_COLOR_ = '#b7791f';
+    /** 締切のときは「締切時刻」「対象者」にし、提出するもの・お知らせの欄を出す（終了時刻は出さない） */
+    function updateEventKindUi_() {
+      const sel = document.getElementById('eventColor');
+      const er = !!(document.getElementById('eventIsEntryRestriction') || {}).checked;
+      const dl = !er && sel && sel.value === EVENT_DEADLINE_COLOR_;
+      document.getElementById('eventDeadlineGroup').hidden = !dl;
+      document.getElementById('eventEndTimeWrap').hidden = dl;
+      document.getElementById('eventStartTimeLabel').textContent = dl ? '締切時刻（任意）' : '開始時刻（任意）';
+      document.getElementById('eventParticipantsLabel').textContent = dl ? '対象者（任意）' : '参加者（任意）';
+    }
+    /** 締切の欄に値を入れる（無ければ、お知らせは 3 日前と当日） */
+    function setEventDeadlineForm_(d) {
+      d = d || {};
+      document.getElementById('eventDlItem').value = d.item || '';
+      document.getElementById('eventDlWhere').value = d.where || '';
+      const days = Array.isArray(d.notify) ? d.notify.map(Number) : [3, 0];
+      document.querySelectorAll('#eventDlNotify input').forEach(i => { i.checked = days.includes(Number(i.value)); });
+    }
+    function readEventDeadlineForm_() {
+      return {
+        item: document.getElementById('eventDlItem').value.trim(),
+        where: document.getElementById('eventDlWhere').value.trim(),
+        notify: [...document.querySelectorAll('#eventDlNotify input:checked')].map(i => Number(i.value))
+      };
     }
     function setEventColor_(c) {
       const sel = document.getElementById('eventColor');
@@ -16642,6 +16699,20 @@
       return { icon: 'fa-solid fa-repeat', label: `全${dates.length}回・${k}回目` };
     }
 
+    /** イベントの時刻の書き方：締切は「締切 17:00」、終了があれば「10:00〜12:00」、開始だけなら「10:00〜」 */
+    function eventTimeLabel_(e) {
+      const st = e.startTime ? formatStartTimeDisplay(e.startTime) : '';
+      if (e.deadline) return st ? '締切 ' + st : '締切';
+      const et = e.endTime ? formatStartTimeDisplay(e.endTime) : '';
+      return st ? st + '〜' + et : et ? '〜' + et : '';
+    }
+    /** 「3日前・当日に通知」 */
+    function eventNotifyLabel_(dl) {
+      const days = (dl && dl.notify) || [];
+      if (!days.length) return '';
+      return days.slice().sort((a, b) => b - a).map(n => n === 0 ? '当日' : n === 1 ? '前日' : n + '日前').join('・') + 'に通知';
+    }
+
     function renderEvents() {
       const container = document.getElementById('eventsContainer');
       if (!container) return;
@@ -16654,7 +16725,8 @@
         const isEr = ev.kind === 'entryRestriction';
         const isMine = myName && (ev.participants || []).includes(myName);
         const series = eventSeriesInfo_(ev);
-        const time = ev.startTime ? formatStartTimeDisplay(ev.startTime) : '';
+        const time = eventTimeLabel_(ev);
+        const dl = ev.deadline;
         const loc = ev.location && String(ev.location).trim() ? String(ev.location).trim() : '';
         return {
           date: ev.date,
@@ -16664,12 +16736,15 @@
               ${time ? `<span class="ag-time">${escapeHtml(time)}</span>` : '<span class="ag-time is-allday">終日</span>'}
               <span class="ag-title">${isEr ? '<i class="fa-solid fa-ban"></i> ' : ''}${escapeHtml(ev.name)}</span>
               ${isEr ? '<span class="ag-badge er">入構規制</span>' : ''}
-              ${isMine ? '<span class="ag-badge me">参加予定</span>' : ''}
+              ${isMine ? `<span class="ag-badge me">${dl ? '対象' : '参加予定'}</span>` : ''}
             </div>
             <div class="ag-metas">
               ${series ? `<div class="ag-meta ag-fix"><i class="${series.icon}"></i><span>${escapeHtml(series.label)}</span></div>` : ''}
+              ${dl && dl.item ? `<div class="ag-meta"><i class="fa-regular fa-file-lines"></i><span>${escapeHtml(dl.item)}</span></div>` : ''}
+              ${dl && dl.where ? `<div class="ag-meta"><i class="fa-solid fa-inbox"></i><span>${escapeHtml(dl.where)}</span></div>` : ''}
               ${loc ? `<div class="ag-meta ag-loc"><i class="fa-solid fa-location-dot"></i><span>${escapeHtml(loc)}</span></div>` : ''}
               ${ev.participants && ev.participants.length ? `<div class="ag-meta ag-names"><i class="fa-solid fa-user-group"></i><span>${agendaNamesHtml_(ev.participants, myName)}</span></div>` : ''}
+              ${dl && eventNotifyLabel_(dl) ? `<div class="ag-meta ag-fix"><i class="fa-regular fa-bell"></i><span>${escapeHtml(eventNotifyLabel_(dl))}</span></div>` : ''}
             </div>
             ${ev.note ? `<div class="ag-note">${escapeHtml(ev.note)}</div>` : ''}
             <div class="ag-actions">
@@ -16710,6 +16785,8 @@
       renderEventMultiDates_();
       document.getElementById('eventDateEnd').value = '';
       document.getElementById('eventStartTime').value = '';
+      document.getElementById('eventEndTime').value = '';
+      setEventDeadlineForm_(null);
       document.getElementById('eventLocation').value = '';
       document.getElementById('eventDate').value = ymdDash(new Date());
       document.getElementById('eventMultiDateInput').value = ymdDash(new Date());
@@ -16724,6 +16801,8 @@
         document.getElementById('eventNote').value = prefill.note || '';
         document.getElementById('eventLocation').value = prefill.location || '';
         document.getElementById('eventStartTime').value = formatStartTimeDisplay(prefill.startTime) || '';
+        document.getElementById('eventEndTime').value = formatStartTimeDisplay(prefill.endTime) || '';
+        setEventDeadlineForm_(prefill.deadline);
         setEventColor_(prefill.color);
         if (erCb) erCb.checked = prefill.kind === 'entryRestriction';
       }
@@ -16768,6 +16847,8 @@
       document.getElementById('eventLocation').value = ev.location != null ? String(ev.location) : '';
       setEventColor_(ev.color);
       document.getElementById('eventStartTime').value = formatStartTimeDisplay(ev.startTime) || '';
+      document.getElementById('eventEndTime').value = formatStartTimeDisplay(ev.endTime) || '';
+      setEventDeadlineForm_(ev.deadline);
       const erCb2 = document.getElementById('eventIsEntryRestriction');
       if (erCb2) erCb2.checked = ev.kind === 'entryRestriction';
       toggleEventEntryKind();
@@ -16781,14 +16862,17 @@
       let name = document.getElementById('eventName').value.trim();
       const isEr = document.getElementById('eventIsEntryRestriction') && document.getElementById('eventIsEntryRestriction').checked;
       if (isEr && !name) name = '入構規制日';
+      const isDl = !isEr && document.getElementById('eventColor').value === EVENT_DEADLINE_COLOR_;
       return {
         name: name,
         color: isEr ? '#e53e3e' : document.getElementById('eventColor').value,
         note: (document.getElementById('eventNote').value || '').trim(),
         startTime: (document.getElementById('eventStartTime').value || '').trim(),
+        endTime: isDl ? '' : (document.getElementById('eventEndTime').value || '').trim(),
         location: (document.getElementById('eventLocation').value || '').trim(),
         participants: getPickerSelection(document.getElementById('eventParticipantsCheckbox')),
-        kind: isEr ? 'entryRestriction' : ''
+        kind: isEr ? 'entryRestriction' : '',
+        deadline: isDl ? readEventDeadlineForm_() : null
       };
     }
     
@@ -19040,8 +19124,10 @@
         item(MC_COLORS.sem, escapeHtml(s.type), s.startTime ? escapeHtml(formatStartTimeDisplay(s.startTime)) + '〜' : '',
           [s.location ? ['fa-solid fa-location-dot', escapeHtml(s.location)] : null, ['fa-solid fa-person-chalkboard', who]]);
       });
-      info.events.forEach(e => item(eventColor_(e.color), escapeHtml(e.name), e.startTime ? escapeHtml(formatStartTimeDisplay(e.startTime)) + '〜' : '終日',
-        [e.location ? ['fa-solid fa-location-dot', escapeHtml(e.location)] : null,
+      info.events.forEach(e => item(eventColor_(e.color), escapeHtml(e.name), escapeHtml(eventTimeLabel_(e)) || '終日',
+        [e.deadline && e.deadline.item ? ['fa-regular fa-file-lines', escapeHtml(e.deadline.item)] : null,
+         e.deadline && e.deadline.where ? ['fa-solid fa-inbox', escapeHtml(e.deadline.where)] : null,
+         e.location ? ['fa-solid fa-location-dot', escapeHtml(e.location)] : null,
          (e.participants || []).length ? ['fa-solid fa-user-group', names(e.participants)] : null,
          e.note ? ['fa-regular fa-note-sticky', escapeHtml(e.note)] : null]));
       info.ers.forEach(er => item(MC_COLORS.er, '入構規制', '終日', [['fa-solid fa-id-card', escapeHtml(er.name || '入構規制日') + '（許可証が必要）']]));
