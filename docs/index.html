@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- 版の印（scripts/stamp-build.py で更新）。公開中の版と違えば、アプリが自分で読み込み直す -->
-  <meta name="app-build" content="20261116-105956">
+  <meta name="app-build" content="20261119-091457">
   <title>栄制スケジュール管理</title>
   <meta name="theme-color" content="#5b9bad">
   <meta name="description" content="シフト・ゼミ・イベント・日程調整の管理">
@@ -55,7 +55,7 @@
       --bg: #fef9f3;
       --card: #ffffff;
       --text: #5a5a5a;
-      --text-light: #999999;
+      --text-light: #737373; /* 白地で 4.5:1 以上（補足・凡例・件数が読めるように） */
       --border: #e8e8e8;
       --accent-ng: #ff9aa2;
       --accent-feed-ng: #ffcc99;
@@ -1502,6 +1502,42 @@
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
       transform: translateY(-1px);
     }
+    /* スマホ：見た目はそのままで、押せる範囲を 40px 以上に広げる（隣を押し間違えないように） */
+    @media (max-width: 767px) {
+      .btn.btn-xs, .link-btn, .info-tip, .g-del-btn, .ck-remove, .sheet-close { position: relative; }
+      .btn.btn-xs:not(.is-busy)::after, .link-btn:not(.is-busy)::after, .info-tip::after, .g-del-btn::after, .ck-remove::after, .sheet-close:not(.is-busy)::after {
+        content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 40px); height: max(100%, 40px); transform: translate(-50%, -50%);
+      }
+    }
+    /* メインのタブ：キーボードで選んだときの枠 */
+    .tabs .tab:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
+    /* オフラインの帯（画面の下。保存できないことがわかるように） */
+    #offlineBar { position: fixed; left: 50%; bottom: calc(12px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 10095;
+      display: none; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; background: #2c3a40; color: #fff; font-size: 13px; font-weight: 700; }
+    #offlineBar.show { display: inline-flex; }
+    /* 入力エラーの欄（赤い枠と、欄の下の短い文） */
+    .field-error { border-color: #d64545 !important; outline: none; }
+    .field-error-msg { margin: 4px 2px 0; font-size: 12px; font-weight: 700; color: #c43d3d; }
+    /* 代理入力の NG カレンダー */
+    .pn-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .pn-wd { text-align: center; font-size: 11.5px; color: var(--text-light); padding: 2px 0; }
+    .pn-wd.sun { color: #c83f3f; } .pn-wd.sat { color: #2f6fb5; }
+    .pn-day { min-height: 44px; border: 1px solid #e3e6e8; border-radius: 8px; background: #fff; font: inherit; font-size: 14px; color: var(--text); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
+    .pn-day small { font-size: 9.5px; font-weight: 700; }
+    .pn-day.full { background: #e74c3c; border-color: #e74c3c; color: #fff; }
+    .pn-day.feed { background: #fbe3e1; border: 2px solid #d9534f; color: #b13b33; }
+    .pn-sw { display: inline-block; width: 14px; height: 12px; border-radius: 4px; }
+    .pn-sw.full { background: #e74c3c; } .pn-sw.feed { background: #fbe3e1; border: 2px solid #d9534f; }
+    .clean-days .seg-tab { flex: 1 1 0; min-width: 0; }
+    .unsaved-chip { margin-left: 8px; padding: 1px 7px; border-radius: 999px; background: #fff; color: #8a6d1f; font-size: 11.5px; font-weight: 700; }
+    .sw-consec { font-size: 11px; color: #8a6d1f; border: 1px solid #e6cf8e; border-radius: 6px; padding: 0 4px; margin-left: 2px; }
+    /* 影・浮く動きは使わない（平らなボタン） */
+    .confirm-modal-btn, .confirm-modal-btn:hover,
+    .btn, .btn:hover { box-shadow: none !important; transform: none !important; }
+    /* 消える操作は赤（文字は白で読める濃さ） */
+    .confirm-modal-btn-ok.danger { background: #d64545; }
+    .confirm-modal-btn-ok.danger:hover { background: #bf3a3a; }
+    .confirm-modal-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
     
     /* 下書き作成後の警告結果モーダル（PC向け・幅広） */
     .draft-warning-result-overlay {
@@ -3190,6 +3226,33 @@
     /* 作成 */
     .poll-builder { border: 1px solid #e3e8eb; border-radius: 14px; padding: 14px; margin-bottom: 18px; background: #fbfcfc; }
     .poll-builder-title { font-weight: 700; margin-bottom: 10px; }
+    /* 候補づくりの手順：1 日付 → 2 時間 → 3 追加。次に触る所の番号を塗り、済んだ所は印に */
+    .pb-step .form-label { display: flex; align-items: center; gap: 8px; }
+    .pb-num { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid #c5d3d9; color: #8b9aa1; font-size: 11px; font-weight: 700; flex: 0 0 auto; transition: background .2s, border-color .2s, color .2s, transform .25s; }
+    .pb-hint { font-size: 11px; font-weight: 500; color: var(--text-light); margin-left: auto; }
+    .pb-step.is-next .pb-num { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; transform: scale(1.12); }
+    .pb-step.is-done:not(.is-next) .pb-num { background: #e7f3f6; border-color: #e7f3f6; color: transparent; position: relative; }
+    .pb-step.is-done:not(.is-next) .pb-num::after { content: ''; position: absolute; width: 8px; height: 4px; border: solid var(--primary-dark); border-width: 0 0 2px 2px; transform: translate(0, -1px) rotate(-45deg); }
+    .pb-step.is-next .form-input { border-color: var(--primary); }
+    .pb-make { margin-top: 4px; }
+    .pb-pending { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px dashed #d6e2e7; }
+    .pb-pending-head { display: flex; align-items: baseline; gap: 6px; font-size: 12px; color: var(--text-light); font-weight: 700; }
+    .pb-pending-head b { color: var(--primary-dark); font-size: 13px; }
+    .poll-option-item.pb-ghost { border-style: dashed; border-color: #b9d3dc; background: #f6fafb; }
+    .pb-ghost.is-dup { opacity: .55; }
+    .pb-ghost-need { margin-left: auto; font-size: 12px; font-weight: 700; color: #4b5a61; }
+    .pb-ghost-tag { font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: #eef1f2; color: #8b9aa1; margin-left: 6px; }
+    .pb-ghost-need + .pb-ghost-tag { margin-left: 6px; }
+    .pb-ghost > .poll-answer-time + .pb-ghost-tag { margin-left: auto; }
+    .pb-ghost-tag.new { background: var(--primary-dark); color: #fff; }
+    .pb-pending-more { font-size: 12px; color: var(--text-light); padding-left: 4px; }
+    .pb-preview { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 0; margin: 0 0 8px; font-size: 13px; font-weight: 700; color: #2c3a40; }
+    .pb-preview:empty { display: none; }
+    .pb-preview i { font-size: 10px; color: var(--text-light); }
+    #pollMakeOptionsBtn:disabled { background: #e9eef0; border-color: #e9eef0; color: #8b9aa1; cursor: default; }
+    .pb-step.is-next #pollMakeOptionsBtn { animation: pbNudge 1.6s ease-in-out 2; }
+    @keyframes pbNudge { 0%, 100% { transform: none; } 50% { transform: translateY(-2px); } }
+    @media (prefers-reduced-motion: reduce) { .pb-step.is-next #pollMakeOptionsBtn, .pb-num { animation: none; transition: none; } }
     .poll-builder .other-input span { flex: 0 0 auto; color: #8b949a; }
     .poll-options-head { display: flex; justify-content: space-between; align-items: center; margin: 14px 0 6px; font-size: 13px; font-weight: 700; color: #55626a; }
     .poll-option-list { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
@@ -3209,7 +3272,7 @@
     .need-step { display: inline-flex; align-items: center; border: 1.5px solid var(--border); border-radius: 9px; background: #fff; overflow: hidden; }
     .need-step button { width: 32px; height: 32px; border: none; background: transparent; color: var(--primary-dark); cursor: pointer; font-size: 12px; }
     .need-step button:hover { background: #f1f8fa; }
-    .need-step span { min-width: 26px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; color: #2c3a40; }
+    .need-step span { min-width: 26px; padding: 0 2px; white-space: nowrap; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; color: #2c3a40; }
     .need-step.sm button { width: 26px; height: 26px; font-size: 10.5px; }
     .need-step.sm span { min-width: 20px; font-size: 13px; }
     .need-unit { font-size: 12.5px; color: var(--text-light); }
@@ -3843,7 +3906,7 @@
     .semrem-preview-wrap { margin-top: 18px; }
     .semrem-preview-label { font-size: 12.5px; font-weight: 700; color: var(--text-light); margin-bottom: 6px; }
     .semrem-preview-label span { font-weight: 500; margin-left: 4px; }
-    .semrem-del { flex: 0 0 52px !important; color: var(--danger-dark); border-color: #f3c3c8; }
+    .semrem-del { flex: 0 0 auto !important; padding-left: 14px; padding-right: 14px; }
 
     /* Teams のカードに似せたプレビュー */
     .teams-preview {
@@ -3910,7 +3973,7 @@
       border: none;
       border-radius: 50%;
       background: transparent;
-      color: #a3b0b6;
+      color: #7b8a91;
       font-size: 14px;
       line-height: 1;
       vertical-align: middle;
@@ -4444,6 +4507,18 @@
     #member-form .cell-foot .ng-icon { white-space: nowrap; letter-spacing: -0.02em; }
     #member-form .cal-day.selected-full .clean-mark,
     #member-form .cal-day.selected-feed-ng .clean-mark { color: #fff; opacity: 0.85; }
+
+    /* 色の意味：橙は「餌番（担当）」なので、餌番 NG は NG の赤の系統（淡い赤＋赤の枠）。完全 NG は濃い赤で塗る */
+    .cal-day.selected-full { box-shadow: none; }
+    .cal-day.selected-feed-ng { background-color: #fbe3e1; border: 2px solid #d9534f !important; box-shadow: none; }
+    .cal-day.selected-feed-ng .day-num,
+    .cal-day.selected-feed-ng .ng-icon,
+    #member-form .cal-day.selected-feed-ng .clean-mark { color: #b13b33; }
+    .sf-pen.feed .sf-swatch { background: #fbe3e1; border: 2px solid #d9534f; }
+    .sf-pen.ok .sf-swatch { background: #fff; border: 2px solid #3f9b6b; }
+    .sf-cf-day.feed { background: #fbe3e1; color: #b13b33; }
+    .ds-bar .feed { background: #eba5a1; }
+    .ds-nums .feed b { color: #b13b33; }
 
     /* マスの大きさに合わせて、数字・曜日・NG・ほうきも大きくする（カレンダーの幅が基準）
        幅 300px 前後は今までどおり、450px で数字が約 21px、上限 24px。狭いスマホの指定（下）はそのまま優先 */
@@ -5486,7 +5561,6 @@
     <div class="loading-content">
       <i class="fa-solid fa-spinner fa-spin fa-3x" style="color: var(--primary); margin-bottom: 20px;"></i>
       <div style="font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 8px;">読み込み中…</div>
-      <div style="font-size: 14px; color: var(--text-light);">しばらくお待ちください</div>
     </div>
   </div>
   
@@ -5716,6 +5790,10 @@
         <div class="sc-panel" data-step="publish" hidden>
           <div class="data-list">
             <div class="data-row">
+              <div class="data-name">メンバーに公開<button type="button" class="info-tip" data-tip="下書きを作った月は、公開するまでメンバーのカレンダー・毎日の通知・交代に出ません。Teams の確定通知でも公開されます" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button> <span id="scPublishState" class="sc-chip"></span></div>
+              <button type="button" class="btn btn-outline btn-xs" id="scPublishBtn" onclick="togglePublishShift_()"><i class="fa-solid fa-eye"></i> 公開</button>
+            </div>
+            <div class="data-row">
               <div class="data-name">担当回数に反映<button type="button" class="info-tip" data-tip="確定したシフトから、全員の餌・掃除の累計回数を数え直します。何度実行しても同じ結果になります" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></div>
               <button type="button" class="btn btn-outline btn-xs" onclick="runConfirm()"><i class="fa-solid fa-calculator"></i> 反映</button>
             </div>
@@ -5759,6 +5837,7 @@
           <button type="button" class="seg-tab active" data-f="all" onclick="setMemberFilter('all')">すべて</button>
           <button type="button" class="seg-tab" data-f="todo" onclick="setMemberFilter('todo')">未提出<span class="seg-count" id="memberTodoCount"></span></button>
           <button type="button" class="seg-tab" data-f="done" onclick="setMemberFilter('done')">提出済<span class="seg-count muted" id="memberDoneCount"></span></button>
+          <button type="button" class="seg-tab" data-f="grad" onclick="setMemberFilter('grad')">卒業<span class="seg-count muted" id="memberGradCount"></span></button>
         </div>
         <div id="memberList"></div>
         <details id="memberDayStatusSection" class="day-status" data-remember="day-status" style="display: none;">
@@ -5882,18 +5961,25 @@
           <i class="fa-solid fa-gear"></i> シフト生成設定
         </div>
         <div class="form-group">
-          <label class="form-label">掃除を行う曜日</label>
-          <select id="cleanDay" class="form-select">
-            <option value="月曜日">月曜日</option>
-            <option value="火曜日">火曜日</option>
-            <option value="水曜日">水曜日</option>
-            <option value="木曜日" selected>木曜日</option>
-            <option value="金曜日">金曜日</option>
-          </select>
+          <label class="form-label">掃除を行う曜日<button type="button" class="info-tip" data-tip="複数選べます（週 2 回など）" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></label>
+          <div class="seg-tabs small clean-days" id="cleanDayPick" role="group" aria-label="掃除を行う曜日">
+            <button type="button" class="seg-tab" data-v="月曜日" aria-pressed="false">月</button>
+            <button type="button" class="seg-tab" data-v="火曜日" aria-pressed="false">火</button>
+            <button type="button" class="seg-tab" data-v="水曜日" aria-pressed="false">水</button>
+            <button type="button" class="seg-tab active" data-v="木曜日" aria-pressed="true">木</button>
+            <button type="button" class="seg-tab" data-v="金曜日" aria-pressed="false">金</button>
+            <button type="button" class="seg-tab" data-v="土曜日" aria-pressed="false">土</button>
+            <button type="button" class="seg-tab" data-v="日曜日" aria-pressed="false">日</button>
+          </div>
+          <input type="hidden" id="cleanDay" value="木曜日">
         </div>
         <div class="form-group">
           <label class="form-label">掃除人数</label>
           <input type="number" id="cleanCount" class="form-input" value="6" min="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">掃除日の鶏班の最低人数<button type="button" class="info-tip" data-tip="下書きと交代で守る人数。鶏班が少ない時期は下げます" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></label>
+          <input type="number" id="cleanChickenMin" class="form-input" value="2" min="0" max="20">
         </div>
         <label class="set-row">
           <span class="set-name">祝日は掃除なし<button type="button" class="info-tip" data-tip="臨時掃除を設定した日は除きます" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></span>
@@ -5970,11 +6056,11 @@
             <button type="button" class="btn btn-outline btn-xs" onclick="openGradeUpdate()"><i class="fa-solid fa-graduation-cap"></i> 開く</button>
           </div>
           <div class="data-row">
-            <div class="data-name">NG リストの全消去<button type="button" class="info-tip" data-tip="全員が提出した NG 日をすべて消去します。取り消しできません" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></div>
-            <button type="button" class="btn btn-outline btn-xs is-danger" onclick="clearNGs()"><i class="fa-regular fa-trash-can"></i> 全消去</button>
+            <div class="data-name">過ぎた月の NG の消去<button type="button" class="info-tip" data-tip="今月より前の NG を消します。今月以降の NG と提出の記録は残ります。取り消しできません" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></div>
+            <button type="button" class="btn btn-outline btn-xs is-danger" onclick="clearNGs()"><i class="fa-regular fa-trash-can"></i> 消去</button>
           </div>
           <div class="data-row">
-            <div class="data-name">担当回数のリセット<button type="button" class="info-tip" data-tip="全員の餌・掃除の累計回数を 0 に戻します。取り消しできません" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></div>
+            <div class="data-name">担当回数のリセット<button type="button" class="info-tip" data-tip="今日を起点に、全員の餌・掃除の累計回数を 0 から数え直します。下書きの並び順も今日より前の担当を数えません" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></div>
             <button type="button" class="btn btn-outline btn-xs is-danger" onclick="resetCounts()"><i class="fa-solid fa-rotate-left"></i> リセット</button>
           </div>
         </div>
@@ -6193,7 +6279,6 @@
         <div class="loading-content">
           <i class="fa-solid fa-spinner fa-spin fa-3x" style="color: var(--primary); margin-bottom: 20px;"></i>
           <div style="font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 8px;">読み込み中…</div>
-          <div style="font-size: 14px; color: var(--text-light);">しばらくお待ちください</div>
         </div>
       </div>
       
@@ -6251,7 +6336,6 @@
         <div class="loading-content">
           <i class="fa-solid fa-spinner fa-spin fa-3x" style="color: var(--primary); margin-bottom: 20px;"></i>
           <div style="font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 8px;">読み込み中…</div>
-          <div style="font-size: 14px; color: var(--text-light);">しばらくお待ちください</div>
         </div>
       </div>
       
@@ -6334,7 +6418,7 @@
         <div class="sheet-head-title" id="seminarModalTitle">ゼミを追加</div>
       </div>
       <div class="sheet-body">
-      <button type="button" class="link-btn add-bulk-link" onclick="closeSeminarModal(); showBulkModal('seminar')"><i class="fa-solid fa-repeat"></i> 繰り返し・表でまとめて追加</button>
+      <button type="button" class="link-btn add-bulk-link" onclick="openBulkFromSeminar_()"><i class="fa-solid fa-repeat"></i> 繰り返し・表でまとめて追加</button>
       <div class="template-bar">
         <select id="seminarTemplateSelect" class="form-select" onchange="applyTemplate('seminar')" aria-label="テンプレートから入力">
           <option value="">テンプレートから入力…</option>
@@ -6856,7 +6940,7 @@
         </div>
       </div>
       <div class="sheet-foot">
-        <button type="button" class="btn btn-outline semrem-del" id="semremDeleteBtn" onclick="deleteSemremRule()" aria-label="削除"><i class="fa-regular fa-trash-can"></i></button>
+        <button type="button" class="btn btn-outline is-danger semrem-del" id="semremDeleteBtn" onclick="deleteSemremRule()"><i class="fa-regular fa-trash-can"></i> 削除</button>
         <button type="button" class="btn btn-outline" onclick="closeSemremEditor()">キャンセル</button>
         <button type="button" class="btn btn-primary" id="semremSaveBtn" onclick="saveSemremRule()"><i class="fa-solid fa-check"></i> 保存</button>
       </div>
@@ -6914,25 +6998,25 @@
         <div class="pe-step" data-step="1" hidden>
         <div class="poll-builder">
           <div class="poll-builder-title">候補日時</div>
-          <div class="form-group">
-            <label class="form-label">① 日付</label>
+          <div class="form-group pb-step" id="pollStepDate">
+            <label class="form-label"><span class="pb-num">1</span>日付<span class="pb-hint">複数の日は「＋」で並べる</span></label>
             <div class="other-input" style="margin-top: 0;">
-              <input type="date" id="pollDateInput" class="form-input">
-              <button type="button" class="btn btn-outline btn-xs" onclick="addPollDate()"><i class="fa-solid fa-plus"></i> 追加</button>
+              <input type="date" id="pollDateInput" class="form-input" oninput="updatePollGuide_()" onchange="updatePollGuide_()">
+              <button type="button" class="btn btn-outline btn-xs" onclick="addPollDate()" aria-label="日付を並べる"><i class="fa-solid fa-plus"></i></button>
             </div>
             <div id="pollDateChips" class="chip-row"></div>
           </div>
-          <div class="form-group">
-            <label class="form-label">② 時間</label>
+          <div class="form-group pb-step" id="pollStepTime">
+            <label class="form-label"><span class="pb-num">2</span>時間<span class="pb-hint">複数の時間は「＋」で並べる</span></label>
             <div class="seg-tabs small" id="pollTimeMode">
               <button type="button" class="seg-tab active" data-mode="time" onclick="setPollTimeMode('time')">時間を指定</button>
               <button type="button" class="seg-tab" data-mode="allday" onclick="setPollTimeMode('allday')">終日</button>
             </div>
             <div id="pollTimeInputs">
               <div class="other-input" style="margin-top: 0;">
-                <input type="time" id="pollTimeStart" class="form-input" value="18:00" aria-label="開始">
+                <input type="time" id="pollTimeStart" class="form-input" value="18:00" aria-label="開始" oninput="updatePollGuide_()">
                 <span>〜</span>
-                <input type="time" id="pollTimeEnd" class="form-input" aria-label="終了（任意）">
+                <input type="time" id="pollTimeEnd" class="form-input" aria-label="終了（任意）" oninput="updatePollGuide_()">
                 <button type="button" class="btn btn-outline btn-xs" onclick="addPollTime()"><i class="fa-solid fa-plus"></i></button>
               </div>
               <div class="poll-split">
@@ -6958,9 +7042,14 @@
           </div>
           <div class="form-group poll-place-group">
             <label class="set-row compact"><span class="set-name">回ごとに場所を指定<button type="button" class="info-tip" data-tip="候補ごとに場所を変えられます。空欄の候補は上の「場所」を使います" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></span><span class="sw"><input type="checkbox" id="pollOptionPlaces" onchange="togglePollOptionPlaces(this.checked)"><span></span></span></label>
-            <input type="text" id="pollOptionPlaceInput" class="form-input" maxlength="100" placeholder="③ 追加する候補の場所" hidden>
+            <input type="text" id="pollOptionPlaceInput" class="form-input" maxlength="100" placeholder="追加する候補の場所" oninput="updatePollGuide_()" hidden>
           </div>
-          <button type="button" class="btn btn-primary btn-block" id="pollMakeOptionsBtn" onclick="makePollOptions()">候補に追加</button>
+          <div class="pb-step pb-make" id="pollStepMake">
+            <div class="form-label"><span class="pb-num">3</span>候補に追加</div>
+            <div class="pb-preview" id="pollMakePreview"></div>
+            <button type="button" class="btn btn-primary btn-block" id="pollMakeOptionsBtn" onclick="makePollOptions()">候補に追加</button>
+          </div>
+          <div id="pollPendingList" class="pb-pending" hidden></div>
           <div class="poll-options-head">
             <span id="pollOptionCount">候補 0 件</span>
             <button type="button" class="link-btn danger" onclick="clearPollOptions()">すべて消去</button>
@@ -7110,6 +7199,13 @@
           <button type="button" class="link-btn danger" id="editMemberRevoke" onclick="revokeLoginsForEditing()">ログインを解除</button>
         </span>
       </div>
+      <div class="mem-login">
+        <span class="mem-login-name">NG 日<button type="button" class="info-tip" data-tip="ログインできない人・口頭で伝えてきた人の NG を代わりに入力します。受付の終了や募集の対象月に関係なく入力できます" aria-label="説明" aria-expanded="false"><i class="fa-solid fa-circle-info"></i></button></span>
+        <span class="mem-login-state"></span>
+        <span class="mem-login-btns">
+          <button type="button" class="link-btn" onclick="openProxyNg_()"><i class="fa-regular fa-calendar-xmark"></i> 代理で入力</button>
+        </span>
+      </div>
       </div>
       <div class="sheet-foot">
         <button type="button" class="link-btn danger mem-graduate" onclick="graduateEditingMember()">卒業にする</button>
@@ -7120,14 +7216,14 @@
   </div>
   
   <!-- モーダル（イベント追加用） -->
-  <div class="modal-overlay sheet" id="eventModal" onclick="if(event.target===this) closeEventModal()">
+  <div class="modal-overlay sheet" id="eventModal">
     <div class="modal-box sheet-box sheet-md" role="dialog" aria-modal="true" aria-labelledby="eventModalTitle" onclick="event.stopPropagation()">
       <div class="sheet-head">
         <button type="button" class="sheet-close" onclick="closeEventModal()" aria-label="閉じる"><i class="fa-solid fa-xmark"></i></button>
         <div class="sheet-head-title" id="eventModalTitle">イベントを追加</div>
       </div>
       <div class="sheet-body">
-      <button type="button" class="link-btn add-bulk-link" onclick="closeEventModal(); showBulkModal('event')"><i class="fa-solid fa-repeat"></i> 繰り返し・表でまとめて追加</button>
+      <button type="button" class="link-btn add-bulk-link" onclick="openBulkFromEvent_()"><i class="fa-solid fa-repeat"></i> 繰り返し・表でまとめて追加</button>
       <div class="template-bar">
         <select id="eventTemplateSelect" class="form-select" onchange="applyTemplate('event')" aria-label="テンプレートから入力">
           <option value="">テンプレートから入力…</option>
@@ -7274,33 +7370,185 @@
     // ==============================================
     // カスタム確認モーダル
     // ==============================================
-    function showConfirmModal(message, title = '確認') {
+    /**
+     * 入力エラー：欄に赤い枠と短い文を出し、そこへスクロールしてフォーカスする（トーストも出す）。
+     * 入力し直すと消える
+     */
+    function fieldError_(idOrEl, msg, short) {
+      const el = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
+      showToast(msg, 'error');
+      if (!el) return;
+      el.classList.add('field-error');
+      el.setAttribute('aria-invalid', 'true');
+      let note = el.nextElementSibling && el.nextElementSibling.classList && el.nextElementSibling.classList.contains('field-error-msg') ? el.nextElementSibling : null;
+      if (!note) {
+        note = document.createElement('div');
+        note.className = 'field-error-msg';
+        el.insertAdjacentElement('afterend', note);
+      }
+      note.textContent = short || '必須';
+      const clear = () => {
+        el.classList.remove('field-error');
+        el.removeAttribute('aria-invalid');
+        if (note && note.parentNode) note.remove();
+        el.removeEventListener('input', clear);
+        el.removeEventListener('change', clear);
+      };
+      el.addEventListener('input', clear);
+      el.addEventListener('change', clear);
+      try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {}
+      try { el.focus({ preventScroll: true }); } catch (_) {}
+    }
+
+    // オフラインの間は帯を出す（保存・読み込みができない）
+    (function offlineBar_() {
+      const bar = document.createElement('div');
+      bar.id = 'offlineBar';
+      bar.setAttribute('role', 'status');
+      bar.innerHTML = '<i class="fa-solid fa-wifi"></i> オフライン';
+      document.body.appendChild(bar);
+      const upd = () => bar.classList.toggle('show', navigator.onLine === false);
+      window.addEventListener('online', () => { upd(); showToast('オンラインに戻りました', 'success'); });
+      window.addEventListener('offline', upd);
+      upd();
+    })();
+
+    // メインのタブ：Tab キーで選べて、Enter・スペースで切り替え。読み上げでもタブとして扱う
+    (function tabsA11y_() {
+      document.querySelectorAll('.tabs').forEach(list => {
+        list.setAttribute('role', 'tablist');
+        list.querySelectorAll('.tab').forEach(t => {
+          t.setAttribute('role', 'tab');
+          t.setAttribute('tabindex', '0');
+          t.setAttribute('aria-selected', t.classList.contains('active') ? 'true' : 'false');
+          t.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t.click(); }
+          });
+        });
+        new MutationObserver(() => list.querySelectorAll('.tab').forEach(t => {
+          const v = t.classList.contains('active') ? 'true' : 'false';
+          if (t.getAttribute('aria-selected') !== v) t.setAttribute('aria-selected', v);
+        })).observe(list, { subtree: true, attributes: true, attributeFilter: ['class'] });
+      });
+    })();
+
+    // ==============================================
+    // シート・ダイアログの共通の動き
+    // ・スマホの「戻る」（ブラウザの戻る）で、いちばん上のシートを閉じる（アプリやページから抜けない）
+    // ・入力したシートは、外側を触っても閉じない。× で閉じるときは破棄の確認を出す
+    // ==============================================
+    (function sheetNav_() {
+      const SEL = '.modal-overlay.show, .confirm-modal-overlay.show, .draft-warning-result-overlay';
+      const openList = () => [...document.querySelectorAll(SEL)].filter(el => el.isConnected);
+      const topOf = list => list.reduce((best, el) => {
+        const z = parseInt(getComputedStyle(el).zIndex, 10) || 0;
+        return !best || z >= best.z ? { el, z } : best;
+      }, null);
+      let depth = 0;   // 開いているシートの分だけ積んだ履歴の数
+      let ignore = 0;  // こちらで戻した分の popstate は無視する
+      let wasOpen = new Set();
+      const sync = () => {
+        const list = openList();
+        list.forEach(el => {
+          if (wasOpen.has(el)) return;
+          delete el.dataset.dirty; // 開き直したら未入力に
+          el.querySelectorAll('.field-error').forEach(f => { f.classList.remove('field-error'); f.removeAttribute('aria-invalid'); });
+          el.querySelectorAll('.field-error-msg').forEach(n => n.remove());
+        });
+        wasOpen = new Set(list);
+        const n = list.length;
+        try {
+          if (n > depth) { while (depth < n) { history.pushState({ sheet: depth + 1 }, ''); depth++; } }
+          else if (n < depth) { const k = depth - n; depth = n; ignore += 1; history.go(-k); } // go(-k) の通知は 1 回だけ
+        } catch (_) {}
+      };
+      // requestAnimationFrame は画面が裏にあると止まるので、タイマーでまとめる
+      let pending = 0;
+      new MutationObserver(() => { if (!pending) pending = setTimeout(() => { pending = 0; sync(); }, 0); })
+        .observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+      window.addEventListener('popstate', () => {
+        if (ignore > 0) { ignore--; return; }
+        if (depth === 0) return;
+        depth--;
+        const top = topOf(openList());
+        if (!top) return;
+        const el = top.el;
+        const btn = el.querySelector('#confirmModalCancel, #draftWarningResultOk, [data-act="cancel"], [data-act="close"], .sheet-close, .modal-close');
+        if (btn) btn.click();
+        else if (el.id) el.classList.remove('show');
+        else el.remove();
+        setTimeout(sync, 60); // 閉じなかった（破棄をやめた）ときは積み直す
+      });
+
+      const markDirty = e => {
+        const t = e.target;
+        const ov = t && t.closest && t.closest('.modal-overlay.sheet');
+        if (!ov || t.type === 'search' || t.closest('[data-nodirty]')) return;
+        ov.dataset.dirty = '1';
+      };
+      document.addEventListener('input', markDirty, true);
+      document.addEventListener('change', markDirty, true);
+      document.addEventListener('click', async e => {
+        const t = e.target;
+        const ov = t && t.closest && t.closest('.modal-overlay.sheet');
+        if (!ov || ov.dataset.dirty !== '1') return;
+        const isBackdrop = t === ov;
+        const closeBtn = t.closest('.sheet-close, [data-act="close"]');
+        if (!isBackdrop && !closeBtn) return;
+        if (ov.dataset.discardOk === '1') { delete ov.dataset.discardOk; return; }
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (isBackdrop) return; // 入力のあるシートは、外側を触っても閉じない
+        const ok = await showConfirmModal('入力した内容を破棄して閉じますか？', '入力の破棄', { okLabel: '破棄', danger: true });
+        if (!ok) return;
+        delete ov.dataset.dirty;
+        ov.dataset.discardOk = '1';
+        closeBtn.click();
+      }, true);
+    })();
+
+    /**
+     * 確認ダイアログ。opts: { okLabel: 実行ボタンの文言, danger: 赤にする }
+     * okLabel を省くと、題名・本文から「削除」「消去」などを拾って動詞のボタンにする（消える操作は赤）
+     */
+    const CONFIRM_DANGER_WORDS_ = [['削除', '削除'], ['消去', '消去'], ['リセット', 'リセット'], ['卒業', '卒業に'], ['破棄', '破棄'], ['取り消', '取り消す'], ['外す', '外す']];
+    function showConfirmModal(message, title = '確認', opts) {
+      opts = opts || {};
       return new Promise((resolve) => {
         const modal = document.getElementById('confirmModal');
         const titleEl = document.getElementById('confirmModalTitle');
         const messageEl = document.getElementById('confirmModalMessage');
         const okBtn = document.getElementById('confirmModalOk');
         const cancelBtn = document.getElementById('confirmModalCancel');
+        const hit = CONFIRM_DANGER_WORDS_.find(([w]) => String(title).includes(w)) || null;
+        const danger = opts.danger !== undefined ? !!opts.danger : !!hit;
         
         titleEl.textContent = title;
         messageEl.textContent = message;
+        okBtn.textContent = opts.okLabel || (hit ? hit[1] : 'OK');
+        okBtn.classList.toggle('danger', danger);
+        modal.setAttribute('role', 'alertdialog');
+        modal.setAttribute('aria-modal', 'true');
         modal.classList.add('show');
+        const prevFocus = document.activeElement;
+        // 消える操作はキャンセルに、それ以外は実行ボタンにフォーカス
+        setTimeout(() => (danger ? cancelBtn : okBtn).focus(), 30);
         
-        const cleanup = () => {
+        const onKey = e => { if (e.key === 'Escape') { e.preventDefault(); finish(false); } };
+        const onBg = e => { if (e.target === modal) finish(false); };
+        const finish = v => {
           modal.classList.remove('show');
           okBtn.onclick = null;
           cancelBtn.onclick = null;
+          document.removeEventListener('keydown', onKey, true);
+          modal.removeEventListener('click', onBg);
+          try { if (prevFocus && prevFocus.focus) prevFocus.focus(); } catch (_) {}
+          resolve(v);
         };
-        
-        okBtn.onclick = () => {
-          cleanup();
-          resolve(true);
-        };
-        
-        cancelBtn.onclick = () => {
-          cleanup();
-          resolve(false);
-        };
+        document.addEventListener('keydown', onKey, true);
+        modal.addEventListener('click', onBg);
+        okBtn.onclick = () => finish(true);
+        cancelBtn.onclick = () => finish(false);
       });
     }
     
@@ -7317,7 +7565,7 @@
           <div class="draft-warning-result-box" onclick="event.stopPropagation()" style="max-width: 440px;">
             <div class="draft-warning-result-title">Teams にシフト確定を通知</div>
             <p style="font-size: 14px; color: var(--text-light); line-height: 1.5; margin: 0 0 12px 0;">
-              設定を変えたときは、先に「設定を保存」してください。
+              対象：<b style="color: var(--text);">${escapeHtml(confirmTargetMonths_().map(m => parseInt(m.split('-')[1], 10) + '月').join('・'))}</b>（作成対象月）。送れたら、この月をメンバーに公開します。
             </p>
             <label class="set-row compact"><span class="set-name">担当回数に反映</span><span class="sw"><input type="checkbox" id="teamsSchedUpdateCounts" checked><span></span></span></label>
             <label class="set-row compact"><span class="set-name">シフトの受付を締め切る</span><span class="sw"><input type="checkbox" id="teamsSchedCloseForm" checked><span></span></span></label>
@@ -7368,12 +7616,17 @@
       return html2canvasPromise_;
     }
     
-    /** 確定シフト表（作成対象月）を PNG の data URL で取得（Teams 送信用） */
+    /** 確定通知の対象の月（作成対象月。2 か月分ならその 2 か月）。通知の文面・画像・公開する月をこれにそろえる */
+    function confirmTargetMonths_() {
+      const list = getDraftEditTargetMonths();
+      if (list.length) return list;
+      return [(adminBoardMonth_ ? adminBoardMonth_.replace('/', '-') : '') || getCurrentMonth()];
+    }
+    /** 確定シフト表（作成対象月。2 か月分なら両方）を PNG の data URL で取得（Teams 送信用） */
     async function getConfirmedSchedulePngDataUrlForTeams() {
-      const targetMonth = normalizeTargetMonth(document.getElementById('adminTargetMonth')?.value || '') ||
-        (adminBoardMonth_ ? adminBoardMonth_.replace('/', '-') : '') || getCurrentMonth();
-      const result = await callAPI('getScheduleData', { targetMonth: targetMonth });
-      const canvas = await shiftSheetCanvas_(result, [targetMonth.replace('-', '/')], {});
+      const months = confirmTargetMonths_();
+      const result = await fetchScheduleMonths(months);
+      const canvas = await shiftSheetCanvas_(result, months.map(m => m.replace('-', '/')), {});
       return canvas.toDataURL('image/png');
     }
     
@@ -8217,7 +8470,7 @@
       if (netState.writes > 0 && !el.closest('#busyOverlay')) {
         e.preventDefault();
         e.stopPropagation();
-        showToast('保存中です。終わるまでお待ちください', 'info');
+        showToast('保存中', 'info');
         return;
       }
       lastPressed = { el, t: performance.now() };
@@ -8289,7 +8542,7 @@
           if (netState.writes > 0) document.getElementById('busyOverlay').classList.add('show');
         }, 180);
         netState.slowTimer = setTimeout(() => {
-          if (netState.writes > 0) document.getElementById('busyOverlaySub').textContent = '少し時間がかかっています。このままお待ちください';
+          if (netState.writes > 0) document.getElementById('busyOverlaySub').textContent = '通信に時間がかかっています';
         }, 12000);
       }
       return el;
@@ -8326,8 +8579,8 @@
         });
       } catch (e) {
         const err = new Error(e && e.name === 'AbortError'
-          ? '時間がかかりすぎています。電波の良い場所でもう一度お試しください。'
-          : '通信できませんでした。ネットワーク接続を確認してください。');
+          ? 'タイムアウト'
+          : '通信エラー');
         err.network = true;
         throw err;
       } finally {
@@ -8340,7 +8593,7 @@
       } catch (parseErr) {
         console.error('GAS 応答（JSON でない）:', rawText.slice(0, 500));
         // GAS の混雑・一時エラー時は HTML のエラーページが返る
-        const err = new Error('混み合っています。少し待ってからもう一度お試しください。');
+        const err = new Error('混雑のため処理できませんでした');
         err.network = true;
         throw err;
       }
@@ -8350,13 +8603,29 @@
         throw err;
       }
       if (!result.ok) {
-        const err = new Error(result.error || 'うまくいきませんでした。もう一度お試しください。');
+        const err = new Error(result.error || '処理エラー');
         err.retryable = result.retryable === true;
         err.server = true;
+        err.code = result.code || '';
+        err.data = result;
         err.sessionExpired = result.code === 'SESSION_EXPIRED';
         throw err;
       }
       return result;
+    }
+
+    /**
+     * 画面に出すエラー文。シート名・HTTP の番号・プログラムの例外など裏側の言葉は出さず、短い用語にする
+     * （詳しい内容はコンソールと「エラーの記録」に残る）
+     */
+    function friendlyError_(error, isWrite) {
+      const msg = String((error && error.message) || error || '');
+      if (error && error.network) return '通信エラー';
+      if (/Failed to fetch|NetworkError|Load failed|timeout|タイムアウト/i.test(msg)) return '通信エラー';
+      if (!msg || /シート|sheet|HTTP \d|Exception|TypeError|ReferenceError|RangeError|SyntaxError|undefined|null|is not a function|Cannot read|getRange|Service|Script|Apps Script/i.test(msg)) {
+        return isWrite ? '保存エラー' : '読み込みエラー';
+      }
+      return msg;
     }
 
     /**
@@ -8408,7 +8677,7 @@
             onSessionExpired_();
             throw error;
           }
-          if (!opts.silent) showToast('エラー: ' + (error.message || String(error)), 'error');
+          if (!opts.silent) showToast(friendlyError_(error, isWrite), 'error');
           throw error;
         }
       ).finally(() => {
@@ -8452,7 +8721,9 @@
       deletePoll: ['polls'],
       remindPoll: ['polls'],
       decidePoll: ['polls', 'events', 'calendar'],
-      assignPoll: ['polls', 'events', 'calendar']
+      assignPoll: ['polls', 'events', 'calendar'],
+      publishSchedule: ['calendar', 'admin'],
+      adminSubmitNg: ['admin', 'form']
     };
     const staleData = new Set();
     function markStale(kinds) {
@@ -8636,7 +8907,7 @@
         if (ls) ls.setItem(LOGIN_PENDING_KEY_, JSON.stringify({ id, key: loginState_.pendingKey, at: Date.now(), exp: Date.now() + min * 60000, email: res.email || '', issued: !!res.issued }));
       } catch (_) {}
       if (loginState_.pendingKey) startLoginPolling_();
-      showLoginCodeStep_({ email: res.email, issued: res.issued, min });
+      showLoginCodeStep_({ email: res.email, issued: res.issued, min, linkOnly: !!res.linkOnly });
       startResendCooldown_();
       if (resend && !res.issued) showToast('コードを再送しました', 'success');
     }
@@ -8646,7 +8917,9 @@
       const exp = o.left ? `あと${o.min}分有効` : `${o.min}分間有効`;
       document.getElementById('loginSentTo').innerHTML = o.issued
         ? `管理者が発行したコード<span class="login-sent-exp">あと${o.min}分有効</span>`
-        : `<b>${escapeHtml(o.email || '大学のメール')}</b> に送信<span class="login-sent-exp">${exp}</span>`;
+        : o.linkOnly
+          ? `<b>${escapeHtml(o.email || '大学のメール')}</b> にリンクを送信<span class="login-sent-exp">コード入力は 1 時間停止中・メールのリンクからログイン</span>`
+          : `<b>${escapeHtml(o.email || '大学のメール')}</b> に送信<span class="login-sent-exp">${exp}</span>`;
       document.getElementById('loginCode').value = '';
       document.getElementById('loginOtp').classList.remove('is-error');
       renderOtp_();
@@ -8982,8 +9255,21 @@
       switchView(currentUser.role === 'admin' ? 'member' : 'admin');
     }
 
+    /** 保存していない変更（ログアウト・ページを離れるときに確認する） */
+    function unsavedSummary_() {
+      const parts = [];
+      try { if (currentUser && currentUser.role === 'member' && typeof hasUnsavedNgEdits === 'function' && targetMonthsList.length && hasUnsavedNgEdits()) parts.push('未提出の NG'); } catch (_) {}
+      try { if (currentUser && currentUser.role === 'admin' && typeof draftChangeCount_ === 'function' && draftChangeCount_()) parts.push(`下書きの変更 ${draftChangeCount_()}日分`); } catch (_) {}
+      try { if (typeof cleaningDirty_ !== 'undefined' && cleaningDirty_) parts.push('臨時掃除・掃除中止'); } catch (_) {}
+      try { if (currentUser && currentUser.role === 'admin' && adminConfigDirtyKeys_().length) parts.push('設定'); } catch (_) {}
+      return parts;
+    }
+
     async function handleLogout() {
-      const confirmed = await showConfirmModal('ログアウトしますか？', 'ログアウト確認');
+      const unsaved = unsavedSummary_();
+      const confirmed = await showConfirmModal(unsaved.length
+        ? `保存していない変更があります（${unsaved.join('・')}）。ログアウトすると失われます。`
+        : 'ログアウトしますか？', 'ログアウト確認', { okLabel: 'ログアウト', danger: unsaved.length > 0 });
       if (!confirmed) return;
       if (currentUser && currentUser.token) {
         // サーバー側の鍵も消す（届かなくても、この端末からは消える）
@@ -9319,7 +9605,9 @@
         latest = m ? m[1] : '';
       } catch (_) { return false; }
       if (!latest || latest === APP_BUILD_) return false;
-      if (typeof hasUnsavedNgEdits === 'function' && hasUnsavedNgEdits()) return false;
+      // 保存していない変更（NG・下書き・臨時掃除・設定）があるとき、シートやダイアログを開いているときは読み込み直さない
+      if (unsavedSummary_().length) return false;
+      if (document.querySelector('.modal-overlay.show, .confirm-modal-overlay.show, .draft-warning-result-overlay')) return false;
       // 読み込み直しても古い版が出る（公開の反映待ち）ときは、繰り返さない。立ち上げ画面は、読み込み直した後も続きから動かす
       const ss = safeStorage_('sessionStorage');
       try {
@@ -9820,15 +10108,39 @@
       });
     }
 
+    /** 掃除を行う曜日（複数可）。値は「月曜日、木曜日」の形で hidden の #cleanDay に入れる */
+    const CLEAN_DAY_ORDER_ = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日', '日曜日'];
+    function setCleanDays_(v) {
+      const norm = x => { const t = String(x || '').trim(); return CLEAN_DAY_ORDER_.find(d => d === t || d.charAt(0) === t.charAt(0)) || ''; };
+      const list = String(v || '').split(/[、,，・\s]+/).map(norm).filter(Boolean);
+      const uniq = CLEAN_DAY_ORDER_.filter(d => list.includes(d));
+      document.getElementById('cleanDay').value = uniq.join('、');
+      document.querySelectorAll('#cleanDayPick .seg-tab').forEach(b => {
+        const on = uniq.includes(b.dataset.v);
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    }
+    document.addEventListener('click', e => {
+      const b = e.target.closest && e.target.closest('#cleanDayPick .seg-tab');
+      if (!b || b.disabled) return;
+      const cur = String(document.getElementById('cleanDay').value || '').split('、').filter(Boolean);
+      const next = cur.includes(b.dataset.v) ? cur.filter(x => x !== b.dataset.v) : cur.concat([b.dataset.v]);
+      if (!next.length) { showToast('曜日を 1 つ以上選んでください', 'error'); return; }
+      setCleanDays_(next.join('、'));
+      document.getElementById('cleanDay').dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
     /** 設定を読み込む前に保存すると初期値で上書きしてしまうため、読み込むまで設定の入力と保存を止める */
     function setAdminConfigInputsEnabled_(enabled) {
       const ids = ['adminTargetMonth', 'useSecondMonth', 'recruitMonth', 'useRecruitSecondMonth', 'recruitDeadline', 'formUrl',
-        'shiftAnswerAccepting', 'cleanDay', 'cleanCount', 'b3PairMode', 'skipHolidayCleaning',
+        'shiftAnswerAccepting', 'cleanDay', 'cleanCount', 'cleanChickenMin', 'b3PairMode', 'skipHolidayCleaning',
         'priorityChicken', 'priorityFood', 'priorityB3', 'priorityB4', 'priorityM1', 'priorityM2', 'priorityD1', 'priorityD2', 'priorityD3'];
       ids.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.disabled = !enabled;
       });
+      document.querySelectorAll('#cleanDayPick .seg-tab').forEach(b => { b.disabled = !enabled; });
       document.querySelectorAll('button[onclick="saveAdminConfig()"]').forEach(btn => {
         if (!btn.classList.contains('is-busy')) btn.disabled = !enabled;
       });
@@ -9878,7 +10190,9 @@
         shiftAnswerAcceptingInput.checked = v === undefined || v === '' || v === true || String(v).toUpperCase() === 'TRUE';
         shiftAnswerAcceptingInput.setAttribute('onchange', 'updateMessages()');
       }
-      if (config['掃除曜日']) document.getElementById('cleanDay').value = config['掃除曜日'];
+      if (config['掃除曜日']) setCleanDays_(config['掃除曜日']);
+      const ccm = document.getElementById('cleanChickenMin');
+      if (ccm) ccm.value = (config['掃除日の鶏班最低人数'] === '' || config['掃除日の鶏班最低人数'] == null) ? 2 : config['掃除日の鶏班最低人数'];
       if (config['掃除人数']) document.getElementById('cleanCount').value = config['掃除人数'];
       document.getElementById('b3PairMode').checked = config['B3ペアモード'] === true || String(config['B3ペアモード']).toUpperCase() === 'TRUE';
       const skipHol = document.getElementById('skipHolidayCleaning');
@@ -9894,6 +10208,7 @@
       });
       syncPrioritySegs_();
       adminConfigSnapshot = collectAdminConfig_();
+      setTimeout(updateConfigDirtyUi_, 0);
     }
     
     function populateMembersStatusMonthSelector(config) {
@@ -9933,14 +10248,17 @@
       }
       const daySection = document.getElementById('memberDayStatusSection');
       if (daySection) daySection.style.display = 'none';
+      // 月を続けて切り替えたとき、遅れて届いた前の月の応答で上書きしない
+      const seq = nextLoadSeq('memberList');
       try {
         const result = await callAPI('getAdminData', { adminId: currentUser.id, targetMonth: ym });
         let ngDataForMonth = {};
+        let ngFailed = false;
         let shiftDatesSet = new Set();
         try {
-          const ngRes = await callAPI('getNGData', { adminId: currentUser.id, targetMonth: ym });
+          const ngRes = await callAPI('getNGData', { adminId: currentUser.id, targetMonth: ym }, { silent: true });
           ngDataForMonth = (ngRes && ngRes.ngData) ? ngRes.ngData : {};
-        } catch (_) { /* getNGData 失敗時は空で日別集計表示 */ }
+        } catch (_) { ngFailed = true; /* 「NG なし」として数えると誤った人数になるので、日ごとの状況は出さない */ }
         try {
           const schedRes = await callAPI('getScheduleData', { targetMonth: ym });
           const schedData = (schedRes && schedRes.data) ? schedRes.data : [];
@@ -9949,13 +10267,20 @@
           membersPageCleanDates = new Set(schedData.filter(d => d.isCleanDay && d.dateStr).map(d => d.dateStr));
           membersPageHolidays = (schedRes && schedRes.holidays) ? schedRes.holidays : {};
         } catch (_) { membersPageHolidays = {}; }
+        if (!isLatestLoad('memberList', seq)) return;
         membersList = (result.members || []).filter(m => !m.isGraduated);
-        membersPageNgData = ngDataForMonth;
+        membersPageNgData = ngFailed ? null : ngDataForMonth; // null＝読み込めていない（「NG なし」と区別する）
         membersPageTargetMonth = ym;
         membersPageShiftDates = shiftDatesSet;
         renderMemberList(result.members || [], ym);
-        renderMemberDayStatus(result.members || [], ngDataForMonth, ym);
+        if (ngFailed) {
+          if (daySection) daySection.style.display = 'none';
+          showToast('NG の読み込みエラー（日ごとの状況は表示しません）', 'error');
+        } else {
+          renderMemberDayStatus(result.members || [], ngDataForMonth, ym);
+        }
       } catch (error) {
+        if (!isLatestLoad('memberList', seq)) return;
         console.error('提出状況の読み込みエラー:', error);
         showToast('提出状況の読み込みに失敗しました', 'error');
         if (memberListEl) {
@@ -10030,6 +10355,7 @@
     }
     
     function showDayDetailModal(dateStr) {
+      if (membersPageNgData === null) { showToast('NG の読み込みエラー。再読み込みしてください', 'error'); return; }
       const active = (membersList || []).filter(isShiftMember_);
       const ngData = membersPageNgData || {};
       const isClean = membersPageCleanDates.has(dateStr);
@@ -10077,6 +10403,7 @@
       if (!modal || !titleEl || !bodyEl) return;
       const ym = membersPageTargetMonth;
       if (!ym) return;
+      if (membersPageNgData === null) { showToast('NG の読み込みエラー。再読み込みしてください', 'error'); return; }
       const ngData = membersPageNgData || {};
       const entries = ngData[memberName] || [];
       const fullNgDates = new Set(entries.filter(e => e.type === 'FULL').map(e => e.date));
@@ -10159,6 +10486,16 @@
       const setCount = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = n ? String(n) : ''; };
       setCount('memberTodoCount', todo.length);
       setCount('memberDoneCount', done.length);
+      const grads = (members || []).filter(m => m.isGraduated);
+      setCount('memberGradCount', grads.length);
+      if (memberFilter === 'grad') {
+        container.innerHTML = grads.length ? `<div class="mem-rows">${grads.map(m => `
+            <div class="mem-row inactive">
+              <div class="mem-main"><span class="mem-name">${escapeHtml(m.name)}</span><span class="mem-sub">${escapeHtml(m.grade || '')}${m.team ? '・' + escapeHtml(m.team) : ''}</span></div>
+              <button type="button" class="btn btn-outline btn-xs" onclick="toggleMemberGraduated(${m.row}, false)"><i class="fa-solid fa-rotate-left"></i> 卒業を解除</button>
+            </div>`).join('')}</div>` : '<p class="bulk-empty">卒業した人はいません</p>';
+        return;
+      }
       if (all.length === 0) {
         container.innerHTML = '<p class="bulk-empty">メンバーがいません</p>';
         return;
@@ -10231,7 +10568,7 @@
       if (!info.accepting) { showToast('シフトの受付中ではありません', 'info'); return; }
       if (!info.names.length) { showToast('未提出の人はいません', 'info'); return; }
       if (info.sentToday) { showToast('今日はすでにメールで催促しました（1 日 1 回まで）', 'info'); return; }
-      const ok = await showConfirmModal(`未提出の ${info.names.length} 人に、大学のメールで提出をお願いしますか？\n\n${info.names.join('、')}\n\n同じ対象月には 1 日 1 回まで送れます。`, 'メールで催促');
+      const ok = await showConfirmModal(`未提出の ${info.names.length} 人に、大学のメールで提出をお願いしますか？\n\n${info.names.join('、')}\n\n同じ対象月には 1 日 1 回まで送れます。`, 'メールで催促', { okLabel: '送信' });
       if (!ok) return;
       try {
         const r = await callAPI('remindShiftByEmail', { adminId: currentUser.id }, { overlayMessage: '送信しています…' });
@@ -10255,7 +10592,7 @@
     }
 
     function memberNameByRow_(row) {
-      const m = (membersList || []).find(x => x.row === row);
+      const m = (membersList || []).find(x => x.row === row) || (membersAllCache_ || []).find(x => x.row === row);
       return m ? m.name : '';
     }
     
@@ -10279,10 +10616,10 @@
       }
     }
     
-    async function toggleMemberGraduated(row, isGraduated) {
+    async function toggleMemberGraduated(row, isGraduated, opts) {
       const name = memberNameByRow_(row);
-      if (isGraduated) {
-        const ok = await showConfirmModal(`${name || 'このメンバー'}を「卒業」にしますか？\nログインできなくなり、一覧からも消えます。`, '卒業の確認');
+      if (isGraduated && !(opts && opts.confirmed)) {
+        const ok = await showConfirmModal(`${name || 'このメンバー'}を「卒業」にしますか？\nログインできなくなります。メンバー一覧の「卒業」から戻せます。`, '卒業の確認');
         if (!ok) {
           renderMemberList(membersList, membersPageTargetMonth || '');
           return;
@@ -10290,7 +10627,7 @@
       }
       try {
         await callAPI('toggleMemberStatus', { adminId: currentUser.id, row: row, name: name, isGraduated: isGraduated });
-        showToast(isGraduated ? `${name}を卒業にしました（一覧から非表示になります）` : '卒業状態を解除しました', 'success');
+        showToast(isGraduated ? `${name}を卒業にしました` : `${name}の卒業を解除しました`, 'success');
         await loadAdminData();
       } catch (error) {
         renderMemberList(membersList, membersPageTargetMonth || '');
@@ -10335,11 +10672,108 @@
       fillMemberLoginState_(sid);
     }
     
+    /**
+     * 管理者の代理入力：メンバーの NG を代わりに入れる。
+     * 日を押すたびに「完全NG → 餌番NG → なし」と変わる。保存すると、その月の NG をこの内容で置き換える
+     */
+    async function openProxyNg_() {
+      const m = editingMember_;
+      if (!m) return;
+      const name = m.name;
+      const cfg = adminConfigSnapshot || {};
+      const defYm = String(cfg['募集する対象月'] || (document.getElementById('recruitMonth') || {}).value || '').slice(0, 7) || ymdDash(new Date()).slice(0, 7);
+      const st = { ym: defYm, ng: new Map(), cleanDays: new Set(), loaded: '' };
+      const wrap = document.createElement('div');
+      wrap.className = 'modal-overlay sheet show';
+      wrap.id = 'proxyNgModal';
+      wrap.style.zIndex = '10060';
+      wrap.innerHTML = `
+        <div class="modal-box sheet-box sheet-md" role="dialog" aria-modal="true" aria-labelledby="proxyNgTitle">
+          <div class="sheet-head">
+            <button type="button" class="sheet-close" data-act="close" aria-label="閉じる"><i class="fa-solid fa-xmark"></i></button>
+            <div class="sheet-head-title" id="proxyNgTitle">${escapeHtml(name)}さんの NG（代理）</div>
+          </div>
+          <div class="sheet-body">
+            <div class="form-group"><label class="form-label" for="proxyNgMonth">対象月</label><input type="month" id="proxyNgMonth" class="form-input" value="${escapeForAttr(st.ym)}"></div>
+            <div class="sf-legend" style="justify-content:flex-start;margin:0 0 8px"><span><i class="pn-sw full"></i>完全NG</span><span><i class="pn-sw feed"></i>餌番NG</span><span>押すたびに切り替え</span></div>
+            <div id="proxyNgGrid" class="pn-grid"></div>
+          </div>
+          <div class="sheet-foot">
+            <button type="button" class="btn btn-outline" data-act="close">キャンセル</button>
+            <button type="button" class="btn btn-primary" data-act="save"><i class="fa-solid fa-check"></i> 保存</button>
+          </div>
+        </div>`;
+      document.body.appendChild(wrap);
+      const grid = wrap.querySelector('#proxyNgGrid');
+      const render = () => {
+        const [y, mo] = st.ym.split('-').map(Number);
+        if (!y || !mo) { grid.innerHTML = ''; return; }
+        const first = new Date(y, mo - 1, 1), days = new Date(y, mo, 0).getDate();
+        const cells = WEEKDAY_JA.map((w, i) => `<span class="pn-wd${i === 0 ? ' sun' : i === 6 ? ' sat' : ''}">${w}</span>`);
+        for (let i = 0; i < first.getDay(); i++) cells.push('<span></span>');
+        for (let d = 1; d <= days; d++) {
+          const ds = ymdSlash(new Date(y, mo - 1, d));
+          const t = st.ng.get(ds) || '';
+          cells.push(`<button type="button" class="pn-day${t === 'FULL' ? ' full' : t === 'FEED_NG' ? ' feed' : ''}" data-d="${ds}" aria-label="${mo}月${d}日 ${t === 'FULL' ? '完全NG' : t === 'FEED_NG' ? '餌番NG' : 'NG なし'}">${d}${t ? `<small>${t === 'FULL' ? 'NG' : '餌番NG'}</small>` : ''}</button>`);
+        }
+        grid.innerHTML = cells.join('');
+      };
+      const load = async () => {
+        st.ng = new Map();
+        grid.innerHTML = '<div class="inline-loading">読み込み中…</div>';
+        try {
+          const r = await callAPI('getNGData', { adminId: currentUser.id, targetMonth: st.ym }, { silent: true });
+          ((r.ngData || {})[name] || []).forEach(x => st.ng.set(normalizeScheduleDateStr(x.date), x.type || 'FULL'));
+        } catch (_) {
+          showToast('読み込みエラー', 'error');
+        }
+        delete wrap.dataset.dirty;
+        render();
+      };
+      wrap.querySelector('#proxyNgMonth').addEventListener('change', e => {
+        const v = String(e.target.value || '').slice(0, 7);
+        if (!v) return;
+        st.ym = v;
+        load();
+      });
+      grid.addEventListener('click', e => {
+        const b = e.target.closest('.pn-day');
+        if (!b) return;
+        const cur = st.ng.get(b.dataset.d) || '';
+        const next = cur === '' ? 'FULL' : cur === 'FULL' ? 'FEED_NG' : '';
+        if (next) st.ng.set(b.dataset.d, next); else st.ng.delete(b.dataset.d);
+        wrap.dataset.dirty = '1';
+        render();
+      });
+      wrap.addEventListener('click', async e => {
+        if (e.target.closest('[data-act="close"]')) { wrap.remove(); return; }
+        const save = e.target.closest('[data-act="save"]');
+        if (!save) return;
+        const ngData = [...st.ng.entries()].map(([date, type]) => ({ date, type }));
+        try {
+          const r = await callAPI('adminSubmitNg', { adminId: currentUser.id, targetName: name, targetMonth: st.ym, ngData }, { button: save, overlayMessage: '保存しています…' });
+          delete wrap.dataset.dirty;
+          wrap.remove();
+          showToast(`${name}さんの${parseInt(st.ym.split('-')[1], 10)}月の NG を保存しました（${ngData.length}日）`, 'success');
+          if (r.conflicts && r.conflicts.length) {
+            const label = { feed: '餌番', clean: '掃除' };
+            showConfirmModal(`次の日は担当に入っています。シフト作成の「調整」で付け替えてください。\n\n${r.conflicts.map(c => `${fmtMdW(c.date)}　${label[c.role] || ''}`).join('\n')}`, '担当日と NG の重なり', { okLabel: 'OK' });
+          }
+          loadAdminData({ maxAgeMs: 0 });
+        } catch (_) { /* callAPI が表示 */ }
+      });
+      load();
+    }
+
     async function graduateEditingMember() {
       const row = editingMemberRow;
       if (!row) return;
+      // 確認は編集画面を開いたまま出す（キャンセルしたら編集を続けられる）
+      const name = memberNameByRow_(row);
+      const ok = await showConfirmModal(`${name || 'このメンバー'}を「卒業」にしますか？\nログインできなくなります。メンバー一覧の「卒業」から戻せます。`, '卒業の確認');
+      if (!ok) return;
       closeMemberEditModal();
-      await toggleMemberGraduated(row, true);
+      await toggleMemberGraduated(row, true, { confirmed: true });
     }
     function closeMemberEditModal() {
       document.getElementById('memberEditModal').classList.remove('show');
@@ -10371,14 +10805,14 @@
         return;
       }
       if (adminChanged && !wantAdmin && isSelf_(oldSid)
-        && !(await showConfirmModal('自分を管理者から外すと、管理者画面を使えなくなります。よろしいですか？', '管理者の変更'))) return;
+        && !(await showConfirmModal('自分を管理者から外すと、管理者画面を使えなくなります。よろしいですか？', '管理者の変更', { okLabel: '外す', danger: true }))) return;
       
       // ボタンをローディング状態に
       const saveButton = document.querySelector('#memberEditModal button[onclick="saveMemberEdit()"]');
       if (saveButton) {
         saveButton.disabled = true;
         saveButton.dataset.originalText = saveButton.innerHTML;
-        saveButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 保存中...';
+        saveButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 保存中…';
       }
       
       try {
@@ -10463,7 +10897,7 @@
     async function revokeLoginsForEditing() {
       const m = editingMember_;
       if (!m || !m.studentId) return;
-      if (!(await showConfirmModal(`${m.name}さんのすべての端末をログアウトさせますか？`, 'ログインの解除'))) return;
+      if (!(await showConfirmModal(`${m.name}さんのすべての端末をログアウトさせますか？`, 'ログインの解除', { okLabel: 'ログアウトさせる', danger: true }))) return;
       try {
         const r = await callAPI('revokeLogins', { sid: String(m.studentId) });
         showToast(r.message || 'ログインを解除しました', 'success');
@@ -10522,8 +10956,8 @@
           isActive: wrap.querySelector('#amActive').checked,
           isAdmin: wrap.querySelector('#amAdmin').checked
         };
-        if (!req.lastName) { showToast('姓を入力してください', 'error'); return; }
-        if (!/^[0-9A-Za-z]{4,20}$/.test(req.sid)) { showToast('学籍番号は半角の英数字で入力してください', 'error'); return; }
+        if (!req.lastName) { fieldError_(wrap.querySelector('#amLast'), '姓を入力してください'); return; }
+        if (!/^[0-9A-Za-z]{4,20}$/.test(req.sid)) { fieldError_(wrap.querySelector('#amSid'), '学籍番号は半角の英数字で入力してください', '半角英数字 4〜20 文字'); return; }
         try {
           const r = await callAPI('addMember', req, { button: btn, overlayMessage: '追加しています…' });
           showToast(r.message || '追加しました', 'success');
@@ -10536,7 +10970,7 @@
     }
     
     async function recalculateCounts() {
-      const ok = await showConfirmModal('確定スケジュール（全期間）から、全員の担当回数を再計算しますか？', '担当回数の再計算');
+      const ok = await showConfirmModal('確定スケジュール（全期間）から、全員の担当回数を再計算しますか？', '担当回数の再計算', { okLabel: '再計算' });
       if (!ok) return;
       try {
         await callAPI('recalculateCounts', { adminId: currentUser.id, targetMonth: getCurrentMonth() }, { overlayMessage: '再計算しています…' });
@@ -10715,6 +11149,7 @@
         'シフト回答受付中': document.getElementById('shiftAnswerAccepting').checked,
         '掃除曜日': document.getElementById('cleanDay').value,
         '掃除人数': parseInt(document.getElementById('cleanCount').value, 10) || 6,
+        '掃除日の鶏班最低人数': (() => { const n = parseInt((document.getElementById('cleanChickenMin') || {}).value, 10); return isNaN(n) || n < 0 ? 2 : n; })(),
         'B3ペアモード': document.getElementById('b3PairMode').checked,
         '祝日は掃除なし': !!(document.getElementById('skipHolidayCleaning') && document.getElementById('skipHolidayCleaning').checked),
         '優先度_鶏班': document.getElementById('priorityChicken').value,
@@ -10750,27 +11185,54 @@
         Object.assign(adminConfigSnapshot, changed);
         showToast('設定を保存しました（' + Object.keys(changed).join('・') + '）', 'success');
         updateMessages();
+        updateConfigDirtyUi_();
       } catch (error) {
         showToast('設定の保存に失敗しました', 'error');
       }
     }
     
+    /** 設定画面の、保存していない項目 */
+    function adminConfigDirtyKeys_() {
+      if (!adminConfigSnapshot) return [];
+      let cur;
+      try { cur = collectAdminConfig_(); } catch (_) { return []; }
+      return Object.keys(cur).filter(k => String(cur[k]) !== String(adminConfigSnapshot[k]));
+    }
+    /** 「設定を保存」のボタンに未保存の印（3 つのボタンはどれも全部の項目を保存する） */
+    function updateConfigDirtyUi_() {
+      const n = adminConfigDirtyKeys_().length;
+      document.querySelectorAll('button[onclick="saveAdminConfig()"]').forEach(btn => {
+        btn.classList.toggle('has-unsaved', n > 0);
+        btn.innerHTML = n > 0
+          ? `<i class="fa-solid fa-save"></i> 設定を保存<span class="unsaved-chip">未保存 ${n}</span>`
+          : '<i class="fa-solid fa-save"></i> 設定を保存';
+      });
+    }
+    document.addEventListener('input', e => { if (e.target.closest && e.target.closest('#admin-settings')) updateConfigDirtyUi_(); });
+    document.addEventListener('change', e => { if (e.target.closest && e.target.closest('#admin-settings')) updateConfigDirtyUi_(); });
+    /** Teams に送る前に、保存していない設定（期限・対象月など）を保存する（古い設定のまま送らないように） */
+    async function saveConfigBeforeSend_() {
+      if (!adminConfigDirtyKeys_().length) return;
+      await saveAdminConfig();
+    }
+
     async function notifyTeamsRecruitmentStartFromSettings() {
       if (!currentUser || currentUser.role !== 'admin') {
         showToast('管理者のみ実行できます', 'error');
         return;
       }
       const confirmed = await showConfirmModal(
-        '募集開始の通知を Teams に送りますか？',
-        'Teams 通知'
+        '募集開始の通知を Teams に送りますか？' + (adminConfigDirtyKeys_().length ? '\n保存していない設定は、先に保存します。' : ''),
+        'Teams 通知', { okLabel: '送信' }
       );
       if (!confirmed) return;
+      await saveConfigBeforeSend_();
       const btn = document.querySelector('button[data-action="notify-teams-recruitment"]');
       try {
         if (btn) {
           btn.disabled = true;
           btn.dataset.originalText = btn.innerHTML;
-          btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 送信中...';
+          btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 送信中…';
         }
         const result = await callAPI('notifyTeamsRecruitmentStart', {
           adminId: currentUser.id,
@@ -10796,16 +11258,17 @@
         return;
       }
       const confirmed = await showConfirmModal(
-        '未提出の人へのリマインドを Teams に送りますか？',
-        'Teams 通知'
+        '未提出の人へのリマインドを Teams に送りますか？' + (adminConfigDirtyKeys_().length ? '\n保存していない設定は、先に保存します。' : ''),
+        'Teams 通知', { okLabel: '送信' }
       );
       if (!confirmed) return;
+      await saveConfigBeforeSend_();
       const btn = document.querySelector('button[data-action="notify-teams-reminder-deadline"]');
       try {
         if (btn) {
           btn.disabled = true;
           btn.dataset.originalText = btn.innerHTML;
-          btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 送信中...';
+          btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 送信中…';
         }
         const result = await callAPI('notifyTeamsReminderDeadline', {
           adminId: currentUser.id,
@@ -10837,7 +11300,7 @@
         if (btn) {
           btn.disabled = true;
           btn.dataset.originalText = btn.innerHTML;
-          btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 送信中...';
+          btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 送信中…';
         }
         const opt = {};
         if (choice.uploadImage) {
@@ -10854,11 +11317,16 @@
         }
         const result = await callAPI('notifyTeamsScheduleConfirmed', {
           adminId: currentUser.id,
+          months: confirmTargetMonths_(),
           updateCounts: choice.updateCounts,
           closeFormAcceptance: choice.closeForm,
           opt: opt
         });
         showToast(result.message || 'Teams に通知しました', 'success');
+        if (draftEditData && Array.isArray(draftEditData.hiddenMonths) && Array.isArray(result.published)) {
+          draftEditData.hiddenMonths = draftEditData.hiddenMonths.filter(m => !result.published.includes(m));
+          renderShiftCreateStatus_();
+        }
         if (result.countsUpdated) loadAdminData({ maxAgeMs: 0 });
         if (result.formClosed) {
           const sac = document.getElementById('shiftAnswerAccepting');
@@ -10904,7 +11372,7 @@
         clearExisting
           ? `${monthText}の担当をすべて消去して下書きを再作成します。手動で設定した担当も消去されます。よろしいですか？`
           : `${monthText}の下書きを作成しますか？（空き枠のみ割り当て）`,
-        '下書き作成確認');
+        '下書き作成確認', clearExisting ? { okLabel: '消して作り直す', danger: true } : { okLabel: '作成' });
       if (!confirmed) return;
       
       // ボタンをローディング状態に
@@ -10912,7 +11380,7 @@
       if (draftButton) {
         draftButton.disabled = true;
         draftButton.dataset.originalText = draftButton.innerHTML;
-        draftButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 下書き作成中...';
+        draftButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 下書き作成中…';
       }
       
       try {
@@ -10932,6 +11400,7 @@
         if (result.warnings && result.warnings.length > 0) {
           await showDraftWarningResultModal(result.warnings, draftWarningModalSummaryLine_(result.message));
         }
+        if (/祝日を取得できませんでした/.test(result.message || '')) showToast('祝日を取得できませんでした。祝日の掃除を確認してください', 'warning');
         window.draftEditWarningDates = result.warningDates || [];
         
         // 下書き作成後、下書き編集セクションを表示（虚無時間を防ぐため先に「下書き実行中」を出す）
@@ -10962,7 +11431,7 @@
     }
     
     async function runConfirm() {
-      const confirmed = await showConfirmModal('確定したシフトから、全員の担当回数を反映しますか？', '担当回数に反映');
+      const confirmed = await showConfirmModal('確定したシフトから、全員の担当回数を反映しますか？', '担当回数に反映', { okLabel: '反映' });
       if (!confirmed) return;
       
       // ボタンをローディング状態に
@@ -10970,7 +11439,7 @@
       if (confirmButton) {
         confirmButton.disabled = true;
         confirmButton.dataset.originalText = confirmButton.innerHTML;
-        confirmButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 反映中...';
+        confirmButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 反映中…';
       }
       
       try {
@@ -10992,7 +11461,7 @@
     }
     
     async function clearNGs() {
-      const confirmed = await showConfirmModal('NGリストを全消去しますか？', 'NGリスト全消去確認');
+      const confirmed = await showConfirmModal('今月より前の NG を消去しますか？今月以降の NG は残ります。', '過ぎた月の NG の消去');
       if (!confirmed) return;
       
       // ボタンをローディング状態に
@@ -11000,15 +11469,15 @@
       if (clearButton) {
         clearButton.disabled = true;
         clearButton.dataset.originalText = clearButton.innerHTML;
-        clearButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 消去中...';
+        clearButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 消去中…';
       }
       
       try {
-        await callAPI('clearAllNGs', {
+        const r = await callAPI('clearAllNGs', {
           adminId: currentUser.id
         });
         
-        showToast('NGリストを全消去しました', 'success');
+        showToast(r.message || 'NG を消去しました', 'success');
         loadAdminData();
       } catch (error) {
         showToast('NGリストの消去に失敗しました', 'error');
@@ -11022,7 +11491,7 @@
     }
     
     async function resetCounts() {
-      const confirmed = await showConfirmModal('全員の回数をリセットしますか？', '回数リセット確認');
+      const confirmed = await showConfirmModal('今日を起点に、全員の回数を 0 から数え直しますか？', '回数リセット');
       if (!confirmed) return;
       
       // ボタンをローディング状態に
@@ -11030,15 +11499,15 @@
       if (resetButton) {
         resetButton.disabled = true;
         resetButton.dataset.originalText = resetButton.innerHTML;
-        resetButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> リセット中...';
+        resetButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> リセット中…';
       }
       
       try {
-        await callAPI('resetMemberCounts', {
+        const r = await callAPI('resetMemberCounts', {
           adminId: currentUser.id
         });
         
-        showToast('回数をリセットしました', 'success');
+        showToast(r.message || '回数をリセットしました', 'success');
         loadAdminData();
       } catch (error) {
         showToast('回数リセットに失敗しました', 'error');
@@ -11448,9 +11917,10 @@
       if (window.editingPeriodId) payload.replacePeriodIds = [window.editingPeriodId];
       if (window.editingLegacyEntries) payload.deleteLegacyKeys = window.editingLegacyEntries;
       try {
-        await callAPI('setChickenSchedule', payload, { overlayMessage: '入雛スケジュールを保存しています…' });
+        const res = await callAPI('setChickenSchedule', payload, { overlayMessage: '入雛スケジュールを保存しています…' });
         closeChickenModal();
         showToast('入雛スケジュールを保存しました', 'success');
+        showDutyMismatches_(res && res.mismatches);
       } catch (error) {
         // callAPI が表示済み。モーダルは開いたままにして入力内容を残す
         return;
@@ -11486,8 +11956,9 @@
         payload.deletePeriodIds = [key];
       }
       try {
-        await callAPI('setChickenSchedule', payload, { overlayMessage: '削除しています…' });
+        const res = await callAPI('setChickenSchedule', payload, { overlayMessage: '削除しています…' });
         showToast('削除しました', 'success');
+        showDutyMismatches_(res && res.mismatches);
       } catch (error) {
         // callAPI が表示済み
       }
@@ -12137,8 +12608,14 @@
     const pollState = { list: [], loadedAt: 0, me: '', isAdmin: false, teamsEnabled: false, filter: 'open', openId: '', view: '', draft: {}, notes: {}, comment: '', expanded: {}, selectMode: false, selected: new Set(), assignDraft: null, assignShowAll: false };
     const POLL_MARK = { yes: '○', maybe: '△', no: '×' };
 
+    /** 担当の人数：need が 0 なら制限なし。cap＝割り当ての上限、min＝足りないとみなす数 */
+    const pollNeedCap_ = o => o.need === 0 ? Infinity : (o.need || 1);
+    const pollNeedMin_ = o => o.need === 0 ? 1 : (o.need || 1);
+    const pollNeedText_ = n => n === 0 ? '制限なし' : (n || 1) + '人';
+    /** 人数の増減：1 から減らすと「制限なし」、制限なしから増やすと 1 */
+    const stepNeed_ = (n, d) => n === 0 ? (d > 0 ? 1 : 0) : (n || 1) + d < 1 ? 0 : Math.min(50, (n || 1) + d);
     function pollOptionLabel(o) {
-      const time = o.start ? o.start + '〜' + (o.end || '') : '終日';
+      const time = (o.title ? o.title + '　' : '') + (o.start ? o.start + '〜' + (o.end || '') : '終日');
       // 候補ごとの場所があれば「10:00〜12:00・A棟」（回答・集計・割り当て・決定・文面のどこでも同じ形で出る）
       const place = o.location ? String(o.location) : '';
       return { date: fmtMdW(o.date), time: place ? time + '・' + place : time, place };
@@ -12309,8 +12786,9 @@
             ? `<div class="poll-decided-line me"><i class="fa-solid fa-user-check"></i> あなたの担当 ${my.map(o => escapeHtml(pollOptionLabel(o).date + ' ' + pollOptionLabel(o).time)).join('、')}</div>`
             : `<div class="poll-decided-line"><i class="fa-solid fa-circle-check"></i> 担当が決まりました</div>`;
         } else if (staffMode) {
-          const need = p.options.reduce((sum, o) => sum + (o.need || 1), 0);
-          foot = `<div class="poll-best-line"><span class="poll-best-label">候補 ${p.options.length}件</span> 必要 ${need}人</div>`;
+          const need = p.options.reduce((sum, o) => sum + (o.need === 0 ? 0 : (o.need || 1)), 0);
+          const free = p.options.some(o => o.need === 0);
+          foot = `<div class="poll-best-line"><span class="poll-best-label">候補 ${p.options.length}件</span> 必要 ${need ? need + '人' : ''}${free ? (need ? '＋' : '') + '制限なし' : ''}</div>`;
         } else if (decided) {
           const l = pollOptionLabel(decided);
           foot = `<div class="poll-decided-line"><i class="fa-solid fa-circle-check"></i> ${escapeHtml(l.date)} ${escapeHtml(l.time)}</div>`;
@@ -12593,7 +13071,7 @@
       if (!p) return;
       const unanswered = p.options.filter(o => !pollState.draft[o.id]).length;
       if (unanswered > 0) {
-        const ok = await showConfirmModal(`未選択の候補が ${unanswered} 件あります。× として回答しますか？`, '回答の確認');
+        const ok = await showConfirmModal(`未選択の候補が ${unanswered} 件あります。× として回答しますか？`, '回答の確認', { okLabel: '回答' });
         if (!ok) return;
         p.options.forEach(o => { if (!pollState.draft[o.id]) pollState.draft[o.id] = 'no'; });
       }
@@ -12649,7 +13127,7 @@
               <span class="poll-answer-date">${escapeHtml(l.date)}</span>
               <span class="poll-answer-time">${escapeHtml(l.time)}</span>
               ${isDecided ? '<span class="poll-tag decided">決定</span>' : isBest ? '<span class="poll-tag best">最有力</span>' : ''}
-              ${staffMode ? `<span class="poll-need">${t.yes.length >= (o.need || 1) ? '' : '<i class="fa-solid fa-triangle-exclamation"></i>'}必要 ${o.need || 1}人</span>` : ''}
+              ${staffMode ? `<span class="poll-need">${t.yes.length >= pollNeedMin_(o) ? '' : '<i class="fa-solid fa-triangle-exclamation"></i>'}${o.need === 0 ? '人数 制限なし' : '必要 ' + (o.need || 1) + '人'}</span>` : ''}
             </div>
             ${staffMode && p.status === 'decided' ? `<div class="poll-assigned-line"><i class="fa-solid fa-user-check"></i>${assigned.length ? meFirst_(assigned, pollState.me).map(n => `<span class="${n === pollState.me ? 'me' : ''}">${escapeHtml(n)}</span>`).join('') : '<span class="dd-none">担当なし</span>'}</div>` : ''}
             <div class="poll-result-bar">
@@ -12735,7 +13213,7 @@
     async function clearPollAssign() {
       const p = currentPoll_();
       if (!p) return;
-      if (!(await showConfirmModal('割り当てをすべて外しますか？', '担当の割り当て'))) return;
+      if (!(await showConfirmModal('割り当てをすべて外しますか？', '担当の割り当て', { okLabel: '外す', danger: true }))) return;
       const map = pollAssignDraft_(p);
       Object.keys(map).forEach(k => { map[k] = []; });
       rerenderPollKeepScroll_();
@@ -12752,7 +13230,7 @@
       const load = {};
       tally.slice().sort((a, b) => a.yes.length - b.yes.length || (a.option.date + a.option.start).localeCompare(b.option.date + b.option.start)).forEach(t => {
         const o = t.option;
-        const need = o.need || 1;
+        const need = pollNeedCap_(o);
         const chosen = [];
         const pick = pool => pool.slice()
           .sort((a, b) => (load[a] || 0) - (load[b] || 0) || a.localeCompare(b, 'ja'))
@@ -12764,11 +13242,11 @@
             load[n] = (load[n] || 0) + 1;
           });
         pick(t.yes);
-        if (chosen.length < need) pick(t.maybe);
+        if (chosen.length < pollNeedMin_(o)) pick(t.maybe);
         map[o.id] = chosen;
       });
       pollState.assignDraft = { pollId: p.id, map };
-      const short = p.options.filter(o => (map[o.id] || []).length < (o.need || 1)).length;
+      const short = p.options.filter(o => (map[o.id] || []).length < pollNeedMin_(o)).length;
       rerenderPollKeepScroll_();
       showToast(short ? `割り当てました（人数が足りない候補が ${short} つあります）` : '割り当てました', short ? 'warning' : 'success');
     }
@@ -12779,9 +13257,10 @@
       const tally = pollTally(p);
       const load = {};
       Object.keys(map).forEach(id => (map[id] || []).forEach(n => { load[n] = (load[n] || 0) + 1; }));
-      const needTotal = p.options.reduce((s, o) => s + (o.need || 1), 0);
-      const doneTotal = p.options.reduce((s, o) => s + Math.min((map[o.id] || []).length, o.need || 1), 0);
-      const shortSlots = p.options.filter(o => (map[o.id] || []).length < (o.need || 1)).length;
+      // 制限なしの候補は、割り当てた人数をそのまま数える
+      const needTotal = p.options.reduce((s, o) => s + (o.need === 0 ? Math.max(1, (map[o.id] || []).length) : (o.need || 1)), 0);
+      const doneTotal = p.options.reduce((s, o) => s + Math.min((map[o.id] || []).length, pollNeedCap_(o)), 0);
+      const shortSlots = p.options.filter(o => (map[o.id] || []).length < pollNeedMin_(o)).length;
       const others = n => !p.answers.some(a => a.name === n);
       const allNames = (membersList && membersList.length ? membersList.filter(isShiftMemberOrAny_).map(m => m.name) : p.answers.map(a => a.name).concat(p.nonRespondents));
       let html = `
@@ -12797,9 +13276,9 @@
       tally.forEach(t => {
         const o = t.option;
         const l = pollOptionLabel(o);
-        const need = o.need || 1;
+        const need = pollNeedCap_(o);
         const chosen = map[o.id] || [];
-        const state = chosen.length < need ? 'short' : chosen.length > need ? 'over' : 'ok';
+        const state = chosen.length < pollNeedMin_(o) ? 'short' : chosen.length > need ? 'over' : 'ok';
         const clashOf = n => p.options.some(x => x.id !== o.id && (map[x.id] || []).includes(n) && pollSlotsOverlap_(x, o));
         const chip = (n, kind) => {
           const on = chosen.includes(n);
@@ -12820,7 +13299,7 @@
             <div class="pa-slot-head">
               <span class="poll-answer-date">${escapeHtml(l.date)}</span>
               <span class="poll-answer-time">${escapeHtml(l.time)}</span>
-              <span class="pa-count">${chosen.length}<small> / ${need}人</small></span>
+              <span class="pa-count">${chosen.length}<small>${o.need === 0 ? '人' : ' / ' + need + '人'}</small></span>
             </div>
             <div class="pa-chips">
               ${t.yes.map(n => chip(n, 'yes')).join('')}${t.maybe.map(n => chip(n, 'maybe')).join('')}${hiddenOn}${extra}
@@ -12845,7 +13324,7 @@
         showToast('担当者を 1 人以上選んでください', 'error');
         return;
       }
-      const short = p.options.filter(o => (map[o.id] || []).length < (o.need || 1));
+      const short = p.options.filter(o => (map[o.id] || []).length < pollNeedMin_(o));
       const clashes = [];
       p.options.forEach(o => (map[o.id] || []).forEach(n => {
         if (p.options.some(x => x.id !== o.id && (map[x.id] || []).includes(n) && pollSlotsOverlap_(x, o)) && !clashes.includes(n)) clashes.push(n);
@@ -12860,7 +13339,7 @@
             ${p.options.map(o => {
               const l = pollOptionLabel(o);
               const list = map[o.id] || [];
-              return `<div class="pa-confirm-row${list.length < (o.need || 1) ? ' short' : ''}">
+              return `<div class="pa-confirm-row${list.length < pollNeedMin_(o) ? ' short' : ''}">
                 <span class="pa-confirm-when">${escapeHtml(l.date)} <small>${escapeHtml(l.time)}</small></span>
                 <span class="pa-confirm-names">${list.length ? list.map(escapeHtml).join('、') : '<span class="dd-none">未定</span>'}</span>
               </div>`;
@@ -12924,13 +13403,15 @@
       renderPollEditorLists_();
     }
     function stepPollDefaultNeed(d) {
-      pollEditor.defaultNeed = Math.max(1, Math.min(50, (pollEditor.defaultNeed || 1) + d));
-      document.getElementById('pollDefaultNeed').textContent = pollEditor.defaultNeed;
+      pollEditor.defaultNeed = stepNeed_(pollEditor.defaultNeed, d);
+      document.getElementById('pollDefaultNeed').textContent = pollEditor.defaultNeed === 0 ? '制限なし' : pollEditor.defaultNeed;
+      document.querySelector('#pollNeedRow .need-unit').hidden = pollEditor.defaultNeed === 0;
+      updatePollGuide_();
     }
     function stepPollOptionNeed(i, d) {
       const o = pollEditor.options[i];
       if (!o) return;
-      o.need = Math.max(1, Math.min(50, (o.need || 1) + d));
+      o.need = stepNeed_(o.need, d);
       renderPollEditorLists_();
     }
 
@@ -12961,7 +13442,7 @@
     // ---------- 作成者・管理者の操作 ----------
     async function closePollEntry() {
       const p = currentPoll_();
-      if (!p || !(await showConfirmModal('回答の受付を締め切りますか？', '締め切る'))) return;
+      if (!p || !(await showConfirmModal('回答の受付を締め切りますか？', '締め切る', { okLabel: '締め切る' }))) return;
       try {
         await callAPI('setPollStatus', { adminId: currentUser.id, pollId: p.id, status: 'closed' });
         showToast('締め切りました', 'success');
@@ -13128,7 +13609,7 @@
     async function remindPollPrepareNow() {
       const p = currentPoll_();
       if (!p) return;
-      const ok = await showConfirmModal(`次の日程の${pollIsStaff(p) ? '担当' : '参加'}の方に、Teams でお知らせを送りますか？`, '今すぐ送る');
+      const ok = await showConfirmModal(`次の日程の${pollIsStaff(p) ? '担当' : '参加'}の方に、Teams でお知らせを送りますか？`, '今すぐ送る', { okLabel: '送信' });
       if (!ok) return;
       try {
         const r = await callAPI('remindPollPrepare', { adminId: currentUser.id, pollId: p.id }, { overlayMessage: '送信しています…' });
@@ -13207,7 +13688,7 @@
 
     async function deletePollEntry() {
       const p = currentPoll_();
-      if (!p || !(await showConfirmModal(`「${p.title}」を削除しますか？回答もすべて消えます。`, '削除の確認'))) return;
+      if (!p || !(await showConfirmModal(`「${p.title}」を削除しますか？回答と、決定で登録したイベントも消えます。`, '削除の確認'))) return;
       try {
         await callAPI('deletePoll', { adminId: currentUser.id, pollId: p.id }, { overlayMessage: '削除しています…' });
         showToast('削除しました', 'success');
@@ -13252,7 +13733,7 @@
       pollEditor.id = id && src ? src.id : '';
       pollEditor.dates = [];
       pollEditor.times = [];
-      pollEditor.options = src ? src.options.map(o => ({ date: o.date, start: o.start, end: o.end, id: id ? o.id : '', need: o.need || 1, location: o.location || '' })) : [];
+      pollEditor.options = src ? src.options.map(o => ({ date: o.date, start: o.start, end: o.end, id: id ? o.id : '', need: o.need === 0 ? 0 : (o.need || 1), location: o.location || '', title: o.title || '' })) : [];
       pollEditor.defaultNeed = 1;
       // 回ごとの場所：前の内容に候補ごとの場所があれば、オンで開く
       pollEditor.optionPlaces = !!(src && src.options.some(o => o.location));
@@ -13261,6 +13742,7 @@
       document.getElementById('pollOptionPlaceInput').hidden = !pollEditor.optionPlaces;
       pollEditor.fromSrc = !!src;
       document.getElementById('pollDefaultNeed').textContent = '1';
+      document.querySelector('#pollNeedRow .need-unit').hidden = false;
       // 時間の分割は毎回「1時間ごと」から
       document.getElementById('pollTimeStep').value = '60';
       document.getElementById('pollEditorTitle').textContent = pollEditor.id ? '日程調整を編集' : copyFrom ? '日程調整を複製' : '日程調整を作成';
@@ -13309,8 +13791,7 @@
     }
     function pollEditorNext() {
       if (pollEditor.step === 0 && !document.getElementById('pollTitle').value.trim()) {
-        showToast('タイトルを入力してください', 'error');
-        document.getElementById('pollTitle').focus();
+        fieldError_('pollTitle', 'タイトルを入力してください');
         return;
       }
       if (pollEditor.step === 1) {
@@ -13366,7 +13847,7 @@
       const s = document.getElementById('pollTimeStart').value;
       const e = document.getElementById('pollTimeEnd').value;
       if (!s) {
-        showToast('開始時刻を入力してください', 'error');
+        fieldError_('pollTimeStart', '開始時刻を入力してください');
         return;
       }
       if (e && e <= s) {
@@ -13428,7 +13909,7 @@
         if (d) pollEditor.dates.push(ymdSlash(d));
       }
       if (pollEditor.dates.length === 0) {
-        showToast('日付を選択してください', 'error');
+        fieldError_('pollDateInput', '日付を選択してください');
         return;
       }
       let times = [{ start: '', end: '' }];
@@ -13447,13 +13928,15 @@
       const place = pollEditor.optionPlaces ? document.getElementById('pollOptionPlaceInput').value.trim() : '';
       pollEditor.dates.forEach(date => times.forEach(t => {
         if (!pollEditor.options.some(o => o.date === date && o.start === t.start && o.end === t.end && (o.location || '') === place)) {
-          pollEditor.options.push({ date, start: t.start, end: t.end, id: '', need: pollEditor.defaultNeed || 1, location: place });
+          pollEditor.options.push({ date, start: t.start, end: t.end, id: '', need: pollEditor.defaultNeed === 0 ? 0 : (pollEditor.defaultNeed || 1), location: place, title: '' });
           added++;
         }
       }));
       pollEditor.options.sort((a, b) => (a.date + a.start + a.end + (a.location || '')).localeCompare(b.date + b.start + b.end + (b.location || '')));
       pollEditor.dates = [];
       pollEditor.times = [];
+      // 追加し終えたら日付を空にして、次は「1 日付」から（同じ候補を二度足さないように）
+      if (added) document.getElementById('pollDateInput').value = '';
       renderPollEditorLists_();
       showToast(added ? `候補を ${added} 件追加しました` : 'すでに追加済みです', added ? 'success' : 'info');
     }
@@ -13461,6 +13944,10 @@
       pollEditor.optionPlaces = !!on;
       document.getElementById('pollOptionPlaceInput').hidden = !on;
       renderPollEditorLists_();
+    }
+    function setPollOptionTitle(i, v) {
+      const o = pollEditor.options[i];
+      if (o) o.title = String(v || '');
     }
     function setPollOptionPlace(i, v) {
       const o = pollEditor.options[i];
@@ -13471,28 +13958,75 @@
       renderPollEditorLists_();
     }
     async function clearPollOptions() {
-      if (pollEditor.options.length && !(await showConfirmModal('候補をすべて消しますか？', '確認'))) return;
+      if (pollEditor.options.length && !(await showConfirmModal('候補をすべて消しますか？', '候補の消去'))) return;
       pollEditor.options = [];
       renderPollEditorLists_();
+    }
+    /**
+     * 候補づくりの案内：いま入っている日付・時間から「何が候補になるか」を見せ、次に触る所（1 日付 → 2 時間 → 3 追加）を目立たせる。
+     * 並べた日付・時間に加えて、入力欄に入っている値も 1 つとして数える（makePollOptions と同じ）
+     */
+    function updatePollGuide_() {
+      const dateIn = document.getElementById('pollDateInput').value;
+      const sIn = document.getElementById('pollTimeStart').value;
+      const eIn = document.getElementById('pollTimeEnd').value;
+      const dates = pollEditor.dates.slice();
+      if (!dates.length && dateIn) { const d = parseYmd(dateIn); if (d) dates.push(ymdSlash(d)); }
+      const allday = pollEditor.timeMode === 'allday';
+      const times = allday ? [] : pollEditor.times.slice();
+      if (!allday && sIn && !times.some(t => t.start === sIn && t.end === eIn)) times.push({ start: sIn, end: eIn });
+      const hasDate = dates.length > 0, hasTime = allday || times.length > 0;
+      const next = !hasDate ? 'date' : !hasTime ? 'time' : 'make';
+      const mark = (id, done, isNext) => { const el = document.getElementById(id); el.classList.toggle('is-done', done); el.classList.toggle('is-next', isNext); };
+      mark('pollStepDate', hasDate, next === 'date');
+      mark('pollStepTime', hasDate && hasTime, next === 'time');
+      mark('pollStepMake', false, next === 'make');
+      const btn = document.getElementById('pollMakeOptionsBtn');
+      const dTxt = dates.length > 3 ? dates.slice(0, 3).map(fmtMdW).join('・') + ` ほか ${dates.length - 3} 日` : dates.map(fmtMdW).join('・');
+      const tTxt = allday ? '終日' : times.map(t => t.start + '〜' + (t.end || '')).join('・');
+      document.getElementById('pollMakePreview').innerHTML = next === 'make'
+        ? `<span>${escapeHtml(dTxt)}</span><i class="fa-solid fa-xmark"></i><span>${escapeHtml(tTxt)}</span>`
+        : '';
+      // 追加すると入る候補を、一覧と同じ形（点線）で先に見せる。すでにある候補は「追加済み」
+      const place = pollEditor.optionPlaces ? document.getElementById('pollOptionPlaceInput').value.trim() : '';
+      const need = pollEditor.defaultNeed === 0 ? 0 : (pollEditor.defaultNeed || 1);
+      const pend = [];
+      if (next === 'make') dates.forEach(date => (allday ? [{ start: '', end: '' }] : times).forEach(t => pend.push({ date, start: t.start, end: t.end, location: place, need })));
+      pend.sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
+      const isDup = o => pollEditor.options.some(x => x.date === o.date && x.start === o.start && x.end === o.end && (x.location || '') === o.location);
+      const nNew = pend.filter(o => !isDup(o)).length;
+      btn.disabled = next !== 'make' || !nNew;
+      btn.innerHTML = next === 'date' ? '日付を選んでください' : next === 'time' ? '時間を選んでください'
+        : nNew ? `<i class="fa-solid fa-arrow-down"></i> ${nNew} 件を候補に追加` : 'すべて追加済み';
+      document.getElementById('pollStepMake').classList.toggle('is-next', next === 'make' && nNew > 0);
+      const box = document.getElementById('pollPendingList');
+      box.hidden = !pend.length;
+      const MAX = 6;
+      box.innerHTML = !pend.length ? '' : `<div class="pb-pending-head"><span>追加すると</span><b>${nNew ? '候補が ' + nNew + ' 件増えます' : '増える候補はありません'}</b></div>`
+        + pend.slice(0, MAX).map(o => {
+          const dup = isDup(o);
+          const l = pollOptionLabel(o);
+          return `<div class="poll-option-item pb-ghost${dup ? ' is-dup' : ''}"><span class="poll-answer-date">${escapeHtml(l.date)}</span><span class="poll-answer-time">${escapeHtml(l.time)}</span>${pollEditor.mode === 'staff' ? `<span class="pb-ghost-need">${escapeHtml(pollNeedText_(o.need))}</span>` : ''}${dup ? '<span class="pb-ghost-tag">追加済み</span>' : '<span class="pb-ghost-tag new">新規</span>'}</div>`;
+        }).join('')
+        + (pend.length > MAX ? `<div class="pb-pending-more">ほか ${pend.length - MAX} 件</div>` : '');
     }
     function renderPollEditorLists_() {
       document.getElementById('pollDateChips').innerHTML = pollEditor.dates.map((d, i) => `<button type="button" class="mp-chip active" onclick="removePollChip('dates', ${i})">${escapeHtml(fmtMdW(d))} ✕</button>`).join('');
       document.getElementById('pollTimeChips').innerHTML = pollEditor.times.map((t, i) => `<button type="button" class="mp-chip active" onclick="removePollChip('times', ${i})">${escapeHtml(t.start + '〜' + (t.end || ''))} ✕</button>`).join('');
-      const nd = Math.max(1, pollEditor.dates.length);
-      const nt = pollEditor.timeMode === 'allday' ? 1 : Math.max(1, pollEditor.times.length + (document.getElementById('pollTimeStart').value && !pollEditor.times.some(t => t.start === document.getElementById('pollTimeStart').value && t.end === document.getElementById('pollTimeEnd').value) ? 1 : 0));
-      document.getElementById('pollMakeOptionsBtn').innerHTML = `<i class="fa-solid fa-arrow-down"></i> 候補に追加${pollEditor.dates.length ? `（${nd * nt}件）` : ''}`;
+      updatePollGuide_();
       document.getElementById('pollOptionCount').textContent = `候補 ${pollEditor.options.length} 件`;
       document.getElementById('pollOptionList').innerHTML = pollEditor.options.length === 0
         ? '<div class="field-hint" style="padding: 8px 2px;">日付と時間を選択して「候補に追加」</div>'
         : pollEditor.options.map((o, i) => {
-          const l = pollOptionLabel(Object.assign({}, o, { location: '' }));
+          const l = pollOptionLabel(Object.assign({}, o, { location: '', title: '' }));
+          const titleHtml = `<input type="text" class="form-input poll-option-place poll-option-title" maxlength="40" value="${escapeForAttr(o.title || '')}" placeholder="タイトル（任意）" oninput="setPollOptionTitle(${i}, this.value)" aria-label="${escapeForAttr(l.date + ' ' + l.time + 'のタイトル')}">`;
           const placeHtml = pollEditor.optionPlaces
             ? `<input type="text" class="form-input poll-option-place" maxlength="100" value="${escapeForAttr(o.location || '')}" placeholder="場所（空欄は上の場所）" oninput="setPollOptionPlace(${i}, this.value)" aria-label="${escapeForAttr(l.date + ' ' + l.time + 'の場所')}">`
             : '';
           const needHtml = pollEditor.mode === 'staff'
-            ? `<div class="need-step sm"><button type="button" onclick="stepPollOptionNeed(${i}, -1)" aria-label="減らす"><i class="fa-solid fa-minus"></i></button><span>${o.need || 1}</span><button type="button" onclick="stepPollOptionNeed(${i}, 1)" aria-label="増やす"><i class="fa-solid fa-plus"></i></button></div><span class="need-unit">人</span>`
+            ? `<div class="need-step sm"><button type="button" onclick="stepPollOptionNeed(${i}, -1)" aria-label="減らす"><i class="fa-solid fa-minus"></i></button><span>${o.need === 0 ? '制限なし' : o.need || 1}</span><button type="button" onclick="stepPollOptionNeed(${i}, 1)" aria-label="増やす"><i class="fa-solid fa-plus"></i></button></div>${o.need === 0 ? '' : '<span class="need-unit">人</span>'}`
             : '';
-          return `<div class="poll-option-item${placeHtml ? ' has-place' : ''}"><span class="poll-answer-date">${escapeHtml(l.date)}</span><span class="poll-answer-time">${escapeHtml(l.time)}</span>${needHtml}<button type="button" class="g-del-btn" onclick="removePollOption(${i})" aria-label="削除">✕</button>${placeHtml}</div>`;
+          return `<div class="poll-option-item has-place"><span class="poll-answer-date">${escapeHtml(l.date)}</span><span class="poll-answer-time">${escapeHtml(l.time)}</span>${needHtml}<button type="button" class="g-del-btn" onclick="removePollOption(${i})" aria-label="削除">✕</button>${titleHtml}${placeHtml}</div>`;
         }).join('');
     }
 
@@ -13500,8 +14034,7 @@
       const title = document.getElementById('pollTitle').value.trim();
       if (!title) {
         setPollEditorStep(0);
-        showToast('タイトルを入力してください', 'error');
-        document.getElementById('pollTitle').focus();
+        fieldError_('pollTitle', 'タイトルを入力してください');
         return;
       }
       if (pollEditor.options.length === 0) {
@@ -13534,7 +14067,7 @@
         location: document.getElementById('pollLocation').value.trim(),
         deadline,
         // 回ごとの場所をオフにしたら、候補の場所は使わない
-        options: pollEditor.optionPlaces ? pollEditor.options.map(o => Object.assign({}, o, { location: String(o.location || '').trim() })) : pollEditor.options.map(o => Object.assign({}, o, { location: '' })),
+        options: pollEditor.options.map(o => Object.assign({}, o, { location: pollEditor.optionPlaces ? String(o.location || '').trim() : '', title: String(o.title || '').trim() })),
         targets: isEveryone ? [] : targets,
         settings: { allowMaybe: document.getElementById('pollAllowMaybe').checked, autoRemind: document.getElementById('pollAutoRemind').checked, allowOthersDecide: document.getElementById('pollAllowOthersDecide').checked, mode: pollEditor.mode,
           label: pollEditor.mode === 'staff' ? document.getElementById('pollLabel').value.trim() : '',
@@ -14006,7 +14539,7 @@
         showToast('エラー・テストの送信先を保存してから送ってください', 'error');
         return;
       }
-      const ok = await showConfirmModal('通知ごとの見本を「エラー・テスト」の送信先に送りますか？', 'カードの見本');
+      const ok = await showConfirmModal('通知ごとの見本を「エラー・テスト」の送信先に送りますか？', 'カードの見本', { okLabel: '送信' });
       if (!ok) return;
       try {
         const r = await callAPI('sendTeamsSamples', { adminId: currentUser.id });
@@ -14925,17 +15458,17 @@
         presenterTentative: document.getElementById('seminarPresTentative').checked
       };
       if (!date) {
-        showToast('日付を入力してください', 'error');
+        fieldError_('seminarDate', '日付を入力してください');
         return null;
       }
       // 場所は「未定」を選べる。その他で空欄はだめ
       if (!isNone && locationSelect === 'その他' && !locationOther) {
-        showToast('場所を入力してください', 'error');
+        fieldError_('seminarLocationOther', '場所を入力してください');
         return null;
       }
       // 仮（日程だけ押さえた回）は、時刻が空でもよい
       if (!isNone && !plan.tentative && !startTime) {
-        showToast('開始時刻を入力してください', 'error');
+        fieldError_('seminarStartTime', '開始時刻を入力してください', '必須（仮の回は空でも可）');
         return null;
       }
       return {
@@ -14961,6 +15494,8 @@
         const orig = seminarData[editingSeminarIndex];
         entry.id = orig.id || '';
         entry.seriesId = orig.seriesId || '';
+        // 開いた時点の発表者（その間に本人が登録した分を消さないため）
+        entry.basePresenters = orig.presenters || [];
       }
       // 追加のとき：選んだ日付ごとに同じ内容で作る（重なりは 1 つにまとめる）
       const dates = isEdit ? [entry.date] : [...new Set([entry.date, ...seminarExtraDates_()])].sort();
@@ -14968,7 +15503,7 @@
       if (!isEdit) {
         const dup = dates.filter(d => seminarData.some(x => x.date === d && x.type === entry.type && x.type !== 'ゼミなし'));
         if (dup.length) {
-          const ok = await showConfirmModal(`${dup.map(fmtMdW).join('、')} には同じ種類のゼミ（${entry.type}）がすでにあります。追加しますか？`, '同じ日のゼミ');
+          const ok = await showConfirmModal(`${dup.map(fmtMdW).join('、')} には同じ種類のゼミ（${entry.type}）がすでにあります。追加しますか？`, '同じ日のゼミ', { okLabel: '追加' });
           if (!ok) return;
         }
       }
@@ -15146,7 +15681,20 @@
     async function shiftSeminarsFromEditing() {
       const start = seminarData[editingSeminarIndex];
       if (!start) return;
-      const chain = seminarData.filter(s => s.type !== 'ゼミなし' && (s.date > start.date || (s.date === start.date && s === start)))
+      const after = seminarData.filter(s => s.type !== 'ゼミなし' && (s.date > start.date || (s.date === start.date && s === start)));
+      // 種類が混ざっているときは、同じ種類だけずらすか選ぶ（予演会など日付が決まっている回を巻き込まないように）
+      let sameTypeOnly = false;
+      if (start.type && start.type !== '未定' && after.some(s => s.type !== start.type)) {
+        const scope = await showChoiceModal('後ろ倒しの範囲',
+          `${fmtMdW(start.date)} 以降のゼミには、${start.type}以外の回もあります。どの回をずらしますか？`,
+          [
+            { label: `${start.type}だけ`, value: 'same', className: 'btn-primary' },
+            { label: 'すべての種類', value: 'all', className: 'btn-outline' }
+          ]);
+        if (!scope) return;
+        sameTypeOnly = scope === 'same';
+      }
+      const chain = after.filter(s => !sameTypeOnly || s.type === start.type)
         .sort((a, b) => a.date.localeCompare(b.date) || String(a.startTime).localeCompare(String(b.startTime)));
       if (!chain.length) return;
       const content = s => {
@@ -15163,7 +15711,7 @@
         `${fmtMdW(start.date)} から ${chain.length} 回分の内容を、次の回へ 1 つずつずらします（日付・時刻・場所はそのまま）。\n最後の ${fmtMdW(last.date)}（${lastLabel || '内容なし'}）の内容はどうしますか？`,
         [
           { label: '後ろに 1 回足して受け止める', value: 'add', className: 'btn-primary' },
-          { label: '押し出す（消える）', value: 'drop', className: 'btn-outline' }
+          { label: '押し出す（消える）', value: 'drop', className: 'btn-outline is-danger' }
         ]);
       if (!choice) return;
       const updates = chain.map((s, i) => {
@@ -15183,7 +15731,7 @@
       }
       // 確かめてから保存
       const lines = updates.map((u, i) => `${fmtMdW(u.date)}　${i === 0 ? '未定（仮）' : label(content(u)) || '内容なし'}${choice === 'add' && i === updates.length - 1 ? '（新しく追加・場所は未定）' : ''}`);
-      const ok = await showConfirmModal(`次のように変わります。\n\n${lines.join('\n')}`, '後ろ倒しの確認');
+      const ok = await showConfirmModal(`次のように変わります。\n\n${lines.join('\n')}`, '後ろ倒しの確認', { okLabel: '後ろ倒し' });
       if (!ok) return;
       try {
         await callAPI('setSeminars', { adminId: currentUser.id, seminars: updates }, { overlayMessage: '後ろ倒ししています…' });
@@ -15232,7 +15780,7 @@
       });
       if (!b) return;
       const ca = semContentOf_(a), cb = semContentOf_(b);
-      const ok = await showConfirmModal(`次のように入れ替えます（場所・時刻はそれぞれの日のまま）。\n\n${fmtMdW(a.date)}　${semContentLabel_(cb) || '内容なし'}\n${fmtMdW(b.date)}　${semContentLabel_(ca) || '内容なし'}`, '入れ替えの確認');
+      const ok = await showConfirmModal(`次のように入れ替えます（場所・時刻はそれぞれの日のまま）。\n\n${fmtMdW(a.date)}　${semContentLabel_(cb) || '内容なし'}\n${fmtMdW(b.date)}　${semContentLabel_(ca) || '内容なし'}`, '入れ替えの確認', { okLabel: '入れ替え' });
       if (!ok) return;
       try {
         await callAPI('setSeminars', { adminId: currentUser.id, seminars: [withSemContent_(a, cb), withSemContent_(b, ca)] }, { overlayMessage: '入れ替えています…' });
@@ -15295,7 +15843,7 @@
         plan.room = roomV ? roomV.v : '';
         overlay.remove();
         try {
-          await callAPI('setSeminars', { adminId: currentUser.id, seminars: [Object.assign({}, s, { location, plan })] }, { overlayMessage: '保存しています…' });
+          await callAPI('setSeminars', { adminId: currentUser.id, seminars: [Object.assign({}, s, { location, plan, basePresenters: s.presenters || [] })] }, { overlayMessage: '保存しています…' });
           showToast(`${fmtMdW(s.date)} の場所を変更しました`, 'success');
           await loadSeminars(true);
         } catch (_) {}
@@ -15530,7 +16078,7 @@
         if (e.target.closest('[data-act="share"]')) {
           await latest();
           if (!canvas) return;
-          const ok = await showConfirmModal('この画像を Teams に共有しますか？（メンションなし）', 'Teams に共有');
+          const ok = await showConfirmModal('この画像を Teams に共有しますか？（メンションなし）', 'Teams に共有', { okLabel: '共有' });
           if (!ok) return;
           try {
             const r = await callAPI('shareSeminarPlan', { title, message: $('.sp-img-msg').value.trim(), imageBase64: canvas.toDataURL('image/png') }, { overlayMessage: 'Teams に共有しています…' });
@@ -15773,8 +16321,8 @@
       let payload;
       if (seminar.seriesId) {
         const choice = await showChoiceModal('ゼミの削除', `${fmtMdW(seminar.date)} の${seminar.type || 'ゼミ'}を削除します。\nこのゼミは一括追加した繰り返しの一部です。`, [
-          { label: 'この回だけ削除', value: 'one', className: 'btn-danger' },
-          { label: 'この回以降の繰り返しをすべて削除', value: 'after', className: 'btn-outline' }
+          { label: 'この回だけ削除', value: 'one', className: 'btn-outline is-danger' },
+          { label: 'この回以降の繰り返しをすべて削除', value: 'after', className: 'btn-outline is-danger' }
         ]);
         if (!choice) return;
         payload = choice === 'one'
@@ -15842,7 +16390,27 @@
     function bulkKindLabel_() { return bulk.kind === 'event' ? 'イベント' : 'ゼミ'; }
     function bulkExisting_() { return bulk.kind === 'event' ? eventData : seminarData; }
 
-    async function showBulkModal(kind) {
+    /** ゼミの追加画面から「まとめて追加」へ：入力中の種類・時刻・場所・日付を引き継ぐ */
+    function openBulkFromSeminar_() {
+      const v = id => (document.getElementById(id) || {}).value || '';
+      const loc = v('seminarLocation') === 'その他' ? v('seminarLocationOther').trim() : v('seminarLocation');
+      const pre = { type: v('seminarType'), startTime: v('seminarStartTime'), location: loc, date: v('seminarDate') };
+      const sm = document.getElementById('seminarModal'); if (sm) delete sm.dataset.dirty;
+      closeSeminarModal();
+      showBulkModal('seminar', pre);
+    }
+    /** イベントの追加画面から「まとめて追加」へ：名前・時刻・場所・種類・参加者・日付を引き継ぐ */
+    function openBulkFromEvent_() {
+      let f = {};
+      try { f = readEventForm_(); } catch (_) {}
+      const pre = Object.assign({}, f, { date: (document.getElementById('eventDate') || {}).value || '' });
+      const em = document.getElementById('eventModal'); if (em) delete em.dataset.dirty;
+      closeEventModal();
+      showBulkModal('event', pre);
+    }
+
+    async function showBulkModal(kind, pre) {
+      pre = pre || {};
       try {
         await ensureMembersList();
       } catch (_) {
@@ -15876,6 +16444,26 @@
         document.getElementById('bulkEvLocation').value = '';
         renderBulkColorPicker_(EVENT_KINDS_[0].value);
         renderMemberPicker(document.getElementById('bulkEvParticipants'), { selected: [] });
+      }
+      // 追加画面から来たときは、入力中の内容を引き継ぐ
+      if (pre.date) {
+        const pd = parseYmd(String(pre.date).replace(/-/g, '/'));
+        if (pd) {
+          document.getElementById('bulkStart').value = ymdDash(pd);
+          document.querySelectorAll('#bulkWeekdays input').forEach(cb => { cb.checked = Number(cb.value) === pd.getDay(); });
+        }
+      }
+      if (bulk.kind === 'seminar') {
+        const typeSel = document.getElementById('bulkSemType');
+        if (pre.type && [...typeSel.options].some(o => o.value === pre.type)) typeSel.value = pre.type;
+        if (pre.startTime) document.getElementById('bulkSemTime').value = pre.startTime;
+        if (pre.location) setBulkLocation_(pre.location);
+      } else {
+        if (pre.name) document.getElementById('bulkEvName').value = pre.name;
+        if (pre.startTime) document.getElementById('bulkEvTime').value = pre.startTime;
+        if (pre.location) document.getElementById('bulkEvLocation').value = pre.location;
+        if (pre.color && pre.kind !== 'entryRestriction') renderBulkColorPicker_(pre.color);
+        if (Array.isArray(pre.participants) && pre.participants.length) renderMemberPicker(document.getElementById('bulkEvParticipants'), { selected: pre.participants });
       }
       bulk.overrides = {};
       bulk.excluded = new Set();
@@ -16284,7 +16872,7 @@
       renderBulkGrid_();
     }
     async function clearBulkGrid() {
-      if (bulk.grid.some(row => row.some(v => String(v).trim())) && !(await showConfirmModal('表の入力内容をすべて消しますか？', '確認'))) return;
+      if (bulk.grid.some(row => row.some(v => String(v).trim())) && !(await showConfirmModal('表の入力内容をすべて消しますか？', '入力の消去'))) return;
       bulk.grid = [];
       renderBulkGrid_();
     }
@@ -16513,7 +17101,7 @@
         return;
       }
       const dup = items.filter(it => bulkExisting_().some(s => s.date === it.date)).length;
-      const ok = await showConfirmModal(`${items.length}件の${bulkKindLabel_()}を追加します。` + (dup ? `\n（${dup}件は同じ日にすでに予定があります）` : ''), '一括追加');
+      const ok = await showConfirmModal(`${items.length}件の${bulkKindLabel_()}を追加します。` + (dup ? `\n（${dup}件は同じ日にすでに予定があります）` : ''), '一括追加', { okLabel: '追加' });
       if (!ok) return;
       try {
         if (bulk.kind === 'event') {
@@ -16884,7 +17472,7 @@
       const date = document.getElementById('eventDate').value;
       const form = readEventForm_();
       if (!date || !form.name) {
-        showToast('日付とイベント名を入力してください', 'error');
+        fieldError_(!form.name ? 'eventName' : 'eventDate', !form.name ? 'イベント名を入力してください' : '日付を入力してください');
         return;
       }
       const orig = eventData[editingEventIndex];
@@ -16938,7 +17526,7 @@
       const dateEnd = document.getElementById('eventDateEnd').value;
       const form = readEventForm_();
       if (!form.name) {
-        showToast('イベント名を入力してください', 'error');
+        fieldError_('eventName', 'イベント名を入力してください');
         return;
       }
       let dateList = [];
@@ -16964,7 +17552,7 @@
         }
       } else {
         if (!date) {
-          showToast('日付を入力してください', 'error');
+          fieldError_('eventDate', '日付を入力してください');
           return;
         }
         dateList = [date.split('-').join('/')];
@@ -16989,13 +17577,17 @@
       const siblings = ev.seriesId ? eventData.filter(e => e.seriesId === ev.seriesId) : [];
       let payload = { adminId: currentUser.id, events: [] };
       if (siblings.length > 1) {
-        const choice = await showChoiceModal('イベントの削除', `「${ev.name}」は ${siblings.length} 件を一括登録した予定です。`, [
-          { label: 'この日だけ削除', value: 'one', className: 'btn-danger' },
-          { label: `${siblings.length} 件すべて削除`, value: 'all', className: 'btn-outline' }
-        ]);
+        // 過ぎた回の記録を残せるように「この日以降」も選べる（消える範囲が広いほど下に）
+        const fromHere = siblings.filter(e => e.date >= ev.date);
+        const choices = [{ label: 'この日だけ削除', value: 'one', className: 'btn-outline is-danger' }];
+        if (fromHere.length > 1 && fromHere.length < siblings.length) choices.push({ label: `この日以降の ${fromHere.length} 件を削除`, value: 'after', className: 'btn-outline is-danger' });
+        choices.push({ label: `${siblings.length} 件すべて削除`, value: 'all', className: 'btn-outline is-danger' });
+        const choice = await showChoiceModal('イベントの削除', `「${ev.name}」は ${siblings.length} 件を一括登録した予定です。`, choices);
         if (!choice) return;
         if (choice === 'all') payload.deleteSeriesIds = [ev.seriesId];
-        payload.deleteIds = choice === 'all' ? siblings.map(e => e.id).filter(Boolean) : (ev.id ? [ev.id] : []);
+        payload.deleteIds = choice === 'all' ? siblings.map(e => e.id).filter(Boolean)
+          : choice === 'after' ? fromHere.map(e => e.id).filter(Boolean)
+          : (ev.id ? [ev.id] : []);
       } else {
         const ok = await showConfirmModal(`${fmtMdW(ev.date)}「${ev.name}」を削除しますか？`, '削除の確認');
         if (!ok) return;
@@ -17528,7 +18120,7 @@
 
     async function clearNgMonth() {
       if (ngMap.size === 0) return;
-      if (!(await showConfirmModal('この月の入力をすべてクリアしますか？', 'クリア'))) return;
+      if (!(await showConfirmModal('この月の入力をすべてクリアしますか？', 'クリア', { okLabel: 'クリア', danger: true }))) return;
       pushUndo_('ng');
       ngMap.clear();
       renderCalendar();
@@ -17721,7 +18313,7 @@
             </div>
             <div class="modal-actions">
               <button type="button" class="btn btn-outline" data-a="no">戻る</button>
-              <button type="button" class="btn btn-primary" data-a="yes"><i class="fa-solid fa-paper-plane"></i> 送る</button>
+              <button type="button" class="btn btn-primary" data-a="yes"><i class="fa-solid fa-paper-plane"></i> 提出</button>
             </div>
           </div>`;
         document.body.appendChild(overlay);
@@ -17751,7 +18343,7 @@
       if (submitButton) {
         submitButton.disabled = true;
         submitButton.dataset.originalText = submitButton.innerHTML;
-        submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 提出中...';
+        submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 提出中…';
       }
       
       const ngData = Array.from(ngMapForMonth.entries()).map(([date, type]) => ({
@@ -17769,6 +18361,7 @@
         
         const [y, m] = targetMonth.split('-');
         showToast(`${parseInt(m, 10)}月分を提出しました`, 'success');
+        showNgDutyConflicts_(result && result.conflicts);
         // 提出完了後の再読み込み（ローディング画面は出さない・もう一方の月の入力中データは残す）
         await loadFormData(false, { keepEditsExcept: targetMonth });
         const rest = targetMonthsList.filter(ym => ym && ym !== targetMonth && !isSubmitted_(ym));
@@ -17789,6 +18382,18 @@
       }
     }
     
+    /** 担当に入っている日を NG にしたとき：交代の依頼へ案内する */
+    async function showNgDutyConflicts_(list) {
+      if (!Array.isArray(list) || !list.length) return;
+      const label = { feed: '餌番', clean: '掃除' };
+      const lines = list.map(c => `${fmtMdW(c.date)}　${label[c.role] || ''}`);
+      const ok = await showConfirmModal(`次の日は担当に入っています。交代を依頼してください。\n\n${lines.join('\n')}`,
+        '担当日と NG の重なり', { okLabel: '交代を依頼' });
+      if (!ok || typeof openSwapCreate !== 'function') return;
+      if (!swapState.loadedAt) await loadSwaps();
+      openSwapCreate(normalizeScheduleDateStr(list[0].date), list[0].role);
+    }
+
     // 全月を同時に提出する処理
     async function submitAllMonths(name) {
       // ボタンをローディング状態に
@@ -17796,7 +18401,7 @@
       if (submitButton) {
         submitButton.disabled = true;
         submitButton.dataset.originalText = submitButton.innerHTML;
-        submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 提出中...';
+        submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 提出中…';
       }
       
       try {
@@ -17832,7 +18437,7 @@
               targetMonth: month,
               ngData: ngData
             });
-            results.push({ month, success: true, message: result.message });
+            results.push({ month, success: true, message: result.message, conflicts: result.conflicts || [] });
           } catch (error) {
             results.push({ month, success: false, error: error.message });
           }
@@ -17842,6 +18447,7 @@
         const successCount = results.filter(r => r.success).length;
         const failCount = results.filter(r => !r.success).length;
         
+        showNgDutyConflicts_([].concat(...results.map(r => r.conflicts || [])));
         if (failCount === 0) {
           showToast(`${targetMonthsList.length}ヶ月分の提出が完了しました`, 'success');
         } else {
@@ -18096,7 +18702,7 @@
     /** 未保存の変更があるときは確認してから進める */
     async function confirmDiscardDraft_(what) {
       if (!draftChangeCount_()) return true;
-      return showConfirmModal(`保存していない変更が ${draftChangeCount_()} 日分あります。${what}と変更は失われます。続けますか？`, '未保存の変更');
+      return showConfirmModal(`保存していない変更が ${draftChangeCount_()} 日分あります。${what}と変更は失われます。続けますか？`, '未保存の変更', { okLabel: '破棄して続ける', danger: true });
     }
     async function reloadDraftEdit_() {
       if (!(await confirmDiscardDraft_('再読み込みする'))) return;
@@ -18121,10 +18727,48 @@
         const filled = need.filter(d => ((draftEditChanges[d.dateStr] || d).feeder || '').trim()).length;
         if (need.length) chips.push(`<span class="sc-chip ${filled === need.length ? 'ok' : 'warn'}">餌 ${filled}/${need.length}日</span>`);
       }
+      const hiddenNow = shiftHiddenTargetMonths_();
+      if (hiddenNow !== null) chips.push(hiddenNow.length ? `<span class="sc-chip warn">非公開</span>` : `<span class="sc-chip ok">公開中</span>`);
       const n = draftChangeCount_();
       if (n) chips.push(`<span class="sc-chip warn">未保存 ${n}日分</span>`);
       box.innerHTML = chips.join('');
+      const pubState = document.getElementById('scPublishState');
+      const pubBtn = document.getElementById('scPublishBtn');
+      if (pubState && pubBtn) {
+        pubState.hidden = hiddenNow === null;
+        if (hiddenNow !== null) {
+          pubState.className = 'sc-chip ' + (hiddenNow.length ? 'warn' : 'ok');
+          pubState.textContent = hiddenNow.length ? '非公開' : '公開中';
+          pubBtn.innerHTML = hiddenNow.length ? '<i class="fa-solid fa-eye"></i> 公開' : '<i class="fa-solid fa-eye-slash"></i> 非公開に';
+        }
+      }
       renderDraftSide_(members);
+    }
+
+    /** 対象月のうち非公開の月（下書きを読み込む前は null） */
+    function shiftHiddenTargetMonths_() {
+      if (!draftEditData || !Array.isArray(draftEditData.hiddenMonths)) return null;
+      return getDraftEditTargetMonths().filter(m => draftEditData.hiddenMonths.includes(m));
+    }
+    /** 対象月を公開する／非公開に戻す */
+    async function togglePublishShift_() {
+      const months = getDraftEditTargetMonths();
+      if (!months.length) { showToast('対象月を選択してください', 'error'); return; }
+      if (shiftHiddenTargetMonths_() === null) await loadDraftEdit();
+      const hidden = shiftHiddenTargetMonths_() || [];
+      const publish = hidden.length > 0;
+      const label = months.map(m => `${parseInt(m.split('-')[1], 10)}月`).join('・');
+      const ok = await showConfirmModal(publish
+        ? `${label}のシフトをメンバーに公開しますか？`
+        : `${label}のシフトを非公開にしますか？メンバーのカレンダー・毎日の通知・交代に出なくなります`,
+        publish ? '公開' : '非公開', { okLabel: publish ? '公開' : '非公開に' });
+      if (!ok) return;
+      try {
+        const r = await callAPI('publishSchedule', { adminId: currentUser.id, months: publish ? hidden : months, publish });
+        if (draftEditData) draftEditData.hiddenMonths = r.hiddenMonths || [];
+        showToast(publish ? `${label}を公開しました` : `${label}を非公開にしました`, 'success');
+        renderShiftCreateStatus_();
+      } catch (_) { /* callAPI が表示 */ }
     }
 
     /** 下書きステップの右側：提出状況と未提出の人（下書きの前に確認・連絡できるように） */
@@ -18151,7 +18795,7 @@
         </div>`;
     }
     window.addEventListener('beforeunload', (e) => {
-      if (currentUser && currentUser.role === 'admin' && draftChangeCount_()) {
+      if (currentUser && ((currentUser.role === 'admin' && draftChangeCount_()) || (typeof cleaningDirty_ !== 'undefined' && cleaningDirty_))) {
         e.preventDefault();
         e.returnValue = '';
       }
@@ -18377,14 +19021,17 @@
       const isCleanDay = d.isCleanDay === true;
       if (isCleanDay && cleaners.length === 0) return '掃除の担当がいません';
       if (isCleanDay && cleaners.length > 0 && cleaners.length < req) return `掃除が ${cleaners.length}/${req} 人です`;
-      if (isCleanDay && cleaners.length >= 2 && (memberStats || []).length > 0) {
+      // 掃除日の鶏班の最低人数（設定。未設定は 2）
+      const chMinRaw = draftEditConfig ? parseInt(draftEditConfig['掃除日の鶏班最低人数'], 10) : NaN;
+      const chMin = isNaN(chMinRaw) || chMinRaw < 0 ? 2 : chMinRaw;
+      if (isCleanDay && chMin > 0 && cleaners.length >= 1 && (memberStats || []).length > 0) {
         const chickenMembers = (memberStats || []).filter(x => (x.team || '').trim() === '鶏班');
         const memberNormMap = new Map();
         chickenMembers.forEach(x => { memberNormMap.set(x, normalizeNameForCompare(x.fullName || x.name)); });
         const chickenCount = cleaners.filter(name => {
           return chickenMembers.some(m => isSameMember(name, m, memberNormMap));
         }).length;
-        if (chickenCount < 2) return '掃除に鶏班が 2 人いません';
+        if (chickenCount < chMin) return `掃除に鶏班が ${chMin} 人いません`;
       }
       return false;
     }
@@ -18775,23 +19422,64 @@
       }
       
       const n = Object.keys(draftEditChanges).length;
+      // 開いた時点の値も送る（その後に成立した交代などを上書きしないため）
+      const baseOf = ds => (draftEditData && draftEditData.data || []).find(d => d.dateStr === ds) || {};
+      const payload = {};
+      Object.keys(draftEditChanges).forEach(ds => {
+        const b = baseOf(ds);
+        payload[ds] = Object.assign({}, draftEditChanges[ds], {
+          baseFeeder: b.feeder || '',
+          baseCleaners: b.cleaners || ''
+        });
+      });
       try {
         const targetMonth = getDraftEditTargetMonth();
-        
+
         // 変更をAPIに送信
         await callAPI('updateDraftSchedule', {
           adminId: currentUser.id,
           targetMonth: targetMonth,
-          changes: draftEditChanges
-        }, { overlayMessage: '保存しています…' });
-        
+          changes: payload
+        }, { overlayMessage: '保存しています…', silent: true });
+
         showToast(`${n}日分の変更を保存しました`, 'success');
         draftEditChanges = {};
         clearUndo_('draft');
         loadDraftEdit();
       } catch (error) {
-        showToast('保存に失敗しました', 'error');
+        if (error && error.code === 'CONFLICT') {
+          await reloadDraftKeepingChanges_((error.data && error.data.conflicts) || []);
+          showToast(`${error.message}。該当日の変更を取り消しました`, 'error');
+          return;
+        }
+        showToast('保存エラー：' + (error && error.message ? error.message : ''), 'error');
       }
+    }
+
+    /**
+     * 下書きを最新に読み込み直し、重なった日以外の未保存の変更は残す。
+     * 画面で変えていない欄は、最新の値に置き換える（古い値で上書きしないように）。
+     */
+    async function reloadDraftKeepingChanges_(dropDates) {
+      const oldBase = {};
+      ((draftEditData && draftEditData.data) || []).forEach(d => { oldBase[d.dateStr] = d; });
+      const keep = {};
+      Object.keys(draftEditChanges).forEach(ds => {
+        if (dropDates.indexOf(ds) < 0) keep[ds] = Object.assign({}, draftEditChanges[ds]);
+      });
+      await loadDraftEdit();
+      if (!draftEditData || !Object.keys(keep).length) return;
+      const sameNames = (a, b) => splitShiftNames(a).sort().join('・') === splitShiftNames(b).sort().join('・');
+      Object.keys(keep).forEach(ds => {
+        const ob = oldBase[ds] || {};
+        const nb = draftEditData.data.find(d => d.dateStr === ds) || {};
+        ['feeder', 'cleaners'].forEach(f => {
+          if (sameNames(keep[ds][f], ob[f])) keep[ds][f] = nb[f] || '';
+        });
+      });
+      draftEditChanges = keep;
+      renderDraftEditCalendar(draftEditData, draftEditNgData || {});
+      updateDraftEditStats();
     }
     
     // 下書きのシフト表を画像で保存（未保存の変更も反映した内容）
@@ -19737,7 +20425,7 @@
       saveBtn.addEventListener('click', async () => {
         const names = picked();
         const ngPicked = names.filter(n => ngOf(n));
-        if (ngPicked.length && !(await showConfirmModal(`${ngPicked.join('、')}さんはこの日を NG として提出しています。保存しますか？`, '担当者の変更'))) return;
+        if (ngPicked.length && !(await showConfirmModal(`${ngPicked.join('、')}さんはこの日を NG として提出しています。保存しますか？`, '担当者の変更', { okLabel: '保存' }))) return;
         saveBtn.disabled = true;
         let ok = false;
         try {
@@ -19767,14 +20455,27 @@
         type,
         current: splitShiftNames(oldValue),
         onSave: async names => {
-          await callAPI('updateConfirmedSchedule', {
-            adminId: currentUser.id,
-            targetMonth: ym.replace('/', '-'),
-            dateStr: row.dateStr,
-            type,
-            value: names.join('・'),
-            oldValue
-          });
+          try {
+            await callAPI('updateConfirmedSchedule', {
+              adminId: currentUser.id,
+              targetMonth: ym.replace('/', '-'),
+              dateStr: row.dateStr,
+              type,
+              value: names.join('・'),
+              oldValue
+            }, { silent: true });
+          } catch (e) {
+            if (e && e.code === 'CONFLICT') {
+              // 開いた後に交代などで変わっていた：最新を出して、もう一度選んでもらう
+              showToast(`${e.message}。最新を表示しました`, 'error');
+              closeDutyEditor_();
+              delete adminMonthCache_[ym];
+              loadResultCalendar();
+              return false;
+            }
+            showToast('保存エラー：' + (e && e.message ? e.message : ''), 'error');
+            return false;
+          }
           showToast('担当者を変更しました', 'success');
           loadResultCalendar();
           return true;
@@ -19804,17 +20505,22 @@
         container.innerHTML = '<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 120px; color: var(--text-light);"><i class="fa-solid fa-spinner fa-spin fa-2x" style="margin-bottom: 12px;"></i><div>読み込み中…</div></div>';
       }
       
+      // 月を続けて切り替えたとき、遅れて届いた前の月の応答で上書きしない
+      const seq = nextLoadSeq('cleaning');
       try {
         const result = await callAPI('getCleaningSchedule', {
           adminId: currentUser.id,
           targetMonth: targetMonth
         });
+        if (!isLatestLoad('cleaning', seq)) return;
         
         cleaningScheduleData = result.schedule || [];
         regularCleaningDates = result.regularCleaningDates || [];
+        cleaningLoadedMonth_ = targetMonth;
         cleaningDirty_ = false;
         renderCleaningSchedule(targetMonth);
       } catch (error) {
+        if (!isLatestLoad('cleaning', seq)) return;
         console.error('掃除スケジュール読み込みエラー:', error);
         if (container) {
           container.innerHTML = '<div style="text-align: center; padding: 24px; color: var(--danger);">読み込みに失敗しました</div>';
@@ -19823,6 +20529,7 @@
     }
     
     let cleaningDirty_ = false; // 保存していない臨時掃除・中止の変更があるか
+    let cleaningLoadedMonth_ = ''; // 表示している（＝保存する）月。選択欄ではなくこちらを保存に使う
     function renderCleaningSchedule(targetMonth) {
       const container = document.getElementById('cleaningScheduleContainer');
       if (!container) return;
@@ -19862,7 +20569,7 @@
     async function shiftCleaningMonth(delta) {
       const input = document.getElementById('cleaningScheduleMonth');
       const [y, m] = (input.value || getCurrentMonth()).split('-').map(Number);
-      if (cleaningDirty_ && !(await showConfirmModal('保存していない変更があります。破棄して月を移動しますか？', '臨時掃除・掃除中止'))) return;
+      if (cleaningDirty_ && !(await showConfirmModal('保存していない変更があります。破棄して月を移動しますか？', '臨時掃除・掃除中止', { okLabel: '破棄して移動', danger: true }))) return;
       const d = new Date(y, m - 1 + delta, 1);
       input.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       cleaningDirty_ = false;
@@ -19907,12 +20614,30 @@
       renderCleaningSchedule(targetMonth);
     }
     
+    /** 入雛・掃除日を変えたあと、担当とずれた日を知らせる（シフト作成の「調整」で直す） */
+    function showDutyMismatches_(list) {
+      if (!Array.isArray(list) || !list.length || !currentUser || currentUser.role !== 'admin') return;
+      const lines = list.map(x => `${fmtMdW(x.date)}　${x.kind}`);
+      showConfirmModal(`次の日の担当が予定と合っていません。シフト作成の「調整」で直してください。\n\n${lines.join('\n')}`,
+        `担当とずれた日（${list.length}件）`, { okLabel: '調整を開く' }).then(ok => {
+        if (!ok) return;
+        const m = list[0].date.slice(0, 7).replace('/', '-');
+        const el = document.getElementById('adminTargetMonth');
+        if (el) { el.value = m; if (typeof onAdminTargetMonthChange === 'function') onAdminTargetMonthChange(); }
+        Promise.resolve(switchTab('admin-shift-create')).then(() => setShiftStep('adjust'));
+      });
+    }
+
     async function saveCleaningSchedule() {
-      const targetMonth = document.getElementById('cleaningScheduleMonth').value;
+      const targetMonth = cleaningLoadedMonth_;
       if (!targetMonth) return;
+      if (targetMonth !== document.getElementById('cleaningScheduleMonth').value) {
+        showToast('読み込み中です。表示が切り替わってから保存してください', 'info');
+        return;
+      }
       const saveButton = document.querySelector('button[onclick="saveCleaningSchedule()"]');
       try {
-        await callAPI('setCleaningSchedule', {
+        const res = await callAPI('setCleaningSchedule', {
           adminId: currentUser.id,
           targetMonth: targetMonth,
           schedule: cleaningScheduleData
@@ -19920,6 +20645,7 @@
         cleaningDirty_ = false;
         renderCleaningSchedule(targetMonth);
         showToast('掃除スケジュールを保存しました', 'success');
+        showDutyMismatches_(res && res.mismatches);
       } catch (error) {
         console.error('保存エラー:', error);
       }
@@ -20153,7 +20879,7 @@
     async function acceptSwap(id) {
       const s = swapState.list.find(x => x.id === id);
       if (!s) return;
-      const ok = await showConfirmModal(`${fmtMdW(s.date)} の${SWAP_ROLE[s.role]}を、${s.requester}さんの代わりに引き受けますか？`, '交代を引き受ける');
+      const ok = await showConfirmModal(`${fmtMdW(s.date)} の${SWAP_ROLE[s.role]}を、${s.requester}さんの代わりに引き受けますか？`, '交代を引き受ける', { okLabel: '引き受ける' });
       if (!ok) return;
       try {
         const r = await callAPI('acceptSwap', { adminId: currentUser.id, id });
@@ -20249,6 +20975,7 @@
         const r = await callAPI('swapCandidates', { adminId: currentUser.id, date: swapDraft.date, role: swapDraft.role }, { silent: true });
         swapDraft.candidates = r.candidates || [];
         swapDraft.confirmed = r.confirmed || [];
+        swapDraft.consecutive = r.consecutive || [];
       } catch (_) {}
       renderSwapCandidates_();
     }
@@ -20258,16 +20985,19 @@
       const n = swapDraft.candidates.length;
       const c = swapDraft.confirmed.length;
       if (!swapDraft.date) info.textContent = '';
-      else if (!n) info.textContent = 'この日に入れる人がいません（NG の人や、すでに担当の人は除いています）';
+      else if (!n) info.textContent = 'この日に入れる人がいません（NG・上限に達している人・すでに担当の人は除いています）';
       else if (swapDraft.mode === 'all') {
         info.textContent = swapDraft.scope === 'all' || !c
           ? `この日に入れる ${n}人にメンションします${swapDraft.scope !== 'all' && !c ? '（提出済みの人がいないため）' : ''}`
           : `この日を参加可能で提出した ${c}人にメンションします（入れる人は全部で ${n}人）`;
       }
-      else info.textContent = `この日に入れる人: ${n}人（✓ は参加可能で提出済み）`;
+      else info.textContent = `この日に入れる人: ${n}人（✓ は参加可能で提出済み・「連続」は前日か翌日も同じ担当）`;
       const confirmed = new Set(swapDraft.confirmed);
-      const sorted = swapDraft.candidates.slice().sort((a, b) => (confirmed.has(b) ? 1 : 0) - (confirmed.has(a) ? 1 : 0));
-      box.innerHTML = sorted.map(name => `<button type="button" class="mp-chip${swapDraft.target === name ? ' active' : ''}" onclick="swapDraft.target = ${jsArg(name)}; renderSwapCandidates_()">${confirmed.has(name) ? '<i class="fa-solid fa-check sw-ok"></i> ' : ''}${escapeHtml(name)}</button>`).join('');
+      const consec = new Set(swapDraft.consecutive || []);
+      // 提出済みを先に、連続になる人は後ろに
+      const rank = nm => (confirmed.has(nm) ? 0 : 1) + (consec.has(nm) ? 2 : 0);
+      const sorted = swapDraft.candidates.slice().sort((a, b) => rank(a) - rank(b));
+      box.innerHTML = sorted.map(name => `<button type="button" class="mp-chip${swapDraft.target === name ? ' active' : ''}" onclick="swapDraft.target = ${jsArg(name)}; renderSwapCandidates_()">${confirmed.has(name) ? '<i class="fa-solid fa-check sw-ok"></i> ' : ''}${escapeHtml(name)}${consec.has(name) ? ' <span class="sw-consec">連続</span>' : ''}</button>`).join('');
     }
     async function submitSwap() {
       if (!swapDraft.date) {
@@ -20279,7 +21009,7 @@
         return;
       }
       if (!swapDraft.candidates.length) {
-        const ok = await showConfirmModal('いま、この日に入れる人がいません。それでも依頼しますか？', '交代の依頼');
+        const ok = await showConfirmModal('いま、この日に入れる人がいません。それでも依頼しますか？', '交代の依頼', { okLabel: '依頼' });
         if (!ok) return;
       }
       try {
@@ -20325,7 +21055,7 @@
       }
     }
     async function resetCalendarLink() {
-      if (!(await showConfirmModal('URL を作り直しますか？前の URL で追加したカレンダーは更新されなくなります。', 'URL の作り直し'))) return;
+      if (!(await showConfirmModal('URL を作り直しますか？前の URL で追加したカレンダーは更新されなくなります。', 'URL の作り直し', { okLabel: '作り直す', danger: true }))) return;
       try {
         const r = await callAPI('getCalendarLink', { studentId: currentUser.id, reset: true });
         showCalendarLink_(calendarUrlFrom_(r));
@@ -20520,7 +21250,7 @@
         return;
       }
       const grads = changes.filter(c => c.graduate).length;
-      if (!(await showConfirmModal(`${changes.length - grads}人の学年を更新し、${grads}人を卒業にします。よろしいですか？`, '学年の一括更新'))) return;
+      if (!(await showConfirmModal(`${changes.length - grads}人の学年を更新し、${grads}人を卒業にします。よろしいですか？`, '学年の一括更新', { okLabel: '更新' }))) return;
       try {
         const r = await callAPI('bulkUpdateGrades', { adminId: currentUser.id, changes }, { button: document.getElementById('gradeApplyBtn') });
         document.getElementById('gradeModal').classList.remove('show');
